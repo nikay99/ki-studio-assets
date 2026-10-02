@@ -31,7 +31,12 @@ Format:
 - Vorschlag: Ablauf Schritt 3a: QA-Subagent prueft das Skript (Narration + Quellen) direkt nach dem Writer, vor fal-Assets; Schritt 8 bleibt fuer Bilder/Sound/Audit.
 - Nutzen: weniger Doppelkosten. Risiko: ein zusaetzlicher kurzer Subagent-Aufruf.
 
-## P-4 – Gemini-Video-QA (Augen + Ohren) in den Ablauf  [OFFEN – Niklas: "muessen wir auf jeden Fall einbauen"]
+## P-4 – Gemini-Video-QA (Augen + Ohren) in den Ablauf  [UMGESETZT (tools/gemini_coworker.md, tools/qa_at.py, Skill-Schritte 1 + 9b) – freigegeben von Niklas 02.10.2026]
 - Beobachtung: 02.10.2026 Gemini 3.8 Flash fand einen echten Untertitel-Fehler, den Audit und Claude nicht sehen konnten; Qwen Omni lieferte nur Fehlalarme.
 - Vorschlag (Details im Chat 02.10.): (a) nach dem Render: scale-video 540x960 -> openrouter/router/video gemini-3.8-flash -> JSON-Urteil; jede Meldung gegen Audit/edit.json verifizieren; bestaetigt -> fixen + 2. Render, sonst Upload. (b) vor dem Render: Musik anhoeren lassen (echte Sekunden von Bruch/Hoehepunkt, Gesang?), Stimmen (Aussprache von Namen/Zahlen). (c) Bilder optional.
 - Nutzen: "Augen und Ohren", die Claude fehlen. Risiko: Fehlalarme -> nur nach Verifikation handeln; Kosten ~1-2 Cent/Video.
+
+## P-5 – Lehren aus Gemini-Zuschauer-Test (Emu War, Score 6/10)  [OFFEN]
+- Beobachtung: G3 nennt (1) Setup 10-16 s zu langsam (Szene "farmers call the army" + Ausruestung), (2) keine Sounds bei Schuessen/Ladehemmung/Emu-Chaos, (3) Ende mit Statistik statt Pointe.
+- Vorschlag: (a) Writer-Regel: Kontext/Setup max. 2 Saetze, erste Aktion spaetestens bei ~10 s; (b) Sound Designer: Aktions-Szenen bekommen 1-2 Szenen-SFX (Schuss-Salve, Klick/Ladehemmung, Tierlaerm) ueber elevenlabs/sound-effects – auch ohne ZAP; dafuer ggf. Pool um "gunfire burst" und "mechanical click/jam" erweitern; (c) letzter Satz = Pointe (ironisch/ueberraschend), Zahlen davor.
+- Nutzen: hoehere Retention/Interesse. Risiko: gering; (b) erfordert neue Pool-Sounds (Niklas hoert + laedt hoch).
