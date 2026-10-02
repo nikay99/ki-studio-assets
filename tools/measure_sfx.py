@@ -11,6 +11,8 @@ import argparse, json, os, re, subprocess, struct
 HERE = os.path.dirname(os.path.abspath(__file__))
 P = os.path.join(HERE, 'sfx.json')
 DEF_VOL = {'opener': 0.65, 'whoosh': 0.8, 'impact': 0.8, 'climax': 0.9, 'riser': 0.6, 'timeskip': 0.8}
+# Referenz-Lautheit je Kategorie (die abgenommenen Sounds); vol wird darauf angeglichen
+REF_LUFS = {'opener': -14.0, 'whoosh': -18.0, 'impact': -16.0, 'climax': -14.0, 'riser': -20.0, 'timeskip': -18.0}
 
 
 def measure(path):
@@ -38,7 +40,7 @@ if __name__ == '__main__':
     name = os.path.splitext(os.path.basename(a.file))[0]
     d = json.load(open(P))
     e = {'file': os.path.basename(a.file), 'file_len': dur, 'len': round(min(a.len or dur, dur), 2), 'peak': peak,
-         'vol': a.vol or DEF_VOL[a.category], 'lufs': lufs, 'category': a.category, 'mood': a.mood.split(',')}
+         'vol': a.vol or (round(max(0.1, min(1.0, DEF_VOL[a.category] * 10 ** ((REF_LUFS[a.category] - lufs) / 20))), 2) if lufs is not None else DEF_VOL[a.category]), 'lufs': lufs, 'category': a.category, 'mood': a.mood.split(',')}
     if a.word: e['word'] = a.word.split(',')
     d['sounds'][name] = e
     json.dump(d, open(P, 'w'), indent=1, ensure_ascii=False)
