@@ -87,6 +87,11 @@ def audit(edit, meta, verbose=True):
         for line in c['asset']['text'].split('\n'):
             maxc = 18 if c['asset']['font']['size'] == 130 and c['width'] == 960 else 16 if c['width'] == 900 else 18
             if len(line) > maxc: errs.append(f'Boxtext zu lang ({len(line)}>{maxc}): {line!r}')
+    # Untertitel-Breite: Bangers ~46 px/Zeichen bei 130 + letterSpacing 3, Box 990 px abzgl. 2x Stroke 16
+    for c in caps:
+        sz = c['asset']['font']['size']; t = c['asset']['text']
+        w = len(t) * (46 * sz / 130 + 3)
+        if w > c['width'] - 32: errs.append(f'Untertitel zu breit (~{w:.0f} px > {c["width"] - 32}): {t!r} bei {c["start"]}')
     say(f'7) Untertitel: {len(caps)} | Laenge {END:.2f} s')
     say('AUDIT ' + ('GRUEN' if not errs else 'ROT:\n  - ' + '\n  - '.join(errs)))
     return not errs

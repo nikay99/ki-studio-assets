@@ -20,6 +20,7 @@ RED, YEL, BLK, WHT = '#E63946', '#F4D35E', '#000000', '#FFFFFF'
 VO = 0.15          # Stimme startet bei 0,15 s (Punch davor)
 HOOK_GAP = 0.10    # Luft zwischen Hook-Satz und Szene 1
 CAP_EARLY = 0.05   # Untertitel 0,05 s vor dem Wort
+CAP_MAXCH = 16     # max. Zeichen je Untertitel (Bangers 145 ~51 px/Zeichen + 3 Spacing, Box 990 px inkl. Stroke)
 OVL = 0.05         # Ueberlappung der unteren Bildspur A
 SX, SY = 0.012, -0.008  # harter Schatten der Boxen
 r2 = lambda x: round(x + 0.0, 2)
@@ -71,8 +72,15 @@ def chunks_of(ws, d):
     ch, k = [], 0
     while k < len(ws):
         txt, st, en = ws[k]; idx = [k]
-        if len(re.sub(r'\W', '', txt)) <= 3 and k + 1 < len(ws) and not re.search(r'[.,;:!?]$', txt):
+        # zusammenziehen nur, wenn der Untertitel danach noch in die 990-px-Box passt (sonst Umbruch/abgeschnitten)
+        if (len(re.sub(r'\W', '', txt)) <= 3 and k + 1 < len(ws) and not re.search(r'[.,;:!?]$', txt)
+                and len(clean(txt + ' ' + ws[k + 1][0])) <= CAP_MAXCH):
             txt, en = txt + ' ' + ws[k + 1][0], ws[k + 1][2]; idx.append(k + 1); k += 1
+        elif (len(re.sub(r'\W', '', txt)) <= 3 and k + 1 < len(ws) and ch
+                and not re.search(r'[.,;:!?]$', txt) and not re.search(r'[.,;:!?]$', ch[-1]['txt'])
+                and len(clean(ch[-1]['txt'] + ' ' + txt)) <= CAP_MAXCH):
+            # passt nicht nach vorne -> an das vorherige Wort haengen statt allein zu flackern
+            ch[-1]['txt'] += ' ' + txt; ch[-1]['en'] = en; ch[-1]['idx'].append(k); k += 1; continue
         ch.append({'txt': txt, 'st': st, 'en': en, 'idx': idx}); k += 1
     for i, c in enumerate(ch):
         nxt = ch[i + 1]['st'] if i + 1 < len(ch) else d
