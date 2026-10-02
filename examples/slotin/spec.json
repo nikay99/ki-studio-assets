@@ -1,0 +1,487 @@
+{
+ "topic": "Louis Slotin \u2013 Demon Core 1946",
+ "title": "He Saved 7 Men\u2026 Then One Screwdriver Slip Killed Him",
+ "hook": {
+  "image": "https://v3b.fal.media/files/b/0aacbb94/r1fTG1c-fAYBKAbsCVcse_K97tB0jo.png",
+  "image2": "https://v3b.fal.media/files/b/0aacacba/jdBQSHZWAmnPbcEcRx3m2_3H4qev8t.png",
+  "voice": "https://v3b.fal.media/files/b/0aacbb91/7mvWx9w9NdPrNjxR_2BGL_output.mp3",
+  "dur": 2.88,
+  "turn_at": 1.63,
+  "line1": "THIS MAN SAVED\n7 LIVES.",
+  "line2": "AND IT KILLED HIM."
+ },
+ "scenes": [
+  {
+   "image": "https://v3b.fal.media/files/b/0aacacbe/Dsg5oIC_X2nMIwo5MIFVK_EC6pRvJd.png",
+   "voice": "https://v3b.fal.media/files/b/0aacacbd/L4fSQ4J3kGVKBpWd8_ttW_output.mp3",
+   "dur": 5.31,
+   "words": [
+    [
+     "in",
+     0.02,
+     0.32
+    ],
+    [
+     "1946",
+     0.32,
+     0.62
+    ],
+    [
+     "louis",
+     1.36,
+     1.61
+    ],
+    [
+     "slotin",
+     1.61,
+     2.17
+    ],
+    [
+     "tested",
+     2.18,
+     2.53
+    ],
+    [
+     "a",
+     2.54,
+     2.84
+    ],
+    [
+     "plutonium",
+     2.84,
+     3.14
+    ],
+    [
+     "core",
+     3.33,
+     3.71
+    ],
+    [
+     "in",
+     3.71,
+     3.82
+    ],
+    [
+     "a",
+     3.82,
+     3.93
+    ],
+    [
+     "secret",
+     3.94,
+     4.29
+    ],
+    [
+     "lab",
+     4.3,
+     4.9
+    ]
+   ]
+  },
+  {
+   "image": "https://v3b.fal.media/files/b/0aacacc2/LlEcco41CQg5Z4NBuJXxJ_5PIBJAh4.png",
+   "voice": "https://v3b.fal.media/files/b/0aacacc2/mjK0FjjpYiIkuIrh6Qtvl_output.mp3",
+   "dur": 5.12,
+   "words": [
+    [
+     "two",
+     0.01,
+     0.285
+    ],
+    [
+     "metal",
+     0.285,
+     0.56
+    ],
+    [
+     "shells",
+     0.57,
+     0.95
+    ],
+    [
+     "must",
+     0.96,
+     1.25
+    ],
+    [
+     "never",
+     1.25,
+     1.55
+    ],
+    [
+     "close",
+     1.56,
+     1.85
+    ],
+    [
+     "around",
+     1.85,
+     2.06
+    ],
+    [
+     "the",
+     2.07,
+     2.37
+    ],
+    [
+     "core",
+     2.37,
+     2.67
+    ],
+    [
+     "then",
+     3.1,
+     3.32
+    ],
+    [
+     "it",
+     3.33,
+     3.465
+    ],
+    [
+     "could",
+     3.465,
+     3.6
+    ],
+    [
+     "go",
+     3.6,
+     3.9
+    ],
+    [
+     "critical",
+     3.9,
+     4.2
+    ]
+   ],
+   "sfx": "https://v3b.fal.media/files/b/0aacacd8/1I1-gRCWBADJRAOSEsRwp_normalized_audio.wav"
+  },
+  {
+   "image": "https://v3b.fal.media/files/b/0aacacc6/t_oGfEQPD1t0Ju86eh1wx_v4DG3n94.png",
+   "voice": "https://v3b.fal.media/files/b/0aacacc5/51sAhHBUoWFKnN61EwRBS_output.mp3",
+   "dur": 4.52,
+   "words": [
+    [
+     "louis",
+     0.02,
+     0.35
+    ],
+    [
+     "held",
+     0.35,
+     0.55
+    ],
+    [
+     "them",
+     0.55,
+     0.71
+    ],
+    [
+     "apart",
+     0.71,
+     1.01
+    ],
+    [
+     "with",
+     1.02,
+     1.2
+    ],
+    [
+     "only",
+     1.2,
+     1.41
+    ],
+    [
+     "a",
+     1.42,
+     1.72
+    ],
+    [
+     "screwdriver",
+     1.72,
+     2.02
+    ],
+    [
+     "seven",
+     2.81,
+     3.2
+    ],
+    [
+     "men",
+     3.2,
+     3.5
+    ],
+    [
+     "watched",
+     3.5,
+     3.8
+    ]
+   ],
+   "focus": "bottom"
+  },
+  {
+   "image": "https://v3b.fal.media/files/b/0aacacc9/czeLuIxdgieEOk24lyrDo_Ql9Lkjcu.png",
+   "voice": "https://v3b.fal.media/files/b/0aacacc9/XJPyd59lvOJWWzJa6dFCp_output.mp3",
+   "dur": 3.87,
+   "words": [
+    [
+     "then",
+     0.05,
+     0.24
+    ],
+    [
+     "the",
+     0.24,
+     0.54
+    ],
+    [
+     "screwdriver",
+     0.54,
+     0.84
+    ],
+    [
+     "slipped",
+     0.93,
+     1.53
+    ],
+    [
+     "a",
+     1.8,
+     2.015
+    ],
+    [
+     "blue",
+     2.015,
+     2.23
+    ],
+    [
+     "flash",
+     2.23,
+     2.63
+    ],
+    [
+     "filled",
+     2.63,
+     2.87
+    ],
+    [
+     "the",
+     2.87,
+     3.17
+    ],
+    [
+     "room",
+     3.17,
+     3.47
+    ]
+   ],
+   "sfx": "https://v3b.fal.media/files/b/0aacacd8/edjNfDeGUm59oMeqFZwRl_normalized_audio.wav"
+  },
+  {
+   "image": "https://v3b.fal.media/files/b/0aacacce/3z0QN3AA2adLygGVr3IRQ_SJA6Xrch.png",
+   "voice": "https://v3b.fal.media/files/b/0aacaccd/SxPdGi9feFmjrXvbAjuuA_output.mp3",
+   "dur": 2.8,
+   "words": [
+    [
+     "he",
+     0.05,
+     0.27
+    ],
+    [
+     "felt",
+     0.27,
+     0.49
+    ],
+    [
+     "heat",
+     0.49,
+     0.8
+    ],
+    [
+     "and",
+     0.8,
+     1.01
+    ],
+    [
+     "knocked",
+     1.01,
+     1.22
+    ],
+    [
+     "the",
+     1.22,
+     1.4
+    ],
+    [
+     "top",
+     1.4,
+     1.58
+    ],
+    [
+     "shell",
+     1.59,
+     1.82
+    ],
+    [
+     "away",
+     1.82,
+     2.42
+    ]
+   ],
+   "sfx": "https://v3b.fal.media/files/b/0aacacd9/phbpLDZEq38iLdimitvHl_normalized_audio.wav",
+   "focus": "top"
+  },
+  {
+   "image": "https://v3b.fal.media/files/b/0aacacd1/P_k_J-pwXc--nmrQIn6IL_hC50XFbn.png",
+   "voice": "https://v3b.fal.media/files/b/0aacacd0/FbG9gUQXp6nHVH9WkC4lW_output.mp3",
+   "dur": 4.42,
+   "words": [
+    [
+     "the",
+     0.01,
+     0.31
+    ],
+    [
+     "reaction",
+     0.31,
+     0.61
+    ],
+    [
+     "stopped",
+     0.79,
+     1.24
+    ],
+    [
+     "but",
+     1.24,
+     1.385
+    ],
+    [
+     "he",
+     1.385,
+     1.53
+    ],
+    [
+     "had",
+     1.53,
+     1.83
+    ],
+    [
+     "received",
+     1.83,
+     2.13
+    ],
+    [
+     "a",
+     2.16,
+     2.46
+    ],
+    [
+     "lethal",
+     2.46,
+     2.76
+    ],
+    [
+     "radiation",
+     2.79,
+     3.39
+    ],
+    [
+     "dose",
+     3.39,
+     3.99
+    ]
+   ],
+   "focus": "bottom"
+  },
+  {
+   "image": "https://v3b.fal.media/files/b/0aacacd4/_6Esd4YC8fDjDb8s1dDcm_UXfbY6GK.png",
+   "voice": "https://v3b.fal.media/files/b/0aacacd4/-rKzOHPowaQ7ZIBUNnLLj_output.mp3",
+   "dur": 4.05,
+   "words": [
+    [
+     "louis",
+     0.02,
+     0.35
+    ],
+    [
+     "died",
+     0.35,
+     0.66
+    ],
+    [
+     "nine",
+     0.71,
+     0.95
+    ],
+    [
+     "days",
+     0.96,
+     1.2
+    ],
+    [
+     "later.",
+     1.21,
+     1.6
+    ],
+    [
+     "his",
+     1.83,
+     2.13
+    ],
+    [
+     "action",
+     2.13,
+     2.43
+    ],
+    [
+     "likely",
+     2.45,
+     2.79
+    ],
+    [
+     "saved",
+     2.79,
+     3.04
+    ],
+    [
+     "seven",
+     3.04,
+     3.33
+    ],
+    [
+     "men",
+     3.33,
+     3.93
+    ]
+   ],
+   "focus": "top"
+  }
+ ],
+ "keywords": {
+  "red": [
+   "PLUTONIUM",
+   "CRITICAL",
+   "SCREWDRIVER",
+   "SLIPPED",
+   "BLUE",
+   "FLASH",
+   "LETHAL",
+   "RADIATION",
+   "DIED"
+  ],
+  "yellow": [
+   "1946",
+   "SEVEN"
+  ]
+ },
+ "zap": {
+  "word": "flash",
+  "text": "ZAP!"
+ },
+ "card": {
+  "text": "NINE DAYS LATER...",
+  "phrase": "nine days later"
+ },
+ "music": "https://v3b.fal.media/files/b/0aacacb2/7ci3AmAZGw-Ufz6zzLThe_normalized_audio.wav"
+}

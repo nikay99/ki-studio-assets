@@ -1,0 +1,14 @@
+{
+  "_doc": "Feste Sounds. peak = Sekunden ab Dateistart bis zum lautesten 10-ms-Fenster. Clip-Start = Zielzeit - peak. len = Clip-Laenge im Video (nie laenger als die Datei).",
+  "base_url": "https://raw.githubusercontent.com/nikay99/ki-studio-assets/main/sfx/",
+  "sounds": {
+    "punch":         {"file": "punch.wav",         "file_len": 0.80, "len": 0.80, "peak": 0.014, "vol": 0.65, "lufs": -14.0},
+    "whoosh_1":      {"file": "whoosh_1.wav",      "file_len": 0.48, "len": 0.48, "peak": 0.111, "vol": 1.0,  "lufs": -18.0},
+    "whoosh_2":      {"file": "whoosh_2.wav",      "file_len": 0.68, "len": 0.50, "peak": 0.190, "vol": 0.5,  "lufs": -18.0},
+    "whoosh_3":      {"file": "whoosh_3.wav",      "file_len": 0.60, "len": 0.50, "peak": 0.009, "vol": 0.8,  "lufs": -18.8},
+    "impact_box":    {"file": "impact_box.wav",    "file_len": 1.00, "len": 1.00, "peak": 0.039, "vol": 0.8,  "lufs": -16.0},
+    "zap":           {"file": "zap.wav",           "file_len": 1.20, "len": 1.20, "peak": 0.105, "vol": 0.9,  "lufs": -14.0},
+    "gong_timeskip": {"file": "gong_timeskip.wav", "file_len": 1.48, "len": 1.48, "peak": 0.035, "vol": 0.8,  "lufs": -18.0}
+  },
+  "whoosh_rotation": ["whoosh_1", "whoosh_2", "whoosh_3"]
+}
