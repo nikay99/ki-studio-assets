@@ -1954,5 +1954,18 @@
   "text": "THREE DAYS LATER",
   "phrase": "three days later"
  },
- "music": "https://v3b.fal.media/files/b/0aacc055/vpRBwbSyDmOYCyLoeyTH1_normalized_audio.wav"
+ "music": "https://v3b.fal.media/files/b/0aacc196/rlEi_WfxyQrPXjFZn48Vi_normalized_audio.wav",
+ "music_prompt": "Dark cinematic documentary underscore, World War II atmosphere, low sustained strings, distant taiko drums and a slow pulsing synth bass, 80 bpm. Starts quiet and sparse with a lonely piano note, tension builds steadily over the first 13 seconds with rising strings and faster drums, a huge orchestral impact hit at 13.5 seconds, then a stunned, sombre aftermath with low drones, building again gently towards a haunting, mournful resolving outro. Instrumental only. | negative: vocals, singing, choir, voice, lyrics, humming, speech, upbeat, happy, pop | 43 s, seed 1315295070",
+ "sound": {
+  "opener": "op_bass",
+  "whooshes": [
+   "wh_deep",
+   "whoosh_1",
+   "wh_reverse"
+  ],
+  "impact": "im_metal",
+  "climax": "cl_boom",
+  "riser": "ri_strings",
+  "timeskip": "ts_clock"
+ }
 }

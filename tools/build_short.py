@@ -3,6 +3,7 @@
 
 Nutzung:
     python3 tools/build_short.py spec.json edit.json
+    python3 tools/build_short.py spec.json --timeline   (vorab: Laenge, Hoehepunkt, Zeitsprung fuer den Musik-Prompt)
 Exit-Code 0 = Audit gruen, 1 = Audit-Fehler (NICHT rendern), 2 = Spec-Fehler.
 
 Bildet exakt das abgenommene Design nach (Referenz: examples/slotin/edit_v9.json):
@@ -327,6 +328,15 @@ def build(spec):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) == 3 and sys.argv[2] == '--timeline':
+        # Vorab-Timeline fuer den Sound Designer (Musik-Prompt): braucht nur Stimmen + Zeitstempel
+        spec = json.load(open(sys.argv[1])); spec.setdefault('music', 'about:blank')
+        for s in spec['scenes']: s.setdefault('image', 'about:blank')
+        spec['hook'].setdefault('image', 'about:blank')
+        _, m = build(spec)
+        print(json.dumps({'laenge_s': m['END'], 'wendung_s': m['CUT'], 'szene1_s': m['S1'], 'hoehepunkt_s': m['Z'],
+                          'zeitsprung_s': (m['card'] or [None])[0], 'szenen_s': m['scene_starts']}, indent=1))
+        sys.exit(0)
     if len(sys.argv) < 3:
         print(__doc__); sys.exit(2)
     spec = json.load(open(sys.argv[1]))
