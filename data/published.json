@@ -1,4 +1,38 @@
 [
-  {"date": "2026-10-02", "topic": "Louis Slotin – Demon Core 1946", "title": "He Saved 7 Men… Then One Screwdriver Slip Killed Him", "status": "[TEST] privat auf YouTube (Pipeline-Test)", "shotstack_render": "e9a7d7d3-a220-4cf7-af71-996591b6cac1"},
-  {"date": "2026-10-02", "topic": "Tsutomu Yamaguchi – überlebte Hiroshima und Nagasaki 1945", "title": "He Survived an Atomic Bomb… Then He Went Home", "status": "privat auf YouTube hochgeladen (Make-Execution db492693fa2242d7818993356fc24b9c)", "shotstack_render": "5823257a-70c5-4a73-b879-38e2b05ac79e", "spec": "examples/yamaguchi/spec.json"}
+ {
+  "date": "2026-10-02",
+  "topic": "Louis Slotin – Demon Core 1946",
+  "title": "He Saved 7 Men… Then One Screwdriver Slip Killed Him",
+  "status": "[TEST] privat auf YouTube (Pipeline-Test)",
+  "shotstack_render": "e9a7d7d3-a220-4cf7-af71-996591b6cac1"
+ },
+ {
+  "date": "2026-10-02",
+  "topic": "Tsutomu Yamaguchi – überlebte Hiroshima und Nagasaki 1945",
+  "title": "He Survived an Atomic Bomb… Then He Went Home",
+  "status": "privat auf YouTube hochgeladen (Make-Execution db492693fa2242d7818993356fc24b9c)",
+  "shotstack_render": "5823257a-70c5-4a73-b879-38e2b05ac79e",
+  "spec": "examples/yamaguchi/spec.json"
+ },
+ {
+  "date": "2026-10-02",
+  "topic": "Tsutomu Yamaguchi – überlebte Hiroshima und Nagasaki 1945 (v2)",
+  "title": "He Survived an Atomic Bomb… Then He Went Home",
+  "status": "privat auf YouTube (v2, ersetzt v1)",
+  "shotstack_render": "e2f03bdd-0975-46e8-ad06-864fc71cd123",
+  "sound": {
+   "opener": "op_bass",
+   "whooshes": [
+    "wh_deep",
+    "whoosh_1",
+    "wh_reverse"
+   ],
+   "impact": "im_metal",
+   "climax": "cl_boom",
+   "riser": "ri_strings",
+   "timeskip": "ts_clock"
+  },
+  "voice": "Brian",
+  "mood": "dark"
+ }
 ]
