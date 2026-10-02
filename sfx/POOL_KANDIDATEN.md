@@ -32,3 +32,13 @@ Danach misst Claude Peak/LUFS und trägt sie in `tools/sfx.json` ein.
 | ts_bell.mp3 | timeskip | Kirchenglocke | https://v3b.fal.media/files/b/0aacc109/SKNMevT1I9cC2jg5vUi_4_sound_effect.mp3 |
 
 Bestehend (bleiben): punch, whoosh_1–3, impact_box, zap, gong_timeskip.
+
+## Hörrunde 2 (02.10.2026, P-5b: Szenen-SFX für Action-Szenen)
+
+ElevenLabs SFX v2 (fal), prompt_influence 0.6, roh/nicht loudnorm. Behalten → unter dem Namen in Spalte 1 nach `sfx/` hochladen, dann misst Claude (`tools/measure_sfx.py`) und trägt sie in `tools/sfx.json` ein.
+
+| Datei (so speichern) | Kategorie | Beschreibung | Link |
+|---|---|---|---|
+| sc_gunfire.mp3 | scene | Schuss-Salve (Maschinengewehr, trocken, 2 s) | https://v3b.fal.media/files/b/0aacc46a/Ri1HFmwcMZH29UlpahHj0_sound_effect.mp3 |
+| sc_jam.mp3 | scene | Klick/Ladehemmung (1,5 s) | https://v3b.fal.media/files/b/0aacc46a/kYNLImjNM5-qIjCgKWYr1_sound_effect.mp3 |
+| sc_animals.mp3 | scene | Tierlärm / Vogel-Stampede (3 s) | https://v3b.fal.media/files/b/0aacc46b/VIckA5SgvHQkSG3jwr9vq_sound_effect.mp3 |

@@ -54,3 +54,8 @@ Format:
 - G3-Zuschauer-Test Emu War v2: Hook "yes", Score 6/10, Swipe-Risiko bei ~11 s (Setup) und ~28 s (Truck = Hoehepunkt vorbei), Payoff "partly" (Statistik statt Pointe), Tipps: Setup kuerzen, Action-SFX (Schuesse/Jam/Emus), schaerfere Schlusspointe. -> P-5
 - Musik-Analyse (audio): mit Vorgabe Echo der Vorgabe, blind voellig andere Struktur + falsche Dauer -> fuer Musik-Timing NICHT nutzen.
 - Neu: tools/gemini_coworker.md (Endpunkte, Vorlagen G1-G3, Grenzen), tools/qa_at.py (Meldung bei Sekunde X gegen Edit pruefen). Skill: Schritt 1 Story-Test, Schritt 9b Gemini Pflicht vor Upload.
+
+## 2026-10-02 – Repo-Sync + P-5 angestoßen (Chat mit Niklas)
+- 4 Patches (Emu War v1/v2, Untertitel-Fix, Gemini-Coworker) per `git am` auf main eingespielt (2308c20..44cc50d).
+- P-5(b): 3 neue Szenen-SFX-Kandidaten per ElevenLabs SFX v2 erzeugt (Schuss-Salve, Klick/Ladehemmung, Tierlaerm) -> `sfx/POOL_KANDIDATEN.md` Hörrunde 2.
+
