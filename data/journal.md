@@ -66,3 +66,4 @@ Format:
 - Offen: Kalibrierung an den echten Koepcke-Fehlerbildern (URLs/Render-ID fehlen noch).
 - Daily-Task: Schritt 0 = add_repo push + `git push --dry-run`, frueh pushen, bei Fehler "PUSH FEHLGESCHLAGEN" + format-patch.
 - Shotstack laeuft auf Plan "payg" (Render 02.10. abends) – freeTrial-/Wasserzeichen-Hinweis erledigt.
+- Nachtrag 20:30 – Kalibrierung Koepcke (Render fe071f63, 10 Bilder via includeData): Gemini findet S4-Zusatzarm, Opus auch, GPT-6 nicht; uebrige Bilder alle PASS. Entscheidung Niklas: nur Gemini als Pruefer (FAIL/UNSURE → neu), Opus vermeidet als Art Director schon im Prompt (neu: keine Selbstberuehrung). Weitere von Niklas gesehene Fehler noch nicht zugeordnet.

@@ -24,7 +24,7 @@ Empfohlen: `temperature 0.2-0.3`, `max_tokens 6000-8000`.
 | Gesang in Musik ja/nein | unsicher, nur Hinweis | beide Laeufe "no vocals" (korrekt), aber nicht unabhaengig belegt |
 | Qwen 3.8 Omni Flash (Vergleich) | **nein** | 4 von 4 Meldungen falsch |
 | Anatomie im fertigen Video (Zusatzarme/-haende) | **nein** | Koepcke 02.10.: G2 meldete PASS trotz mehrerer Bilder mit Zusatzarmen |
-| Anatomie auf Einzelbild, Gemini allein | **unzureichend** | Koepcke: nur Szene 4 gefunden, weitere Fehler uebersehen → Pflicht-Bildpruefung mit 2 Modellen + Veto (`tools/image_check.md`) |
+| Anatomie auf Einzelbild (Vorlage G0) | **ja, Pflicht** | Koepcke S4 Zusatzarm gefunden (GPT-6 nicht) → Pflicht-Bildpruefung `tools/image_check.md` |
 
 **Grundregel:** Jede Gemini-Meldung ist ein Hinweis, kein Urteil. Vor jeder Aktion verifizieren:
 `python3 tools/qa_at.py edit.json <sekunde>` zeigt, was zu dem Zeitpunkt laut Edit im Bild/Ton ist (Untertitel inkl. geschaetzter Breite, Boxen, Bild, Sounds).
@@ -49,5 +49,5 @@ Showrunner entscheidet (Gemini beraet), Begruendung ins Journal.
 Nutzung: Score + Aenderungen ins Journal. Billige Fixes (Titel, Beschreibung) sofort; inhaltliche Punkte (Szene zu lang, fehlende Sounds) nur mit 2. Render, wenn ohnehin noetig – sonst als Lehre fuer das naechste Video ("Lehren" im Journal), wiederkehrende Muster als Vorschlag.
 
 ### G0 – Pflicht-Bildpruefung (Anatomie, vor der Stimme/Spec)
-Vorlage, Modelle (Gemini + GPT parallel, Opus als Schiedsrichter), Veto-Regel und Neu-Erzeugung: **`tools/image_check.md`**.
+Vorlage, Regel (FAIL/UNSURE → neu) und Neu-Erzeugung: **`tools/image_check.md`**.
 Claude prueft Bilder NICHT allein – Claude erkennt Zusatzarme/-haende nicht zuverlaessig.
