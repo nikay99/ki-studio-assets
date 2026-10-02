@@ -55,7 +55,6 @@ Format:
 - Musik-Analyse (audio): mit Vorgabe Echo der Vorgabe, blind voellig andere Struktur + falsche Dauer -> fuer Musik-Timing NICHT nutzen.
 - Neu: tools/gemini_coworker.md (Endpunkte, Vorlagen G1-G3, Grenzen), tools/qa_at.py (Meldung bei Sekunde X gegen Edit pruefen). Skill: Schritt 1 Story-Test, Schritt 9b Gemini Pflicht vor Upload.
 
-## 2026-10-02 – Repo-Sync + P-5 angestoßen (Chat mit Niklas)
-- 4 Patches (Emu War v1/v2, Untertitel-Fix, Gemini-Coworker) per `git am` auf main eingespielt (2308c20..44cc50d).
-- P-5(b): 3 neue Szenen-SFX-Kandidaten per ElevenLabs SFX v2 erzeugt (Schuss-Salve, Klick/Ladehemmung, Tierlaerm) -> `sfx/POOL_KANDIDATEN.md` Hörrunde 2.
-
+## 2026-10-02 – Repo-Sync + P-5 umgesetzt (Chat mit Niklas)
+- 4 Patches (Emu War v1/v2, Untertitel-Fix, Gemini-Coworker) per `git am` auf main (2308c20..44cc50d); Blobs = Patch, alle Beispiele Audit gruen, slotin + yamaguchi byte-identisch zum Builder vor dem Fix.
+- P-5 als allgemeine Skill-Regeln: Writer Setup max. 2 Saetze / erste Aktion bis ~10 s, letzter Satz = Pointe (Zahlen davor); Sound Designer: Aktions-Szenen 1-2 Szenen-SFX pro Video erzeugt, auch ohne ZAP. Kein neuer Pool-Sound noetig (Kandidaten wieder entfernt).
