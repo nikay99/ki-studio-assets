@@ -193,7 +193,9 @@ def build(spec):
     # Float-Overlaps auf der Untertitelspur in 0,01-Schritten kuerzen (transparent, unkritisch)
     caps.sort(key=lambda c: c['start'])
     for x, y in zip(caps, caps[1:]):
-        if x['start'] + x['length'] > y['start'] + 1e-9: x['length'] = r2(y['start'] - x['start'])
+        # strikt pruefen wie Shotstack (JS-Float): 4.12 + 1.19 = 5.3100000000000005 > 5.31 -> clip_overlap
+        if x['start'] + x['length'] > y['start']: x['length'] = r2(y['start'] - x['start'])
+        if x['start'] + x['length'] > y['start']: x['length'] = r2(x['length'] - 0.01)
 
     # --- Bilder (Liste in Schnittreihenfolge)
     imgs = [({'asset': {'type': 'image', 'src': hook['image']}, 'position': 'center',

@@ -26,7 +26,7 @@ def audit(edit, meta, verbose=True):
     for name, t in N.items():
         s = sorted(t['clips'], key=lambda c: c['start'])
         for a, b in zip(s, s[1:]):
-            if a['start'] + a['length'] > b['start'] + 1e-9:
+            if a['start'] + a['length'] > b['start']:  # strikt wie Shotstack (JS-Float)
                 errs.append(f'Overlap auf {name} bei {a["start"]}')
         for c in t['clips']:
             if c['length'] <= 0: errs.append(f'Laenge <= 0 auf {name} bei {c["start"]}')
