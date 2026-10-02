@@ -20,3 +20,13 @@ Format:
 - Beobachtung: Vermessung 02.10.2026: im_fist -54 LUFS, cl_bang -41 LUFS, op_flash -25.5 LUFS – auch mit vol 1.0 kaum hoerbar, daher in sfx.json gesperrt (usable=false).
 - Vorschlag: mit elevenlabs/sound-effects/v2 neu erzeugen (prompt_influence 0.6, lauter/praesenter formulieren), Niklas laedt hoch, neu vermessen, Sperre entfernen.
 - Nutzen: Faustschlag-Impact, Gewehrschuss-BANG und Kamera-Blitz-Opener wieder verfuegbar. Risiko: keins.
+
+## P-2 – Laengen-Warnung im --timeline bei > 40 s  [OFFEN]
+- Beobachtung: Emu-War-Lauf 02.10.2026: 9 Saetze / 112 Woerter ergaben 42,9 s – erst nach der Vertonung sichtbar; Ziel laut Skill 30-40 s.
+- Vorschlag: build_short.py --timeline gibt bei > 40 s eine Warnung + Vorschlag aus, welche Szene am kuerzesten zu streichen waere; Skill-Regel "Writer: max. ~95 Woerter inkl. Hook" ergaenzen.
+- Nutzen: bessere Retention, weniger Neuvertonungen. Risiko: keins (nur Hinweis).
+
+## P-3 – QA-Faktencheck vor der Vertonung  [OFFEN]
+- Beobachtung: Emu-War-Lauf: QA fand 4 Faktenfehler erst nach Stimmen/Bildern -> 4 TTS + 1 Musik + 1 Bild neu.
+- Vorschlag: Ablauf Schritt 3a: QA-Subagent prueft das Skript (Narration + Quellen) direkt nach dem Writer, vor fal-Assets; Schritt 8 bleibt fuer Bilder/Sound/Audit.
+- Nutzen: weniger Doppelkosten. Risiko: ein zusaetzlicher kurzer Subagent-Aufruf.
