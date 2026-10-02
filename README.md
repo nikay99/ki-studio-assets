@@ -40,6 +40,13 @@ A/B-Bildspuren (Überlappung nur unten), Whoosh-Peaks exakt auf Szenenschnitten,
 | `zap` | `{"word": "flash", "text": "ZAP!"}` – Wort in der Narration |
 | `card` | `{"text": "NINE DAYS LATER...", "phrase": "nine days later"}` – ersetzt die Untertitel dieser Phrase |
 | `music` | Musik-URL (loudnorm), Volume 0.18 |
+| `sound` (optional) | Auswahl aus dem Pool je Kategorie: `opener`, `whooshes` (Liste, rotiert), `impact`, `climax` (passend zum Lautwort), `riser` (endet auf dem Hoehepunkt, optional), `timeskip`. Fehlende Felder = Standard (`tools/sfx.json` → `defaults`). |
+
+## Neue Sounds
+`python3 tools/measure_sfx.py sfx/<datei> <kategorie> [--word BOOM!] [--vol 0.9]` misst Peak/LUFS und traegt in `tools/sfx.json` ein. Kandidaten: `sfx/POOL_KANDIDATEN.md`.
+
+## data/journal.md / data/proposals.md
+Journal = Protokoll jedes Laufs. Proposals = Verbesserungsvorschlaege, nur nach Freigabe durch Niklas umsetzen; Fehlerbehebungen ohne Freigabe erlaubt.
 
 ## data/published.json
 Liste aller produzierten Themen (Dedup für den täglichen Task). Nach jedem Upload ergänzen.

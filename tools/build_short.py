@@ -120,6 +120,21 @@ def audio(src, start, length, vol=1, effect=None):
     return {'asset': a, 'start': start, 'length': length}
 
 
+def pick_sounds(spec):
+    """spec.sound waehlt pro Kategorie aus dem Pool (tools/sfx.json); fehlend = defaults."""
+    sel = dict(SFX['defaults']); sel.update({k: v for k, v in (spec.get('sound') or {}).items() if k in sel})
+    want = {'opener': 'opener', 'impact': 'impact', 'climax': 'climax', 'timeskip': 'timeskip', 'riser': 'riser'}
+    for k, c in want.items():
+        n = sel.get(k)
+        if n is None: continue
+        if n not in SFX['sounds']: die('Sound %r (%s) nicht in tools/sfx.json' % (n, k))
+        if SFX['sounds'][n]['category'] != c: die('Sound %r ist Kategorie %s, nicht %s' % (n, SFX['sounds'][n]['category'], c))
+    if isinstance(sel['whooshes'], str): sel['whooshes'] = [sel['whooshes']]
+    for n in sel['whooshes']:
+        if SFX['sounds'].get(n, {}).get('category') != 'whoosh': die('Whoosh %r unbekannt' % n)
+    return sel
+
+
 def sfx_clip(name, target, align_peak=True):
     src, s = snd(name)
     st = r2(target - s['peak']) if align_peak else target
@@ -139,6 +154,7 @@ def burst_svg():
 # ---------- Build ----------
 def build(spec):
     hook, scs = spec['hook'], spec['scenes']
+    SND = pick_sounds(spec)
     if not 5 <= len(scs) <= 9: die('5-9 Szenen erwartet, sind %d' % len(scs))
     for s in scs:
         s['_words'] = scene_words(s)
@@ -229,10 +245,11 @@ def build(spec):
         voice.append(audio(s['voice'], s['_t'], r2(s['_d'] - 0.01)))
         if s.get('sfx'):
             scene_sfx.append(audio(s['sfx'], s['_t'], r2(s['_d'] - 0.01), s.get('sfx_vol', 1)))
-        wh.append(sfx_clip(SFX['whoosh_rotation'][k % 3], s['_t']))
+        wh.append(sfx_clip(SND['whooshes'][k % len(SND['whooshes'])], s['_t']))
 
     # --- Hits
-    hits = [sfx_clip('impact_box', CUT, align_peak=False)]
+    hits = [sfx_clip(SND['impact'], CUT, align_peak=False)]
+    riser = []
     top_fx, zap_txt, zap_burst = [], [], []
     flash = {'asset': {'type': 'shape', 'shape': 'rectangle', 'rectangle': {'width': 1080, 'height': 1920},
                        'fill': {'color': WHT, 'opacity': 1}}, 'start': 0, 'length': 0.3, 'position': 'center',
@@ -250,7 +267,10 @@ def build(spec):
                           'offset': {'x': 0, 'y': 0.24}, 'transform': {'rotate': {'angle': -8}}, 'scale': zs})
         top_fx.append({'asset': flash['asset'], 'start': Z, 'length': 0.2, 'position': 'center',
                        'opacity': [{'from': 0.6, 'to': 0, 'start': 0, 'length': 0.2, 'easing': 'easeOutCubic'}]})
-        hits.append(sfx_clip('zap', Z))
+        hits.append(sfx_clip(SND['climax'], Z))
+        if SND.get('riser'):   # Riser endet exakt auf dem Hoehepunkt (Peak = Dateiende)
+            rsrc, rs = snd(SND['riser'])
+            riser.append(audio(rsrc, r2(max(0, Z - rs['len'])), rs['len'], rs['vol']))
 
     # --- Boxen / Karte / CTA
     l1, l2 = hook['line1'], hook['line2']
@@ -263,7 +283,7 @@ def build(spec):
         box2_text.append(text(card['text'], 760, 170, BLK, 115, cs_, cl, 0, 0.30, -2))
         box2.append(rect(760, 170, YEL, True, cs_, cl, 0, 0.30, -2))
         box2_sh.append(rect(760, 170, BLK, False, cs_, cl, SX, 0.30 + SY, -2))
-        hits.append(sfx_clip('gong_timeskip', cs_, align_peak=False))
+        hits.append(sfx_clip(SND['timeskip'], cs_, align_peak=False))
     cta = {'asset': {'type': 'rich-text', 'text': spec.get('cta', 'FOLLOW FOR THE NEXT TRUE STORY'),
                      'font': {'family': 'Bangers', 'size': 76, 'color': RED}, 'style': {'letterSpacing': 3},
                      'stroke': {'width': 12, 'color': BLK},
@@ -290,15 +310,15 @@ def build(spec):
                {'from': MV, 'to': 0, 'start': r2(END - 1), 'length': 1.0}]
     music = [{'asset': {'type': 'audio', 'src': spec['music'], 'volume': vol}, 'start': 0, 'length': END}]
 
-    punch = [sfx_clip('punch', 0, align_peak=False)]
+    punch = [sfx_clip(SND['opener'], 0, align_peak=False)]
     order = [top_fx, zap_txt, zap_burst, box2_text, box2, box2_sh, box1_text, box1, box1_sh, caps,
-             B, A, voice, scene_sfx, wh, punch, hits, music]
+             B, A, voice, scene_sfx, wh, punch, hits, riser, music]
     names = ['flash', 'zap_text', 'zap_burst', 'box2_text', 'box2', 'box2_shadow', 'box1_text', 'box1', 'box1_shadow',
-             'captions', 'images_B', 'images_A', 'voice', 'scene_sfx', 'whooshes', 'punch', 'hits', 'music']
+             'captions', 'images_B', 'images_A', 'voice', 'scene_sfx', 'whooshes', 'punch', 'hits', 'riser', 'music']
     tracks = [{'clips': c} for c in order if c]
     edit = {'timeline': {'background': BLK, 'fonts': [{'src': FONT_URL}], 'tracks': tracks},
             'output': {'format': 'mp4', 'size': {'width': 1080, 'height': 1920}, 'fps': 24}}
-    meta = {'END': END, 'CUT': CUT, 'S1': S1, 'Z': Z, 'cuts': cuts,
+    meta = {'END': END, 'CUT': CUT, 'S1': S1, 'Z': Z, 'cuts': cuts, 'sound': SND,
             'scene_starts': [s['_t'] for s in scs],
             'track_names': [n for n, c in zip(names, order) if c],
             'card': [min(a for a, _ in card_span)] if card else None}

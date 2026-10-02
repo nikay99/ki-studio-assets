@@ -9,6 +9,7 @@ import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SFX = json.load(open(os.path.join(HERE, 'sfx.json')))
 PEAK = {v['file']: v['peak'] for v in SFX['sounds'].values()}
+CAT = {v['file']: v['category'] for v in SFX['sounds'].values()}
 FPS = 24
 
 
@@ -57,9 +58,9 @@ def audit(edit, meta, verbose=True):
     if len(N['whooshes']['clips']) != len(meta['scene_starts']): errs.append('Anzahl Whooshes != Szenenschnitte')
     say(f'3) Whoosh-Peak vs. Schnitt (ms): {wd}')
     # 4 Hits
-    targets = {'impact_box.wav': meta['CUT'], 'zap.wav': meta.get('Z'), 'gong_timeskip.wav': (meta.get('card') or [None])[0]}
+    targets = {'impact': meta['CUT'], 'climax': meta.get('Z'), 'timeskip': (meta.get('card') or [None])[0]}
     for c in N['hits']['clips']:
-        tg = targets.get(fname(c))
+        tg = targets.get(CAT[fname(c)])
         d = (c['start'] + PEAK[fname(c)] - tg) * 1000
         say(f'4) {fname(c):18s} Peak {c["start"] + PEAK[fname(c)]:.3f} s, Ziel {tg:.2f} ({d:+.0f} ms)')
         if abs(d) > 50: errs.append(f'{fname(c)} {d:+.0f} ms neben Ziel')
