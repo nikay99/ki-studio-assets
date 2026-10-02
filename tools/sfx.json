@@ -103,6 +103,354 @@
     "curious",
     "thrill"
    ]
+  },
+  "op_bass": {
+   "file": "op_bass.mp3",
+   "file_len": 0.8,
+   "len": 0.8,
+   "peak": 0.105,
+   "vol": 0.27,
+   "lufs": -6.4,
+   "category": "opener",
+   "mood": [
+    "dark",
+    "thrill"
+   ]
+  },
+  "op_flash": {
+   "file": "op_flash.mp3",
+   "file_len": 0.8,
+   "len": 0.8,
+   "peak": 0.015,
+   "vol": 1.0,
+   "lufs": -25.5,
+   "category": "opener",
+   "mood": [
+    "curious",
+    "dark"
+   ],
+   "usable": false,
+   "note": "zu leise geliefert (-25.5 LUFS) - neu erzeugen"
+  },
+  "op_slam": {
+   "file": "op_slam.mp3",
+   "file_len": 0.8,
+   "len": 0.8,
+   "peak": 0.005,
+   "vol": 0.97,
+   "lufs": -17.5,
+   "category": "opener",
+   "mood": [
+    "thrill",
+    "dark"
+   ]
+  },
+  "wh_soft": {
+   "file": "wh_soft.mp3",
+   "file_len": 0.6,
+   "len": 0.6,
+   "peak": 0.095,
+   "vol": 0.77,
+   "lufs": -17.7,
+   "category": "whoosh",
+   "mood": [
+    "curious"
+   ]
+  },
+  "wh_sharp": {
+   "file": "wh_sharp.mp3",
+   "file_len": 0.48,
+   "len": 0.48,
+   "peak": 0.035,
+   "vol": 0.55,
+   "lufs": -14.8,
+   "category": "whoosh",
+   "mood": [
+    "thrill",
+    "curious"
+   ]
+  },
+  "wh_deep": {
+   "file": "wh_deep.mp3",
+   "file_len": 0.68,
+   "len": 0.68,
+   "peak": 0.165,
+   "vol": 0.54,
+   "lufs": -14.6,
+   "category": "whoosh",
+   "mood": [
+    "dark"
+   ]
+  },
+  "wh_paper": {
+   "file": "wh_paper.mp3",
+   "file_len": 0.48,
+   "len": 0.48,
+   "peak": 0.055,
+   "vol": 0.48,
+   "lufs": -13.6,
+   "category": "whoosh",
+   "mood": [
+    "curious"
+   ]
+  },
+  "wh_reverse": {
+   "file": "wh_reverse.mp3",
+   "file_len": 0.68,
+   "len": 0.68,
+   "peak": 0.555,
+   "vol": 0.52,
+   "lufs": -14.3,
+   "category": "whoosh",
+   "mood": [
+    "dark",
+    "thrill"
+   ]
+  },
+  "wh_wind": {
+   "file": "wh_wind.mp3",
+   "file_len": 0.6,
+   "len": 0.6,
+   "peak": 0.185,
+   "vol": 0.5,
+   "lufs": -14.0,
+   "category": "whoosh",
+   "mood": [
+    "dark",
+    "curious"
+   ]
+  },
+  "im_stamp": {
+   "file": "im_stamp.mp3",
+   "file_len": 0.8,
+   "len": 0.8,
+   "peak": 0.035,
+   "vol": 0.76,
+   "lufs": -15.6,
+   "category": "impact",
+   "mood": [
+    "curious",
+    "dark"
+   ]
+  },
+  "im_fist": {
+   "file": "im_fist.mp3",
+   "file_len": 0.8,
+   "len": 0.8,
+   "peak": 0.025,
+   "vol": 1.0,
+   "lufs": -54.2,
+   "category": "impact",
+   "mood": [
+    "thrill"
+   ],
+   "usable": false,
+   "note": "zu leise geliefert (-54.2 LUFS) - neu erzeugen"
+  },
+  "im_metal": {
+   "file": "im_metal.mp3",
+   "file_len": 1.0,
+   "len": 1.0,
+   "peak": 0.015,
+   "vol": 0.55,
+   "lufs": -12.8,
+   "category": "impact",
+   "mood": [
+    "dark",
+    "thrill"
+   ]
+  },
+  "cl_boom": {
+   "file": "cl_boom.mp3",
+   "file_len": 1.48,
+   "len": 1.48,
+   "peak": 0.265,
+   "vol": 0.57,
+   "lufs": -10.1,
+   "category": "climax",
+   "mood": [
+    "dark",
+    "thrill"
+   ],
+   "word": [
+    "BOOM!"
+   ]
+  },
+  "cl_crack": {
+   "file": "cl_crack.mp3",
+   "file_len": 1.0,
+   "len": 1.0,
+   "peak": 0.505,
+   "vol": 0.94,
+   "lufs": -14.4,
+   "category": "climax",
+   "mood": [
+    "dark",
+    "thrill"
+   ],
+   "word": [
+    "CRACK!"
+   ]
+  },
+  "cl_crash": {
+   "file": "cl_crash.mp3",
+   "file_len": 1.48,
+   "len": 1.48,
+   "peak": 0.045,
+   "vol": 0.51,
+   "lufs": -9.0,
+   "category": "climax",
+   "mood": [
+    "thrill",
+    "dark"
+   ],
+   "word": [
+    "CRASH!"
+   ]
+  },
+  "cl_splash": {
+   "file": "cl_splash.mp3",
+   "file_len": 1.2,
+   "len": 1.2,
+   "peak": 0.015,
+   "vol": 1.0,
+   "lufs": -20.3,
+   "category": "climax",
+   "mood": [
+    "thrill",
+    "curious"
+   ],
+   "word": [
+    "SPLASH!"
+   ]
+  },
+  "cl_snap": {
+   "file": "cl_snap.mp3",
+   "file_len": 0.8,
+   "len": 0.8,
+   "peak": 0.235,
+   "vol": 1.0,
+   "lufs": -15.6,
+   "category": "climax",
+   "mood": [
+    "thrill",
+    "curious"
+   ],
+   "word": [
+    "SNAP!"
+   ]
+  },
+  "cl_bang": {
+   "file": "cl_bang.mp3",
+   "file_len": 1.2,
+   "len": 1.2,
+   "peak": 0.015,
+   "vol": 1.0,
+   "lufs": -41.3,
+   "category": "climax",
+   "mood": [
+    "dark",
+    "thrill"
+   ],
+   "word": [
+    "BANG!"
+   ],
+   "usable": false,
+   "note": "zu leise geliefert (-41.3 LUFS) - neu erzeugen"
+  },
+  "cl_thunder": {
+   "file": "cl_thunder.mp3",
+   "file_len": 1.48,
+   "len": 1.48,
+   "peak": 0.495,
+   "vol": 0.54,
+   "lufs": -9.5,
+   "category": "climax",
+   "mood": [
+    "dark",
+    "thrill"
+   ],
+   "word": [
+    "CRACK!",
+    "ZAP!",
+    "BOOM!"
+   ]
+  },
+  "ri_strings": {
+   "file": "ri_strings.mp3",
+   "file_len": 2.0,
+   "len": 2.0,
+   "peak": 2.0,
+   "vol": 0.16,
+   "lufs": -8.6,
+   "category": "riser",
+   "mood": [
+    "dark"
+   ]
+  },
+  "ri_heart": {
+   "file": "ri_heart.mp3",
+   "file_len": 2.0,
+   "len": 2.0,
+   "peak": 2.0,
+   "vol": 0.41,
+   "lufs": -16.6,
+   "category": "riser",
+   "mood": [
+    "thrill",
+    "dark"
+   ]
+  },
+  "ri_reverse": {
+   "file": "ri_reverse.mp3",
+   "file_len": 1.48,
+   "len": 1.48,
+   "peak": 1.48,
+   "vol": 0.14,
+   "lufs": -7.3,
+   "category": "riser",
+   "mood": [
+    "dark",
+    "curious",
+    "thrill"
+   ]
+  },
+  "ts_clock": {
+   "file": "ts_clock.mp3",
+   "file_len": 1.48,
+   "len": 1.48,
+   "peak": 1.275,
+   "vol": 1.0,
+   "lufs": -23.1,
+   "category": "timeskip",
+   "mood": [
+    "curious",
+    "dark"
+   ]
+  },
+  "ts_typewriter": {
+   "file": "ts_typewriter.mp3",
+   "file_len": 1.48,
+   "len": 1.48,
+   "peak": 0.645,
+   "vol": 0.44,
+   "lufs": -12.9,
+   "category": "timeskip",
+   "mood": [
+    "curious"
+   ]
+  },
+  "ts_bell": {
+   "file": "ts_bell.mp3",
+   "file_len": 1.76,
+   "len": 1.76,
+   "peak": 0.015,
+   "vol": 1.0,
+   "lufs": -22.6,
+   "category": "timeskip",
+   "mood": [
+    "dark"
+   ]
   }
  },
  "defaults": {

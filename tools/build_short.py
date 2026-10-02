@@ -128,10 +128,11 @@ def pick_sounds(spec):
         n = sel.get(k)
         if n is None: continue
         if n not in SFX['sounds']: die('Sound %r (%s) nicht in tools/sfx.json' % (n, k))
+        if SFX['sounds'][n].get('usable') is False: die('Sound %r ist gesperrt: %s' % (n, SFX['sounds'][n].get('note')))
         if SFX['sounds'][n]['category'] != c: die('Sound %r ist Kategorie %s, nicht %s' % (n, SFX['sounds'][n]['category'], c))
     if isinstance(sel['whooshes'], str): sel['whooshes'] = [sel['whooshes']]
     for n in sel['whooshes']:
-        if SFX['sounds'].get(n, {}).get('category') != 'whoosh': die('Whoosh %r unbekannt' % n)
+        if SFX['sounds'].get(n, {}).get('category') != 'whoosh' or SFX['sounds'][n].get('usable') is False: die('Whoosh %r unbekannt/gesperrt' % n)
     return sel
 
 

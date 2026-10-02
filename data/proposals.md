@@ -15,3 +15,8 @@ Format:
 ```
 
 ---
+
+## P-1 – 3 Pool-Sounds neu erzeugen (zu leise)  [OFFEN]
+- Beobachtung: Vermessung 02.10.2026: im_fist -54 LUFS, cl_bang -41 LUFS, op_flash -25.5 LUFS – auch mit vol 1.0 kaum hoerbar, daher in sfx.json gesperrt (usable=false).
+- Vorschlag: mit elevenlabs/sound-effects/v2 neu erzeugen (prompt_influence 0.6, lauter/praesenter formulieren), Niklas laedt hoch, neu vermessen, Sperre entfernen.
+- Nutzen: Faustschlag-Impact, Gewehrschuss-BANG und Kamera-Blitz-Opener wieder verfuegbar. Risiko: keins.
