@@ -8,6 +8,7 @@ Format:
 - Ergebnis: hochgeladen (privat) | abgebrochen (Grund)
 - Titel / Render-ID / Laenge
 - Sounds: opener, whooshes, impact, climax, riser, timeskip
+- Musik: Stimme/Stimmung + kompletter Musik-Prompt (inkl. Spannungsbogen) + URL
 - Probleme + selbst behobene Fehler (was, wie, Commit)
 - Spec-Anpassungen (z. B. Text gekuerzt)
 - Kosten (Renders, Bild-/Stimm-Neuversuche)

@@ -40,6 +40,7 @@ A/B-Bildspuren (Überlappung nur unten), Whoosh-Peaks exakt auf Szenenschnitten,
 | `zap` | `{"word": "flash", "text": "ZAP!"}` – Wort in der Narration |
 | `card` | `{"text": "NINE DAYS LATER...", "phrase": "nine days later"}` – ersetzt die Untertitel dieser Phrase |
 | `music` | Musik-URL (loudnorm), Volume 0.18 |
+| `music_prompt` (Doku) | Kompletter Prompt der generierten Musik (wird nicht gebaut, nur fuer Journal/Review) |
 | `sound` (optional) | Auswahl aus dem Pool je Kategorie: `opener`, `whooshes` (Liste, rotiert), `impact`, `climax` (passend zum Lautwort), `riser` (endet auf dem Hoehepunkt, optional), `timeskip`. Fehlende Felder = Standard (`tools/sfx.json` → `defaults`). |
 
 ## Neue Sounds
