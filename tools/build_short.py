@@ -248,7 +248,7 @@ def build(spec):
         wh.append(sfx_clip(SND['whooshes'][k % len(SND['whooshes'])], s['_t']))
 
     # --- Hits
-    hits = [sfx_clip(SND['impact'], CUT, align_peak=False)]
+    hits = [sfx_clip(SND['impact'], CUT, align_peak=snd(SND['impact'])[1]['peak'] > 0.05)]
     riser = []
     top_fx, zap_txt, zap_burst = [], [], []
     flash = {'asset': {'type': 'shape', 'shape': 'rectangle', 'rectangle': {'width': 1080, 'height': 1920},
@@ -283,7 +283,7 @@ def build(spec):
         box2_text.append(text(card['text'], 760, 170, BLK, 115, cs_, cl, 0, 0.30, -2))
         box2.append(rect(760, 170, YEL, True, cs_, cl, 0, 0.30, -2))
         box2_sh.append(rect(760, 170, BLK, False, cs_, cl, SX, 0.30 + SY, -2))
-        hits.append(sfx_clip(SND['timeskip'], cs_, align_peak=False))
+        hits.append(sfx_clip(SND['timeskip'], cs_, align_peak=snd(SND['timeskip'])[1]['peak'] > 0.05))
     cta = {'asset': {'type': 'rich-text', 'text': spec.get('cta', 'FOLLOW FOR THE NEXT TRUE STORY'),
                      'font': {'family': 'Bangers', 'size': 76, 'color': RED}, 'style': {'letterSpacing': 3},
                      'stroke': {'width': 12, 'color': BLK},
