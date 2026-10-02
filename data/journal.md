@@ -58,3 +58,11 @@ Format:
 ## 2026-10-02 – Repo-Sync + P-5 umgesetzt (Chat mit Niklas)
 - 4 Patches (Emu War v1/v2, Untertitel-Fix, Gemini-Coworker) per `git am` auf main (2308c20..44cc50d); Blobs = Patch, alle Beispiele Audit gruen, slotin + yamaguchi byte-identisch zum Builder vor dem Fix.
 - P-5 als allgemeine Skill-Regeln: Writer Setup max. 2 Saetze / erste Aktion bis ~10 s, letzter Satz = Pointe (Zahlen davor); Sound Designer: Aktions-Szenen 1-2 Szenen-SFX pro Video erzeugt, auch ohne ZAP. Kein neuer Pool-Sound noetig (Kandidaten wieder entfernt).
+
+## 2026-10-02 – Pflicht-Bildpruefung + Push-Rechte (Chat, Auftrag Niklas)
+- Anlass: Koepcke-Lauf (Render fe071f63) – mehrere Bilder mit ueberzaehligen Armen/Haenden online; Claude sieht es nicht zuverlaessig, Gemini-G2 meldete PASS, Gemini auf Einzelbildern fand nur Szene 4. Koepcke-Lauf hat NICHT gepusht (keine Spec/Journal im Repo).
+- Neu: `tools/image_check.md` (Vorbeugung im Bild-Prompt, 2 Pruefer gemini-3.8-flash + gpt-6-sol parallel mit Veto, Opus als Schiedsrichter bei UNSURE, neu erzeugen statt edit, max. 3 Versuche, `image_check` in der spec). gemini_coworker.md: Vision-Endpunkt + G0.
+- Test: Pruef-Vorlage laeuft auf allen 3 Modellen (Emu-War-Bilder, einfache Bilder uebereinstimmend PASS); erste Vorlage mit Hintergrund-Herden lieferte nur UNSURE -> jetzt nur "prominente" Figuren. Kosten ~0,25 Cent (Gemini/GPT), ~3 Cent (Opus) je Bild.
+- Offen: Kalibrierung an den echten Koepcke-Fehlerbildern (URLs/Render-ID fehlen noch).
+- Daily-Task: Schritt 0 = add_repo push + `git push --dry-run`, frueh pushen, bei Fehler "PUSH FEHLGESCHLAGEN" + format-patch.
+- Shotstack laeuft auf Plan "payg" (Render 02.10. abends) – freeTrial-/Wasserzeichen-Hinweis erledigt.

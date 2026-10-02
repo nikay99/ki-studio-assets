@@ -9,6 +9,7 @@ Mit Gemini **immer auf Englisch** kommunizieren, Antworten **nur JSON**. Kosten 
 | Video ansehen + anhoeren | `openrouter/router/video` | `model`, `prompt`, `video_urls: [..]`, **`reasoning: true`** (Pflicht bei Gemini) |
 | Nur Audio | `openrouter/router/audio` | `model`, `prompt`, `audio_url`, `reasoning: true` |
 | Nur Text | `openrouter/router` | `model`, `prompt`, `reasoning: true` |
+| Bilder (einzeln) | `openrouter/router/vision` | `model`, `prompt`, `image_urls: [..]`; `reasoning: true` Pflicht bei Gemini **und** Claude-Modellen, bei `openai/gpt-6-sol` weglassen |
 
 Empfohlen: `temperature 0.2-0.3`, `max_tokens 6000-8000`.
 **Video vorher verkleinern** (sonst "Payload Too Large"): `fal-ai/workflow-utilities/scale-video` mit `width 540, height 960, crf 30, preset fast` (~6 MB).
@@ -22,6 +23,8 @@ Empfohlen: `temperature 0.2-0.3`, `max_tokens 6000-8000`.
 | Musik-Struktur/Timing (wo ist der Bruch?) | **nein** | mit Vorgabe: wiederholt nur die Vorgabe; blind: voellig andere Struktur, falsche Dauer |
 | Gesang in Musik ja/nein | unsicher, nur Hinweis | beide Laeufe "no vocals" (korrekt), aber nicht unabhaengig belegt |
 | Qwen 3.8 Omni Flash (Vergleich) | **nein** | 4 von 4 Meldungen falsch |
+| Anatomie im fertigen Video (Zusatzarme/-haende) | **nein** | Koepcke 02.10.: G2 meldete PASS trotz mehrerer Bilder mit Zusatzarmen |
+| Anatomie auf Einzelbild, Gemini allein | **unzureichend** | Koepcke: nur Szene 4 gefunden, weitere Fehler uebersehen → Pflicht-Bildpruefung mit 2 Modellen + Veto (`tools/image_check.md`) |
 
 **Grundregel:** Jede Gemini-Meldung ist ein Hinweis, kein Urteil. Vor jeder Aktion verifizieren:
 `python3 tools/qa_at.py edit.json <sekunde>` zeigt, was zu dem Zeitpunkt laut Edit im Bild/Ton ist (Untertitel inkl. geschaetzter Breite, Boxen, Bild, Sounds).
@@ -45,5 +48,6 @@ Showrunner entscheidet (Gemini beraet), Begruendung ins Journal.
 - prompt: "Watch this Short as a viewer scrolling the feed. Return JSON: {\"hook_0_3s_would_stop_scrolling\": \"yes|maybe|no\", \"hook_reason\": str, \"curiosity_gap_clear\": bool, \"swipe_risk_moments\": [{\"t_s\", \"why\"}], \"most_engaging_moment\": {\"t_s\", \"why\"}, \"payoff_satisfying\": \"yes|partly|no\", \"payoff_reason\": str, \"interest_score_1_to_10\": number, \"top_3_changes_for_more_retention\": [str], \"title_ideas\": [str]}"
 Nutzung: Score + Aenderungen ins Journal. Billige Fixes (Titel, Beschreibung) sofort; inhaltliche Punkte (Szene zu lang, fehlende Sounds) nur mit 2. Render, wenn ohnehin noetig – sonst als Lehre fuer das naechste Video ("Lehren" im Journal), wiederkehrende Muster als Vorschlag.
 
-### G4 – Bild-Zweitmeinung (optional, vor dem Render)
-Szenenbilder einzeln als Video gibt es nicht; Bilder prueft Claude selbst (kann Bilder sehen). Gemini nur bei Unsicherheit ueber den `openrouter/router` Text-Endpunkt mit Bild-URL, falls unterstuetzt – sonst weglassen.
+### G0 – Pflicht-Bildpruefung (Anatomie, vor der Stimme/Spec)
+Vorlage, Modelle (Gemini + GPT parallel, Opus als Schiedsrichter), Veto-Regel und Neu-Erzeugung: **`tools/image_check.md`**.
+Claude prueft Bilder NICHT allein – Claude erkennt Zusatzarme/-haende nicht zuverlaessig.
