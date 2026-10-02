@@ -56,5 +56,28 @@
   },
   "voice": "Jessica",
   "mood": "curious"
+ },
+ {
+  "date": "2026-10-02",
+  "topic": "Great Emu War – Australien 1932 (v2)",
+  "title": "Australia Went to War With Birds… And Lost",
+  "status": "privat auf YouTube (v2, ersetzt v1 – Untertitel-Fix; Make-Execution a3dce5d4ef0a4f99bb93a46e07c89a15)",
+  "shotstack_render": "52f9f683-6fef-43d4-9eee-13731db5d726",
+  "spec": "examples/emu_war/spec.json",
+  "sound": {
+   "opener": "punch",
+   "whooshes": [
+    "wh_paper",
+    "wh_soft",
+    "wh_sharp"
+   ],
+   "impact": "im_stamp",
+   "climax": null,
+   "riser": null,
+   "timeskip": "ts_typewriter"
+  },
+  "voice": "Jessica",
+  "mood": "curious",
+  "video_qa": "gemini-3.8-flash GRUEN"
  }
 ]

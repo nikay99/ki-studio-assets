@@ -42,3 +42,10 @@ Format:
 - Fehler im Code: keine.
 - Kosten: 1 Render (0,72 Credits), 13 TTS (4 Neuvertonungen), 11 Bilder (1 Nachbesserung), 2 Musik + 2 loudnorm.
 - Beobachtung: 42,9 s liegt ueber dem Ziel 30-40 s (Zitat-Szene behalten) -> P-2.
+
+## 2026-10-02 – Great Emu War v2 (Chat mit Niklas)
+- Video-QA-Test ueber fal `openrouter/router/video` (Video vorher per `fal-ai/workflow-utilities/scale-video` auf 540x960, crf 30, sonst "Payload Too Large"):
+  - qwen/qwen3.8-omni-flash: ROT, 4 Meldungen, alle falsch (weisser Blitz, angebliche Sync-Fehler, per edit.json widerlegt) -> ungeeignet
+  - google/gemini-3.8-flash (reasoning Pflicht): 1 Meldung, korrekt: 'THE INVULNERABILITY' bei 33 s umgebrochen/abgeschnitten (Niklas hat es auch gesehen). ~0,8 Cent/Check
+- Fehler im Builder behoben: kurze Woerter werden nur noch angehaengt, wenn der Untertitel <= 16 Zeichen bleibt, sonst ans vorherige Wort ('WITH THE' + 'INVULNERABILITY'); Audit prueft jetzt Untertitel-Breite. Regression: slotin + yamaguchi byte-identisch.
+- v2: Render 52f9f683 (2. Render), Audit gruen, Gemini-QA GRUEN, privat hochgeladen (Make a3dce5d4). v1 (d4f5d406) bitte in YouTube Studio loeschen.

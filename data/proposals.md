@@ -30,3 +30,8 @@ Format:
 - Beobachtung: Emu-War-Lauf: QA fand 4 Faktenfehler erst nach Stimmen/Bildern -> 4 TTS + 1 Musik + 1 Bild neu.
 - Vorschlag: Ablauf Schritt 3a: QA-Subagent prueft das Skript (Narration + Quellen) direkt nach dem Writer, vor fal-Assets; Schritt 8 bleibt fuer Bilder/Sound/Audit.
 - Nutzen: weniger Doppelkosten. Risiko: ein zusaetzlicher kurzer Subagent-Aufruf.
+
+## P-4 – Gemini-Video-QA (Augen + Ohren) in den Ablauf  [OFFEN – Niklas: "muessen wir auf jeden Fall einbauen"]
+- Beobachtung: 02.10.2026 Gemini 3.8 Flash fand einen echten Untertitel-Fehler, den Audit und Claude nicht sehen konnten; Qwen Omni lieferte nur Fehlalarme.
+- Vorschlag (Details im Chat 02.10.): (a) nach dem Render: scale-video 540x960 -> openrouter/router/video gemini-3.8-flash -> JSON-Urteil; jede Meldung gegen Audit/edit.json verifizieren; bestaetigt -> fixen + 2. Render, sonst Upload. (b) vor dem Render: Musik anhoeren lassen (echte Sekunden von Bruch/Hoehepunkt, Gesang?), Stimmen (Aussprache von Namen/Zahlen). (c) Bilder optional.
+- Nutzen: "Augen und Ohren", die Claude fehlen. Risiko: Fehlalarme -> nur nach Verifikation handeln; Kosten ~1-2 Cent/Video.
