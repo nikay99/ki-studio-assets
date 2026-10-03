@@ -1912,6 +1912,25 @@
     "voice": "Liam regenerated with ElevenLabs multilingual-v2; original returned timestamps preserved",
     "audit": "GREEN; 30.16 s; whoosh peaks within ±5 ms; no black/wrong frames; aligned endings",
     "independent_qa": "PASS",
-    "render_status": "not rendered yet"
+    "render_status": "done",
+    "render_id": "2e0bf22c-26d8-4dcc-ae2a-a6885d1998ce",
+    "render_url": "https://shotstack-api-v1-output.s3-ap-southeast-2.amazonaws.com/rwr9s5liin/2e0bf22c-26d8-4dcc-ae2a-a6885d1998ce.mp4",
+    "shotstack_credits": 0.5,
+    "g2": {
+      "verdict": "PASS",
+      "issues": [],
+      "note": "Audio mix balanced; captions/voice, visuals and text overlays passed Gemini video QA."
+    },
+    "g3": {
+      "score": 7,
+      "hook": "yes",
+      "payoff": "partly",
+      "most_engaging_s": 17,
+      "notes": [
+        "Slight pacing dip at four-year transition.",
+        "Propeller sequence strongest moment.",
+        "Olympic/loop ideas deferred: advisory only; would require content/design change and unnecessary second render."
+      ]
+    }
   }
 }
