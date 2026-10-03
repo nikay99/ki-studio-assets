@@ -228,7 +228,7 @@
   "shotstack_render": "7b7b37d3-df01-4b4f-8f84-7722fb61a6f3",
   "make_execution": "89163b83765a413c8c090f925208d573",
   "publish_at": "2026-10-10T10:00:00-04:00",
-  "status": "privat hochgeladen mit publish_at Sa 10.10. 16:00 Wien",
+  "status": "scheduled",
   "sound": {
    "opener": "op_slam",
    "whooshes": [
@@ -247,6 +247,7 @@
   },
   "rejected_images": 0,
   "spec": "examples/humanoid_factory_20261003_chatgpt/spec_final.json",
-  "producer": "ChatGPT (Assets) + Claude (Fertigstellung)"
+  "producer": "ChatGPT (Assets) + Claude (Fertigstellung)",
+  "youtube_id": "IZJkVXnk2XE"
  }
 ]
