@@ -147,3 +147,12 @@ Format:
 - Kosten grob: 10 Bilder à ~3–5 Cent, TTS, Musik, 3 SFX, Gemini (G0×10, G1, G2, G3 je < 1 Cent), Shotstack 0,62 Credits.
 - Lehren: (1) Bei Tech-Rekorden den Ausgang nicht im Hook verraten – Box 2 als offene Frage („CAN A TOWER CATCH IT?“) testen. (2) Datum/Ort-Einstieg kürzen, direkt in die Action. (3) ZAP-Lautwort bei realen Großereignissen sparsamer bzw. ernster wählen. (4) Bitcoin-Pizza laut G1 ausgelutscht – bei C (Geld & Internet) weniger bekannte Geschichten suchen.
 - Niklas-Feedback 03.10.2026: „super geworden!!“ → **Referenz-Video für Säule A** (Machart: realer Tech-Rekord ≤ 10 Jahre, Stimmung wow, Liam, Ziffern-Hook-Box, Lautwort auf den Höhepunkt, 3 eigene Szenen-SFX). Eine News/Trend-Säule kommt vorerst nicht dazu.
+
+## 2026-10-03 – SpaceX v2 nach Pflicht-Prüfskript (qa/preflight.py)
+- Anlass: preflight auf v1 ROT. (1) CTA „FOLLOW FOR THE NEXT TRUE STORY“ lag bei 80 % Höhe unter Titel/Kanalname. (2) Hook-Bild stand 1,6–3,0 s still (Zoom-Tween endete nach 1,6 s). (3) Mix nur −22,2 LUFS (ElevenLabs-Stimmen roh ~−24 LUFS).
+- Builder-Fix (tools/build_short.py): CTA jetzt `position center, offset y 0.25, height 220` (Mitte bei 25 % Höhe); Hook-Zoom läuft bis zum Schnitt (1.08→1.22). Regression: alle Beispiele GRÜN außer emu_war (war vorher schon ROT, unverändert).
+- Ton: 9 Stimmen per fal loudnorm (dynamic, −16 LUFS, TP −1.5) → `voices_norm.json`; Musik 0.18→0.4, Szenen-SFX ×2,5. Ergebnis −15,2 LUFS, TP −0,6. Sync-Check gegen v1 per Hüllkurven-Korrelation: 0 ms Versatz in allen Abschnitten.
+- US-Ausrichtung: Titel „A 20-Story Rocket Fell. A Tower Caught It.“ (neu, sonst Duplikat-Titel), CTA „WOULD YOU WATCH IT LIVE?“, Beschreibung 233-foot.
+- Render v2 `dcdb9694-281b-4660-819a-c10d007ac9b6` (0,62 Credits). preflight GRÜN (Hinweise: Box 2 Textbreite, Button-Leiste rechts). Gemini G2 PASS, Niklas-Regeln alle erfüllt; Meldung „Overlap 26 s“ per qa_at.py als Fehlalarm belegt (SNAP! oben, Untertitel unten).
+- Upload v2 privat OHNE Termin (Execution bd1634ce53244be7bde43b809e755276), damit v1 und v2 nicht beide veröffentlicht werden. v1 muss Niklas in Studio löschen; danach Termin für v2 über Make 7750442.
+- Lehre: Für künftige Videos Stimmen immer gleich nach TTS auf −16 LUFS normalisieren (Musik-Default dann ~0.4).

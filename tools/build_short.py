@@ -230,7 +230,7 @@ def build(spec):
     # --- Bilder (Liste in Schnittreihenfolge)
     imgs = [({'asset': {'type': 'image', 'src': hook['image']}, 'position': 'center',
               'scale': [{'from': 1.35, 'to': 1.08, 'start': 0, 'length': 0.35, 'easing': 'easeOutCubic'},
-                        {'from': 1.08, 'to': 1.14, 'start': 0.35, 'length': 1.25}]}, 0),
+                        {'from': 1.08, 'to': 1.22, 'start': 0.35, 'length': r2(max(1.25, CUT - 0.25))}]}, 0),  # Zoom bis zum Schnitt (preflight: kein Stillstand im Hook)
             ({'asset': {'type': 'image', 'src': hook.get('image2') or scs[0]['image']}, 'scale': 1.15,
               'position': 'center', 'effect': 'zoomInSlow'}, CUT)]
     for k, s in enumerate(scs):
@@ -308,7 +308,7 @@ def build(spec):
                      'font': {'family': 'Bangers', 'size': 76, 'color': RED}, 'style': {'letterSpacing': 3},
                      'stroke': {'width': 12, 'color': BLK},
                      'shadow': {'offsetX': 4, 'offsetY': 6, 'color': BLK, 'opacity': 1}},
-           'start': r2(END - 2), 'length': 2, 'width': 990, 'height': 300, 'position': 'bottom', 'offset': {'x': 0, 'y': 0.12}}
+           'start': r2(END - 2), 'length': 2, 'width': 990, 'height': 220, 'position': 'center', 'offset': {'x': 0, 'y': 0.25}}  # Safe Zone: Mitte bei 25 % Hoehe (preflight: unten ab 75 % liegen Titel/Kanalname)
     box1_text = [text(l1, 900, 330, BLK, 130, VO, r2(BOX_END - VO), 0, -0.04, -2), cta]
     box1 = [rect(900, 330, YEL, True, VO, r2(BOX_END - VO), 0, -0.04, -2)]
     box1_sh = [rect(900, 330, BLK, False, VO, r2(BOX_END - VO), SX, -0.04 + SY, -2)]

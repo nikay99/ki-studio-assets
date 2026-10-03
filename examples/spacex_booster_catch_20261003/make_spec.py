@@ -1,12 +1,17 @@
 import json
 from voices import OUT
+import os
+if os.path.exists('voices_norm.json'):
+    for _k,_u in json.load(open('voices_norm.json')).items():
+        if _k in OUT: OUT[_k]['voice']=_u
 img={l.split()[0]:l.split()[1] for l in open('images.txt')}
 foc={'s1':'center','s2':'center','s3':'top','s4':'center','s5':'top','s6':'top','s7':'top','s8':'center'}
 spec={
  "topic":"SpaceX Super Heavy Booster-Fang durch den Startturm (Mechazilla), Flight 5, 13.10.2024",
  "pillar":"A",
- "title":"A Tower Caught a Falling Rocket. First Try.",
- "description":"A 71-meter rocket booster fell back to its launch tower, and two giant steel arms caught it in mid-air. SpaceX Starship Flight 5, October 13, 2024.\n\n🔔 Follow for the next true story.\n#shorts #spacex #starship #rocket #truestory",
+ "title":"A 20-Story Rocket Fell. A Tower Caught It.",
+ "cta":"WOULD YOU WATCH IT LIVE?",
+ "description":"A 233-foot rocket booster fell back to its launch tower, and two giant steel arms caught it in mid-air. SpaceX Starship Flight 5, October 13, 2024.\n\nWould you have watched this live? 🔔 Follow for the next true story.\n#shorts #spacex #starship #rocket #truestory",
  "tags":"SpaceX Starship SuperHeavy Mechazilla rocket booster space truestory technology",
  "sources":["https://www.npr.org/2024/10/13/nx-s1-5151788/spacex-starship-booster-caught-first-launch",
   "https://www.scientificamerican.com/article/spacex-catches-a-falling-starship-a-first-in-spaceflight-history/",

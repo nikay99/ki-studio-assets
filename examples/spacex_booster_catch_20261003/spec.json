@@ -1,8 +1,9 @@
 {
  "topic": "SpaceX Super Heavy Booster-Fang durch den Startturm (Mechazilla), Flight 5, 13.10.2024",
  "pillar": "A",
- "title": "A Tower Caught a Falling Rocket. First Try.",
- "description": "A 71-meter rocket booster fell back to its launch tower, and two giant steel arms caught it in mid-air. SpaceX Starship Flight 5, October 13, 2024.\n\n🔔 Follow for the next true story.\n#shorts #spacex #starship #rocket #truestory",
+ "title": "A 20-Story Rocket Fell. A Tower Caught It.",
+ "cta": "WOULD YOU WATCH IT LIVE?",
+ "description": "A 233-foot rocket booster fell back to its launch tower, and two giant steel arms caught it in mid-air. SpaceX Starship Flight 5, October 13, 2024.\n\nWould you have watched this live? 🔔 Follow for the next true story.\n#shorts #spacex #starship #rocket #truestory",
  "tags": "SpaceX Starship SuperHeavy Mechazilla rocket booster space truestory technology",
  "sources": [
   "https://www.npr.org/2024/10/13/nx-s1-5151788/spacex-starship-booster-caught-first-launch",
@@ -14,7 +15,7 @@
  "hook": {
   "image": "https://v3b.fal.media/files/b/0aace439/uUklcqfUIzoH6gmQLUk2Y_sK3eSI1T.png",
   "image2": "https://v3b.fal.media/files/b/0aace43b/ediXR1qrGBabcrlLG-ZTv_ngNcuG11.png",
-  "voice": "https://v3b.fal.media/files/b/0aace42a/Dg_u85JIREaXFwQ3tC7Jn_output.mp3",
+  "voice": "https://v3b.fal.media/files/b/0aace9a3/7MqXBB8qUqNcrylZHXX94_normalized_audio.wav",
   "timestamps": [
    {
     "characters": [
@@ -337,7 +338,7 @@
  "scenes": [
   {
    "image": "https://v3b.fal.media/files/b/0aace435/3XjPPp-ZQ6K75LSuJ_oCu_O9UObDRB.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42b/engrum1PfDJ_tDXCMP562_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9a6/k-6eP10RypA9_hFrX1Dpz_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -593,11 +594,11 @@
     "issue": ""
    },
    "sfx": "https://v3b.fal.media/files/b/0aace45a/86iQDEe8Vzzdf6bbffmbb_normalized_audio.wav",
-   "sfx_vol": 0.3
+   "sfx_vol": 0.75
   },
   {
    "image": "https://v3b.fal.media/files/b/0aace43e/RTeEa0npdk_XL71S9sa0p_9s5aZOZz.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42b/UQGB4qDKQ2Ujy054y7l-O_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9a6/GkNsNw437XvF5Ae3Tgq5g_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -753,7 +754,7 @@
   },
   {
    "image": "https://v3b.fal.media/files/b/0aace440/zn4I69K9kvVBHyUX9trwc_ScNvUMzp.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42c/TUhR-MNXlR6hibEh1ZA7Z_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9a7/vSdCJ5PFdX6Qp__t9Fild_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -984,7 +985,7 @@
   },
   {
    "image": "https://v3b.fal.media/files/b/0aace443/CChIfzN0Ohm9QS1Vqpv7e_lPMG2DwD.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42c/V_xgovb9XTD2crNzzRujY_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9a7/_MnBZe6cRotYGlfM9hKNo_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -1155,7 +1156,7 @@
   },
   {
    "image": "https://v3b.fal.media/files/b/0aace446/myQ1mGfHi6zWm9JlW7u3D_4z8L3XmS.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42d/WgGlviUR7E2izUCdDIhf6_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9a8/yu7H7Ayz-QGwAzdAnkcKv_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -1339,11 +1340,11 @@
     "issue": ""
    },
    "sfx": "https://v3b.fal.media/files/b/0aace45b/WmEH5amEWdsQYhFLkAuYv_normalized_audio.wav",
-   "sfx_vol": 0.4
+   "sfx_vol": 1.0
   },
   {
    "image": "https://v3b.fal.media/files/b/0aace449/FeRXOqwwJedWon-xWzDdv_V3MlLV9p.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42e/YK5q-SmlVgC0xTFAfT-Wq_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9a8/Rx9pOF9pWntmv8dAD5JI7_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -1539,11 +1540,11 @@
     "issue": ""
    },
    "sfx": "https://v3b.fal.media/files/b/0aace45b/U-VZZt5HKI6oqymAjYpKN_normalized_audio.wav",
-   "sfx_vol": 0.4
+   "sfx_vol": 1.0
   },
   {
    "image": "https://v3b.fal.media/files/b/0aace44c/epOe6fkNZqtQIFJuolqwT_2z5Vi47Y.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42e/PbHAfCEdEJOTTzrKbsGt4_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9a9/ntpaWTrlmhn9uRpPhohZP_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -1769,7 +1770,7 @@
   },
   {
    "image": "https://v3b.fal.media/files/b/0aace44e/FlXmjmuLpZHf9qRQH2SL4_iDC2NVD7.png",
-   "voice": "https://v3b.fal.media/files/b/0aace42f/QDjP13rPRRUbzRszWM5cB_output.mp3",
+   "voice": "https://v3b.fal.media/files/b/0aace9aa/k5TkMGZlK4gtVPEuxM5WM_normalized_audio.wav",
    "timestamps": [
     {
      "characters": [
@@ -2092,5 +2093,6 @@
   "timeskip": null
  },
  "music": "https://v3b.fal.media/files/b/0aace468/KIPceYAr4tmNX6BSv3vkk_normalized_audio.wav",
- "music_prompt": "Epic modern space-launch documentary underscore, pulsing synth bass, tight electronic drums, shimmering pads and a soaring synth lead, 118 bpm. Starts with a tense ticking synth pulse and a low rocket-like rumble for the first 5 seconds, builds momentum with driving electronic percussion from 5 to 20 seconds, tension rises sharply with a rising synth sweep and faster drums from 20 to 26 seconds, a huge cinematic impact hit at 26.2 seconds, then a triumphant euphoric section with bright soaring synth chords until the end, resolving warmly at 37 seconds. Instrumental only. | negative: vocals, singing, choir, voice, lyrics, humming, speech | 42 s | seed 371650267 | loudnorm -16"
+ "music_prompt": "Epic modern space-launch documentary underscore, pulsing synth bass, tight electronic drums, shimmering pads and a soaring synth lead, 118 bpm. Starts with a tense ticking synth pulse and a low rocket-like rumble for the first 5 seconds, builds momentum with driving electronic percussion from 5 to 20 seconds, tension rises sharply with a rising synth sweep and faster drums from 20 to 26 seconds, a huge cinematic impact hit at 26.2 seconds, then a triumphant euphoric section with bright soaring synth chords until the end, resolving warmly at 37 seconds. Instrumental only. | negative: vocals, singing, choir, voice, lyrics, humming, speech | 42 s | seed 371650267 | loudnorm -16",
+ "music_vol": 0.4
 }

@@ -136,11 +136,11 @@
  {
   "date": "2026-10-03",
   "topic": "SpaceX Super Heavy Booster-Fang durch den Startturm (Mechazilla), Flight 5, 13.10.2024",
-  "title": "A Tower Caught a Falling Rocket. First Try.",
+  "title": "A 20-Story Rocket Fell. A Tower Caught It.",
   "pillar": "A",
-  "status": "privat auf YouTube hochgeladen (Make-Execution 038845117e84454dbe11468e1d207d7b)",
+  "status": "v2 privat ohne Termin hochgeladen (Make-Execution bd1634ce53244be7bde43b809e755276); v1 bitte in Studio löschen, danach Termin Mo 05.10. 12:00 ET",
   "youtube_id": null,
-  "shotstack_render": "298e1f28-45bb-49d1-b49e-d1c6cb733d4f",
+  "shotstack_render": "dcdb9694-281b-4660-819a-c10d007ac9b6",
   "spec": "examples/spacex_booster_catch_20261003/spec.json",
   "sound": {
    "opener": "op_slam",
@@ -159,7 +159,11 @@
   "voice": "Liam",
   "mood": "wow",
   "discarded_images": 0,
-  "video_qa": "gemini-3.8-flash G2 PASS, 0 Issues",
-  "viewer_score": 6.5
+  "video_qa": "preflight GRÜN (-15,2 LUFS), Gemini G2 PASS inkl. Niklas-Regeln",
+  "viewer_score": 6.5,
+  "previous_title": "A Tower Caught a Falling Rocket. First Try.",
+  "previous_shotstack_render": "298e1f28-45bb-49d1-b49e-d1c6cb733d4f",
+  "previous_status": "privat auf YouTube hochgeladen (Make-Execution 038845117e84454dbe11468e1d207d7b)",
+  "cta": "WOULD YOU WATCH IT LIVE?"
  }
 ]
