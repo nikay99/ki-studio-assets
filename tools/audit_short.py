@@ -52,10 +52,10 @@ def audit(edit, meta, verbose=True):
     say(f'2) Bilder: {len(imgs)} Clips, {int(END*FPS)} Frames, schwarz {len(black)}, falsch {len(wrong)}')
     # 3 Whooshes
     wd = []
-    for c, cut in zip(N['whooshes']['clips'], meta['scene_starts']):
+    whoosh_targets = meta.get('whoosh_targets', meta['scene_starts'])\n    for c, cut in zip(N['whooshes']['clips'], whoosh_targets):
         d = (c['start'] + PEAK[fname(c)] - cut) * 1000; wd.append(round(d))
         if abs(d) > 10: errs.append(f'Whoosh {fname(c)} {d:+.0f} ms neben Schnitt {cut}')
-    if len(N['whooshes']['clips']) != len(meta['scene_starts']): errs.append('Anzahl Whooshes != Szenenschnitte')
+    if len(N['whooshes']['clips']) != len(whoosh_targets): errs.append('Anzahl Whooshes != geplante Whoosh-Ziele')
     say(f'3) Whoosh-Peak vs. Schnitt (ms): {wd}')
     # 4 Hits
     targets = {'impact': meta['CUT'], 'climax': meta.get('Z'), 'timeskip': (meta.get('card') or [None])[0]}
