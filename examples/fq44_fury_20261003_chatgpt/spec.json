@@ -1771,14 +1771,25 @@
   "sound": {
     "opener": "op_bass",
     "whooshes": [
-      "whoosh_2",
-      "whoosh_3",
-      "wh_reverse"
+      "wh_soft",
+      null,
+      "wh_sharp",
+      "wh_paper",
+      null,
+      "wh_deep"
     ],
     "impact": "im_metal",
     "climax": null,
     "riser": null,
-    "timeskip": null
+    "timeskip": null,
+    "whoosh_vols": [
+      0.35,
+      0,
+      0.55,
+      0.25,
+      0,
+      0.45
+    ]
   },
   "production_checkpoint": {
     "created_by": "ChatGPT",
@@ -1849,8 +1860,15 @@
       "deterministic_audit_green": true,
       "independent_qa_pass": true,
       "gemini_g2_pass": true,
-      "private_youtube_upload_success": true,
-      "repo_documented": true
+      "private_youtube_upload_success": false,
+      "repo_documented": false
+    },
+    "render_v2_fix": {
+      "requested_by_user": true,
+      "reason": "Visible caption wrap/overlap around 28 s and repetitive/loud transition whooshes in render v1.",
+      "caption_fix": "Conservative <=12-char auto-join plus audit hard gate for highlighted captions >13 chars.",
+      "transition_fix": "Per-scene whoosh selection with null support and per-scene volume multipliers; FQ-44 sequence soft/none/sharp/paper/none/deep.",
+      "status": "pending regression/build"
     }
   },
   "music": "https://v3b.fal.media/files/b/0aace009/pfrh-RbbR_UWyiPpKHD6z_normalized_audio.wav",
