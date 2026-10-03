@@ -146,3 +146,4 @@ Format:
 - Tags: auf Einzelwörter umgestellt (Mehrwort-Tags in Anführungszeichen riskant bei Leerzeichen-Trennung in Make).
 - Kosten grob: 10 Bilder à ~3–5 Cent, TTS, Musik, 3 SFX, Gemini (G0×10, G1, G2, G3 je < 1 Cent), Shotstack 0,62 Credits.
 - Lehren: (1) Bei Tech-Rekorden den Ausgang nicht im Hook verraten – Box 2 als offene Frage („CAN A TOWER CATCH IT?“) testen. (2) Datum/Ort-Einstieg kürzen, direkt in die Action. (3) ZAP-Lautwort bei realen Großereignissen sparsamer bzw. ernster wählen. (4) Bitcoin-Pizza laut G1 ausgelutscht – bei C (Geld & Internet) weniger bekannte Geschichten suchen.
+- Niklas-Feedback 03.10.2026: „super geworden!!“ → **Referenz-Video für Säule A** (Machart: realer Tech-Rekord ≤ 10 Jahre, Stimmung wow, Liam, Ziffern-Hook-Box, Lautwort auf den Höhepunkt, 3 eigene Szenen-SFX). Eine News/Trend-Säule kommt vorerst nicht dazu.
