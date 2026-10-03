@@ -52,7 +52,8 @@ def audit(edit, meta, verbose=True):
     say(f'2) Bilder: {len(imgs)} Clips, {int(END*FPS)} Frames, schwarz {len(black)}, falsch {len(wrong)}')
     # 3 Whooshes
     wd = []
-    whoosh_targets = meta.get('whoosh_targets', meta['scene_starts'])\n    for c, cut in zip(N['whooshes']['clips'], whoosh_targets):
+    whoosh_targets = meta.get('whoosh_targets', meta['scene_starts'])
+    for c, cut in zip(N['whooshes']['clips'], whoosh_targets):
         d = (c['start'] + PEAK[fname(c)] - cut) * 1000; wd.append(round(d))
         if abs(d) > 10: errs.append(f'Whoosh {fname(c)} {d:+.0f} ms neben Schnitt {cut}')
     if len(N['whooshes']['clips']) != len(whoosh_targets): errs.append('Anzahl Whooshes != geplante Whoosh-Ziele')
@@ -91,6 +92,8 @@ def audit(edit, meta, verbose=True):
     for c in caps:
         sz = c['asset']['font']['size']; t = c['asset']['text']
         w = len(t) * (46 * sz / 130 + 3)
+        if sz >= 145 and len(t) > 13:
+            errs.append(f'Highlight-Untertitel Wrap-Risiko ({len(t)}>13 Zeichen): {t!r} bei {c["start"]}')
         if w > c['width'] - 32: errs.append(f'Untertitel zu breit (~{w:.0f} px > {c["width"] - 32}): {t!r} bei {c["start"]}')
     say(f'7) Untertitel: {len(caps)} | Laenge {END:.2f} s')
     say('AUDIT ' + ('GRUEN' if not errs else 'ROT:\n  - ' + '\n  - '.join(errs)))
