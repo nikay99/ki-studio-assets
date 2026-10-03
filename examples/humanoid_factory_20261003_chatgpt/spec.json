@@ -1,6 +1,6 @@
 {
   "topic": "Humanoid robots in real automotive manufacturing — BMW / Figure 02 and Figure 03 (2025–2026)",
-  "status": "ASSETS_G0_PASS_CHECKPOINT",
+  "status": "AUDIO_READY_CHECKPOINT",
   "producer": "ChatGPT",
   "date": "2026-10-03",
   "candidate_hook": "These humanoid robots aren't demos anymore. One helped build 30,000 BMWs.",
@@ -56,7 +56,7 @@
     "decision": "Continue humanoid factory checkpoint: strongest combination of verified present-day capability, relevance and visuals."
   },
   "production_checkpoint": {
-    "stage": "IMAGES_AND_VOICE_READY",
+    "stage": "VOICE_IMAGES_MUSIC_SFX_READY",
     "pricing_correction": "The prior statement that Fal's unit_price=1 meant $1 per image was incorrect. That response used an abstract billing unit and did not establish one US dollar per image. No exact image-dollar cost is asserted here without unambiguous billing usage.",
     "voice_request_ids": [
       "01a10156-459c-7dc1-a600-55dad5466c2d",
@@ -86,13 +86,37 @@
     "regenerated_images": 8,
     "rejected_images": 0,
     "all_used_images_g0": "PASS",
-    "music_generated": false,
-    "sfx_generated": false,
+    "music_generated": true,
+    "sfx_generated": true,
     "builder_run": false,
     "audit_run": false,
     "render_count": 0,
     "uploaded": false,
-    "coexistence": "Fresh main read immediately before checkpoint write; latest observed 39818939cb89e5101d617371a58e5487c77d920e"
+    "coexistence": "Fresh main re-read immediately before audio checkpoint; latest observed 00b92cdc2760a58cdc86d6287ead4e01ef62ff47",
+    "timeline_preview": {
+      "length_s": 43.58,
+      "turn_s": 3.73,
+      "scene1_s": 6.57,
+      "scene_starts": [
+        6.57,
+        12.97,
+        16.59,
+        23.37,
+        29.62,
+        34.67,
+        38.61
+      ]
+    },
+    "music_request_id": "01a10184-2758-7491-a838-34cd0acbbe92",
+    "music_loudnorm_request_id": "01a10187-41a2-7260-9dc6-4f5532a9f6c1",
+    "scene_sfx_request_ids": [
+      "01a10184-ded7-7832-b485-bdb4469386e7",
+      "01a10184-f0f2-79e1-8a14-8affdd122f64"
+    ],
+    "scene_sfx_loudnorm_request_ids": [
+      "01a10185-9f40-7ce1-9fe2-55928bf087f6",
+      "01a10185-af08-7140-9055-5485733c81dd"
+    ]
   },
   "script": {
     "hook": "This humanoid robot helped build 30,000 BMWs. And BMW is already testing its replacement.",
@@ -850,7 +874,9 @@
         "gemini": "PASS",
         "attempts": 1,
         "issue": ""
-      }
+      },
+      "sfx": "https://v3b.fal.media/files/b/0aace3e1/-bhcWulbtYp2wqTx3TCY2_normalized_audio.wav",
+      "sfx_vol": 0.55
     },
     {
       "narration": "In ten months: 90,000 parts, 1,250 hours, and 1.2 million steps.",
@@ -1861,7 +1887,9 @@
         "gemini": "PASS",
         "attempts": 1,
         "issue": ""
-      }
+      },
+      "sfx": "https://v3b.fal.media/files/b/0aace3e2/WbT010dwE32Fhe5o37pwT_normalized_audio.wav",
+      "sfx_vol": 0.45
     },
     {
       "narration": "The future didn't arrive with a robot uprising. It arrived one repetitive job at a time.",
@@ -2192,5 +2220,9 @@
     "climax": null,
     "riser": null,
     "timeskip": null
-  }
+  },
+  "music": "https://v3b.fal.media/files/b/0aace3ec/G6WiHh57TIKmX6VrcnOQN_normalized_audio.wav",
+  "music_prompt": "Curious cinematic future-tech documentary underscore, real modern factory atmosphere, pulsing analog synth bass, precise muted electronic percussion, light marimba-like mechanical ticks, restrained strings and subtle metallic textures, around 94 bpm. Start with immediate forward motion and intrigue, stay clean under narration, build gradually through the real BMW factory deployment, add a satisfying rhythmic lift around 16 to 22 seconds as the huge production numbers land, turn briefly more tense and sparse around 23 to 29 seconds as hardware weaknesses are revealed, then brighten into a confident technological reveal from about 30 seconds for the newer robot generation, finishing with a thoughtful understated resolving pulse by 44 seconds. Instrumental only.",
+  "music_negative_prompt": "vocals, singing, choir, voice, lyrics, humming, speech, EDM drop, comedy, horror, bombastic trailer brass",
+  "music_seed": 1901834710
 }
