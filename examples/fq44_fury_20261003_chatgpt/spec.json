@@ -1860,16 +1860,32 @@
       "deterministic_audit_green": true,
       "independent_qa_pass": true,
       "gemini_g2_pass": true,
-      "private_youtube_upload_success": false,
-      "repo_documented": false
+      "private_youtube_upload_success": true,
+      "repo_documented": true
     },
     "render_v2_fix": {
       "requested_by_user": true,
       "reason": "Visible caption wrap/overlap around 28 s and repetitive/loud transition whooshes in render v1.",
       "caption_fix": "Conservative <=12-char auto-join plus audit hard gate for highlighted captions >13 chars.",
       "transition_fix": "Per-scene whoosh selection with null support and per-scene volume multipliers; FQ-44 sequence soft/none/sharp/paper/none/deep.",
-      "status": "pending regression/build"
-    }
+      "status": "completed",
+      "render_id": "2b55f3f3-51a7-4902-98e2-a80df72a8253",
+      "render_url": "https://shotstack-api-v1-output.s3-ap-southeast-2.amazonaws.com/rwr9s5liin/2b55f3f3-51a7-4902-98e2-a80df72a8253.mp4",
+      "shotstack_credits": 0.59,
+      "g2": {
+        "verdict": "PASS",
+        "issues": [],
+        "request_id": "01a10141-dfe5-7620-9c13-004e6c092b08"
+      },
+      "targeted_qc": {
+        "layout_fixed": true,
+        "audio_fixed": true,
+        "request_id": "01a10142-1316-7f43-940a-c7a93070e4c4"
+      }
+    },
+    "final_render_id": "2b55f3f3-51a7-4902-98e2-a80df72a8253",
+    "final_youtube_id": "FiQNl8heBiQ",
+    "make_execution_v2": "93784db1257f4f6fa64f8e5cfe6e7276"
   },
   "music": "https://v3b.fal.media/files/b/0aace009/pfrh-RbbR_UWyiPpKHD6z_normalized_audio.wav",
   "music_prompt": "Cinematic near-future military aviation documentary underscore, tense modern synth pulse, low strings, restrained brass, deep electronic percussion and subtle jet-engine texture, around 92 bpm. Start with immediate high-tech tension for the no-cockpit hook, build steadily through the explanation of uncrewed wingmen, rise into a strong dramatic impact and acceleration around 16.4 seconds for the missile live-fire moment, then briefly pull back for the human-authorization reveal around 19 to 24 seconds, rebuild with confident scale through production numbers around 24 to 31 seconds, and finish with an expansive futuristic aerial payoff through 35.7 seconds. Instrumental only. Negative: vocals, singing, choir, voice, lyrics, humming, speech, cheerful pop, comedy, EDM drop. 40.65 s. Seed 413128778."
