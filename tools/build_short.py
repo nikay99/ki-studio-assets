@@ -20,7 +20,8 @@ RED, YEL, BLK, WHT = '#E63946', '#F4D35E', '#000000', '#FFFFFF'
 VO = 0.15          # Stimme startet bei 0,15 s (Punch davor)
 HOOK_GAP = 0.10    # Luft zwischen Hook-Satz und Szene 1
 CAP_EARLY = 0.05   # Untertitel 0,05 s vor dem Wort
-CAP_MAXCH = 16     # max. Zeichen fuer normale Untertitel\nCAP_JOIN_MAXCH = 12 # konservativer Join: verhindert Auto-Wrap bei grossen Keyword-Captions
+CAP_MAXCH = 16     # max. Zeichen fuer normale Untertitel
+CAP_JOIN_MAXCH = 12 # konservativer Join: verhindert Auto-Wrap bei grossen Keyword-Captions
 OVL = 0.05         # Ueberlappung der unteren Bildspur A
 SX, SY = 0.012, -0.008  # harter Schatten der Boxen
 r2 = lambda x: round(x + 0.0, 2)
@@ -131,7 +132,9 @@ def audio(src, start, length, vol=1, effect=None):
 
 def pick_sounds(spec):
     """spec.sound waehlt pro Kategorie aus dem Pool (tools/sfx.json); fehlend = defaults."""
-    raw = spec.get('sound') or {}\n    sel = dict(SFX['defaults']); sel.update({k: v for k, v in raw.items() if k in sel})\n    sel['whoosh_vols'] = raw.get('whoosh_vols', [])
+    raw = spec.get('sound') or {}
+    sel = dict(SFX['defaults']); sel.update({k: v for k, v in raw.items() if k in sel})
+    sel['whoosh_vols'] = raw.get('whoosh_vols', [])
     want = {'opener': 'opener', 'impact': 'impact', 'climax': 'climax', 'timeskip': 'timeskip', 'riser': 'riser'}
     for k, c in want.items():
         n = sel.get(k)
@@ -141,6 +144,7 @@ def pick_sounds(spec):
         if SFX['sounds'][n]['category'] != c: die('Sound %r ist Kategorie %s, nicht %s' % (n, SFX['sounds'][n]['category'], c))
     if isinstance(sel['whooshes'], str): sel['whooshes'] = [sel['whooshes']]
     for n in sel['whooshes']:
+        if n is None: continue
         if SFX['sounds'].get(n, {}).get('category') != 'whoosh' or SFX['sounds'][n].get('usable') is False: die('Whoosh %r unbekannt/gesperrt' % n)
     return sel
 
@@ -250,12 +254,18 @@ def build(spec):
 
     # --- Stimme, Szenen-SFX, Whooshes
     voice = [audio(hook['voice'], VO, hook_d)]
-    scene_sfx, wh = [], []
+    scene_sfx, wh, wh_targets = [], [], []
     for k, s in enumerate(scs):
         voice.append(audio(s['voice'], s['_t'], r2(s['_d'] - 0.01)))
         if s.get('sfx'):
             scene_sfx.append(audio(s['sfx'], s['_t'], r2(s['_d'] - 0.01), s.get('sfx_vol', 1)))
-        wname = SND['whooshes'][k % len(SND['whooshes'])]\n        if wname is not None:\n            wc = sfx_clip(wname, s['_t'])\n            vols = SND.get('whoosh_vols') or []\n            mult = float(vols[k]) if k < len(vols) else 1.0\n            wc['asset']['volume'] = round(wc['asset']['volume'] * mult, 3)\n            wh.append(wc); wh_targets.append(s['_t'])
+        wname = SND['whooshes'][k % len(SND['whooshes'])]
+        if wname is not None:
+            wc = sfx_clip(wname, s['_t'])
+            vols = SND.get('whoosh_vols') or []
+            mult = float(vols[k]) if k < len(vols) else 1.0
+            wc['asset']['volume'] = round(wc['asset']['volume'] * mult, 3)
+            wh.append(wc); wh_targets.append(s['_t'])
 
     # --- Hits
     hits = [sfx_clip(SND['impact'], CUT, align_peak=snd(SND['impact'])[1]['peak'] > 0.05)]
