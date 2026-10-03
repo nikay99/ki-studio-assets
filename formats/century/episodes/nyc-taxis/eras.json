@@ -1,0 +1,126 @@
+{
+ "base_url": "https://v3b.fal.media/files/b/0aace388/3tnp1sZKavm24QemNL6W1_OJert4JX.jpg",
+ "eras": [
+  {
+   "year": 1925,
+   "label": "Yellow Cab Co. taxi",
+   "taxi": "a 1925 Yellow Cab Company taxi: tall boxy black-and-yellow body, upright windshield, running boards, thin spoked wheels, brass headlamps",
+   "lamp": "an ornate cast-iron bishop's crook lamp post with a glass lantern; no traffic signal, no countdown, no bike dock, no kiosk",
+   "right": "low 5-story brick tenement buildings with fire escapes and a wooden rooftop water tower instead of the glass tower",
+   "shop": "a cigar store and pharmacy with gold-leaf painted window lettering and a striped canvas awning",
+   "people": "men in three-piece suits with fedoras, boaters and flat caps, women in cloche hats and drop-waist coats, a newsboy; a horse-drawn delivery wagon far in the background; trolley tracks in the street",
+   "look": "black-and-white silver gelatin glass-plate photograph with warm sepia toning, soft lens, heavy grain, gentle vignette, faint dust specks",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1925. Taxi: a 1925 Yellow Cab Company taxi: tall boxy black-and-yellow body, upright windshield, running boards, thin spoked wheels, brass headlamps. Street furniture: an ornate cast-iron bishop's crook lamp post with a glass lantern; no traffic signal, no countdown, no bike dock, no kiosk. Right side: low 5-story brick tenement buildings with fire escapes and a wooden rooftop water tower instead of the glass tower. Corner building ground floor: a cigar store and pharmacy with gold-leaf painted window lettering and a striped canvas awning. People and street: men in three-piece suits with fedoras, boaters and flat caps, women in cloche hats and drop-waist coats, a newsboy; a horse-drawn delivery wagon far in the background; trolley tracks in the street. Everything else must be period-correct for 1925 with no anachronisms. Photographic look: black-and-white silver gelatin glass-plate photograph with warm sepia toning, soft lens, heavy grain, gentle vignette, faint dust specks. Authentic real photograph taken in 1925, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 1935,
+   "label": "Checker Model Y",
+   "taxi": "a 1935 Checker Model Y taxi: rounded 1930s sedan body, two-tone yellow with a black-and-white checker band, chrome headlamp pods",
+   "lamp": "the same cast-iron bishop's crook lamp post with an electric globe; a simple early traffic signal on a post; no countdown, no bike dock, no kiosk",
+   "right": "a brick Art Deco setback skyscraper instead of the glass tower",
+   "shop": "a luncheonette with a vertical neon sign and a cloth awning",
+   "people": "men in double-breasted suits and fedoras, women in long bias-cut coats and small hats; streetcar tracks in the street",
+   "look": "black-and-white 35mm Leica photograph, high contrast, fine grain, deep blacks",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1935. Taxi: a 1935 Checker Model Y taxi: rounded 1930s sedan body, two-tone yellow with a black-and-white checker band, chrome headlamp pods. Street furniture: the same cast-iron bishop's crook lamp post with an electric globe; a simple early traffic signal on a post; no countdown, no bike dock, no kiosk. Right side: a brick Art Deco setback skyscraper instead of the glass tower. Corner building ground floor: a luncheonette with a vertical neon sign and a cloth awning. People and street: men in double-breasted suits and fedoras, women in long bias-cut coats and small hats; streetcar tracks in the street. Everything else must be period-correct for 1935 with no anachronisms. Photographic look: black-and-white 35mm Leica photograph, high contrast, fine grain, deep blacks. Authentic real photograph taken in 1935, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 1945,
+   "label": "DeSoto taxi",
+   "taxi": "a 1941 DeSoto taxi: rounded fenders, waterfall chrome grille, yellow body with checker band",
+   "lamp": "the same cast-iron bishop's crook lamp post with electric lantern; a 1940s traffic signal; no countdown, no bike dock, no kiosk",
+   "right": "the same brick Art Deco setback skyscraper",
+   "shop": "a luncheonette with a hand-painted sign and patriotic bunting",
+   "people": "sailors and soldiers in WWII uniforms, women in tailored skirt suits and victory-roll hair, men in fedoras; small American flags",
+   "look": "black-and-white 4x5 press photograph (Speed Graphic), crisp, silver grain, slight halation in highlights",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1945. Taxi: a 1941 DeSoto taxi: rounded fenders, waterfall chrome grille, yellow body with checker band. Street furniture: the same cast-iron bishop's crook lamp post with electric lantern; a 1940s traffic signal; no countdown, no bike dock, no kiosk. Right side: the same brick Art Deco setback skyscraper. Corner building ground floor: a luncheonette with a hand-painted sign and patriotic bunting. People and street: sailors and soldiers in WWII uniforms, women in tailored skirt suits and victory-roll hair, men in fedoras; small American flags. Everything else must be period-correct for 1945 with no anachronisms. Photographic look: black-and-white 4x5 press photograph (Speed Graphic), crisp, silver grain, slight halation in highlights. Authentic real photograph taken in 1945, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 1955,
+   "label": "DeSoto Skyview",
+   "taxi": "a 1950s DeSoto Skyview taxi: chunky chrome bumpers and grille, two-tone yellow and green-tinted roof window, checker band",
+   "lamp": "the same cast-iron bishop's crook lamp post; a 1950s traffic light; no countdown, no bike dock, no kiosk",
+   "right": "the same brick Art Deco setback skyscraper",
+   "shop": "a drugstore soda fountain with a red neon sign and Coca-Cola style red awning (no brand logos)",
+   "people": "men in gray flannel suits and fedoras, women in full skirts, gloves and pillbox hats, a kid with a crew cut",
+   "look": "Kodachrome color slide: rich saturated reds and yellows, warm highlights, fine grain, slight edge falloff",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1955. Taxi: a 1950s DeSoto Skyview taxi: chunky chrome bumpers and grille, two-tone yellow and green-tinted roof window, checker band. Street furniture: the same cast-iron bishop's crook lamp post; a 1950s traffic light; no countdown, no bike dock, no kiosk. Right side: the same brick Art Deco setback skyscraper. Corner building ground floor: a drugstore soda fountain with a red neon sign and Coca-Cola style red awning (no brand logos). People and street: men in gray flannel suits and fedoras, women in full skirts, gloves and pillbox hats, a kid with a crew cut. Everything else must be period-correct for 1955 with no anachronisms. Photographic look: Kodachrome color slide: rich saturated reds and yellows, warm highlights, fine grain, slight edge falloff. Authentic real photograph taken in 1955, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 1965,
+   "label": "Checker Marathon",
+   "taxi": "a 1965 Checker Marathon taxi: tall boxy body, round headlights, all-yellow with checker band and a small roof light",
+   "lamp": "an aluminum pole with a cobra-head street light and a WALK / DON'T WALK pedestrian signal; no countdown, no bike dock, no kiosk",
+   "right": "the same brick Art Deco setback skyscraper",
+   "shop": "a record store and coffee counter with bold mid-century signage",
+   "people": "men in slim suits and skinny ties, women in shift dresses, beehive hairdos and mini skirts",
+   "look": "Ektachrome color slide: slightly cyan-shifted shadows, lifted blacks, soft saturation, film grain",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1965. Taxi: a 1965 Checker Marathon taxi: tall boxy body, round headlights, all-yellow with checker band and a small roof light. Street furniture: an aluminum pole with a cobra-head street light and a WALK / DON'T WALK pedestrian signal; no countdown, no bike dock, no kiosk. Right side: the same brick Art Deco setback skyscraper. Corner building ground floor: a record store and coffee counter with bold mid-century signage. People and street: men in slim suits and skinny ties, women in shift dresses, beehive hairdos and mini skirts. Everything else must be period-correct for 1965 with no anachronisms. Photographic look: Ektachrome color slide: slightly cyan-shifted shadows, lifted blacks, soft saturation, film grain. Authentic real photograph taken in 1965, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 1975,
+   "label": "Checker Marathon (big bumpers)",
+   "taxi": "a 1975 Checker Marathon taxi with heavy 5-mph bumpers, dented, yellow with checker band, roof light with an advertising sign",
+   "lamp": "the cobra-head street light pole with a WALK / DON'T WALK signal; no countdown, no bike dock, no kiosk",
+   "right": "a dark 1960s International Style office block instead of the Art Deco tower",
+   "shop": "a pizza place and pawn shop with roll-down metal security gates covered in graffiti; trash bags on the curb",
+   "people": "people in bell-bottoms, leather jackets, afros, platform shoes, leisure suits",
+   "look": "faded 1970s Kodacolor print: warm orange-magenta cast, low contrast, soft focus, visible grain",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1975. Taxi: a 1975 Checker Marathon taxi with heavy 5-mph bumpers, dented, yellow with checker band, roof light with an advertising sign. Street furniture: the cobra-head street light pole with a WALK / DON'T WALK signal; no countdown, no bike dock, no kiosk. Right side: a dark 1960s International Style office block instead of the Art Deco tower. Corner building ground floor: a pizza place and pawn shop with roll-down metal security gates covered in graffiti; trash bags on the curb. People and street: people in bell-bottoms, leather jackets, afros, platform shoes, leisure suits. Everything else must be period-correct for 1975 with no anachronisms. Photographic look: faded 1970s Kodacolor print: warm orange-magenta cast, low contrast, soft focus, visible grain. Authentic real photograph taken in 1975, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 1985,
+   "label": "Chevrolet Caprice",
+   "taxi": "a 1985 Chevrolet Caprice taxi: long boxy sedan, square headlights, all-yellow with checker stripe and roof light",
+   "lamp": "the cobra-head street light pole with a WALK / DON'T WALK signal; a payphone booth; no countdown, no bike dock, no kiosk",
+   "right": "the dark 1960s International Style office block",
+   "shop": "an electronics and video store with a neon 'VIDEO' sign, graffiti on the side wall",
+   "people": "people in shoulder pads, big permed hair, windbreakers, high-top sneakers, one man with a boombox",
+   "look": "1980s 35mm consumer color film (Fujicolor): punchy saturated colors, slightly greenish shadows, medium grain",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1985. Taxi: a 1985 Chevrolet Caprice taxi: long boxy sedan, square headlights, all-yellow with checker stripe and roof light. Street furniture: the cobra-head street light pole with a WALK / DON'T WALK signal; a payphone booth; no countdown, no bike dock, no kiosk. Right side: the dark 1960s International Style office block. Corner building ground floor: an electronics and video store with a neon 'VIDEO' sign, graffiti on the side wall. People and street: people in shoulder pads, big permed hair, windbreakers, high-top sneakers, one man with a boombox. Everything else must be period-correct for 1985 with no anachronisms. Photographic look: 1980s 35mm consumer color film (Fujicolor): punchy saturated colors, slightly greenish shadows, medium grain. Authentic real photograph taken in 1985, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 1995,
+   "label": "Ford Crown Victoria",
+   "taxi": "a 1995 Ford Crown Victoria taxi: rounded 1990s sedan, all-yellow with black checker stripe, roof light",
+   "lamp": "the cobra-head street light pole with a WALK / DON'T WALK signal; a payphone; no countdown, no bike dock, no kiosk",
+   "right": "the dark 1960s International Style office block",
+   "shop": "a bodega deli with a green awning and lottery signs (no brand logos)",
+   "people": "people in baggy jeans, flannel shirts, puffer jackets, baseball caps, one with a pager on the belt",
+   "look": "disposable camera snapshot: slightly overexposed, warm, soft corners, mild chromatic aberration, grain",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 1995. Taxi: a 1995 Ford Crown Victoria taxi: rounded 1990s sedan, all-yellow with black checker stripe, roof light. Street furniture: the cobra-head street light pole with a WALK / DON'T WALK signal; a payphone; no countdown, no bike dock, no kiosk. Right side: the dark 1960s International Style office block. Corner building ground floor: a bodega deli with a green awning and lottery signs (no brand logos). People and street: people in baggy jeans, flannel shirts, puffer jackets, baseball caps, one with a pager on the belt. Everything else must be period-correct for 1995 with no anachronisms. Photographic look: disposable camera snapshot: slightly overexposed, warm, soft corners, mild chromatic aberration, grain. Authentic real photograph taken in 1995, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 2005,
+   "label": "Crown Vic + first hybrid cabs",
+   "taxi": "a 2005 Ford Crown Victoria taxi: all-yellow, black checker stripe, roof light with ad topper",
+   "lamp": "a modern pole with a cobra-head light and a pedestrian walk/hand signal (no countdown), no bike dock, no kiosk, a newspaper box",
+   "right": "the tall glass office tower (as in the original photo)",
+   "shop": "a bank branch with a backlit sign (no real brand)",
+   "people": "people with flip phones, white iPod earbuds, trucker hats, low-rise jeans",
+   "look": "early digital compact camera photo (5 megapixel): slight noise, over-sharpened edges, blown-out white sky, cool white balance",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 2005. Taxi: a 2005 Ford Crown Victoria taxi: all-yellow, black checker stripe, roof light with ad topper. Street furniture: a modern pole with a cobra-head light and a pedestrian walk/hand signal (no countdown), no bike dock, no kiosk, a newspaper box. Right side: the tall glass office tower (as in the original photo). Corner building ground floor: a bank branch with a backlit sign (no real brand). People and street: people with flip phones, white iPod earbuds, trucker hats, low-rise jeans. Everything else must be period-correct for 2005 with no anachronisms. Photographic look: early digital compact camera photo (5 megapixel): slight noise, over-sharpened edges, blown-out white sky, cool white balance. Authentic real photograph taken in 2005, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 2015,
+   "label": "Nissan NV200 'Taxi of Tomorrow'",
+   "taxi": "a 2015 Nissan NV200 yellow taxi minivan with sliding door, NYC TLC markings and roof light",
+   "lamp": "a modern pole with LED light and pedestrian countdown signal; a Citi Bike dock; no LinkNYC kiosk",
+   "right": "the tall glass office tower (as in the original photo)",
+   "shop": "a juice bar with a minimal glass storefront (no real brand)",
+   "people": "people holding smartphones, one with a selfie stick, skinny jeans, beanies",
+   "look": "smartphone HDR photo: crisp, oversaturated colors, slight halo around edges, flat shadows",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 2015. Taxi: a 2015 Nissan NV200 yellow taxi minivan with sliding door, NYC TLC markings and roof light. Street furniture: a modern pole with LED light and pedestrian countdown signal; a Citi Bike dock; no LinkNYC kiosk. Right side: the tall glass office tower (as in the original photo). Corner building ground floor: a juice bar with a minimal glass storefront (no real brand). People and street: people holding smartphones, one with a selfie stick, skinny jeans, beanies. Everything else must be period-correct for 2015 with no anachronisms. Photographic look: smartphone HDR photo: crisp, oversaturated colors, slight halo around edges, flat shadows. Authentic real photograph taken in 2015, no text overlays, no watermark, no borders."
+  },
+  {
+   "year": 2025,
+   "label": "Toyota Camry Hybrid",
+   "taxi": "the same 2025 Toyota Camry Hybrid taxi as in the original",
+   "lamp": "the same LED pole, countdown signal, Citi Bike dock and LinkNYC kiosk as in the original",
+   "right": "the tall glass office tower (as in the original photo)",
+   "shop": "an independent coffee shop called 'CORNER COFFEE' instead of the Starbucks (remove all Starbucks logos)",
+   "people": "the same contemporary pedestrians",
+   "look": "modern full-frame mirrorless photo, crisp, natural colors, unchanged",
+   "prompt": "Edit this photograph. Keep the EXACT same camera position, lens, framing, perspective and horizon line. Keep the same ornate 8-story limestone-and-brick corner building with the rounded corner, cornice, window grid and arched ground floor, at the same place and size. Keep the curb line, sidewalk edge and street corner at the same place. The taxi stays at exactly the same position, size and three-quarter angle at the curb in the foreground, filling the lower half. The street lamp pole stays at the left edge in the same place. Turn the scene into New York City in the year 2025. Taxi: the same 2025 Toyota Camry Hybrid taxi as in the original. Street furniture: the same LED pole, countdown signal, Citi Bike dock and LinkNYC kiosk as in the original. Right side: the tall glass office tower (as in the original photo). Corner building ground floor: an independent coffee shop called 'CORNER COFFEE' instead of the Starbucks (remove all Starbucks logos). People and street: the same contemporary pedestrians. Everything else must be period-correct for 2025 with no anachronisms. Photographic look: modern full-frame mirrorless photo, crisp, natural colors, unchanged. Authentic real photograph taken in 2025, no text overlays, no watermark, no borders."
+  }
+ ]
+}
