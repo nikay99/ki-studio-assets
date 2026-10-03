@@ -172,3 +172,8 @@ Format:
 - Sound: op_bass / whoosh_2, wh_sharp, whoosh_3, wh_wind / impact_box; Szenen-SFX Klick (s3, 0.7) und Hammer (s6, 0.8). Musik stable-audio-3 seed 343457774 (Finanz-Thriller, Bruch bei 32 s), music_vol 0.4. Nur drei Opener nutzbar (op_flash gesperrt) – Wiederholung nach 3 Videos unvermeidbar.
 - Ergebnis: 1 Render (3a55f71b, 0 Diffs). Preflight ROT: True Peak +0,1 dBTP bei 26,5 s (Hammer-SFX 0.8 + Stimme + Musik), −0,4 bei 3,5 s (impact_box). Fix ohne 2. Render: lokal `alimiter limit=0.708`, Video-Stream kopiert → Preflight GRÜN (−16,1 LUFS, TP −2,8). G2 PASS, alle Niklas-Regeln ja. Upload privat mit publish_at 2026-10-09T12:00-04:00, YouTube SwOBCjJqhro, Termin bestätigt.
 - Lehre: Szenen-SFX mit sfx_vol ≤ 0.5 ansetzen, wenn sie auf Stimme + Musik fallen; fal-CDN-Upload und GitHub-Branch-Löschen sind aus der Shell gesperrt (Datei lag auf Branch media-tmp).
+
+## 2026-10-03 – Humanoid/BMW fertiggestellt (Säule A, Sa 10.10.)
+- Basis: ChatGPT-Checkpoint (Bilder G0 PASS, Stimmen, Musik, Szenen-SFX). Claude: Stimmen auf −16 LUFS normalisiert, line2 „NOW THE UPGRADE.“, CTA „WOULD YOU WORK NEXT TO ONE?“, US-Beschreibung, op_slam/im_metal, music_vol 0.35, Szenen-SFX ≤ 0.45 → `finalize.py` → `spec_final.json`.
+- Builder-Fix `tools/build_short.py clean()`: Punkt/Komma zwischen Ziffern bleiben erhalten. Vorher stand „AND 12 MILLION STEPS“ statt 1.2 Millionen und „90000“ im Untertitel. Citibank-Edit unverändert (geprüft).
+- Ergebnis: 1 Render (7b7b37d3, 0 Diffs), Preflight GRÜN (−16,0 LUFS, TP −1,1; Hinweise 1-Frame-Hänger 38,67 s, Hook-Box rechts 0,94), G2 PASS inkl. Niklas-Regeln. Upload privat mit publish_at 2026-10-10T10:00-04:00 (Make 89163b83…).

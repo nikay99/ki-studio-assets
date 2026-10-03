@@ -219,5 +219,34 @@
   },
   "rejected_images": 0,
   "spec": "examples/citibank_900m_20261003"
+ },
+ {
+  "date": "2026-10-03",
+  "topic": "Humanoide Roboter in der BMW-Fertigung: Figure 02 (Spartanburg 2025) und Figure 03 (2026)",
+  "pillar": "A",
+  "title": "This Robot Helped Build 30,000 BMWs",
+  "shotstack_render": "7b7b37d3-df01-4b4f-8f84-7722fb61a6f3",
+  "make_execution": "89163b83765a413c8c090f925208d573",
+  "publish_at": "2026-10-10T10:00:00-04:00",
+  "status": "privat hochgeladen mit publish_at Sa 10.10. 16:00 Wien",
+  "sound": {
+   "opener": "op_slam",
+   "whooshes": [
+    "wh_soft",
+    null,
+    "wh_paper",
+    "wh_sharp",
+    null,
+    "whoosh_1",
+    "wh_wind"
+   ],
+   "impact": "im_metal",
+   "climax": null,
+   "riser": null,
+   "timeskip": null
+  },
+  "rejected_images": 0,
+  "spec": "examples/humanoid_factory_20261003_chatgpt/spec_final.json",
+  "producer": "ChatGPT (Assets) + Claude (Fertigstellung)"
  }
 ]

@@ -37,7 +37,9 @@ def snd(name):
 
 
 def clean(w):
-    return re.sub(r"[^\w'\-\$%&]+", '', w).upper()
+    # Punkt/Komma nur zwischen Ziffern behalten (1.2 MILLION, 90,000), sonst entfernen
+    w = re.sub(r"[^\w'\-\$%&.,]+", '', w)
+    return re.sub(r"(?<!\d)[.,]|[.,](?!\d)", '', w).upper()
 
 
 # ---------- Wort-Timings ----------
