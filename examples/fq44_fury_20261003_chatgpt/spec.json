@@ -941,7 +941,7 @@
           ]
         }
       ],
-      "sfx": "https://v3b.fal.media/files/b/0aace00a/5N_H0xzX_iKZ7-_UzNymK_normalized_audio.wav",
+      "sfx": "https://v3b.fal.media/files/b/0aace010/zdGuhK1KHE0daM4GPXfVM_normalized_audio.wav",
       "sfx_vol": 0.27
     },
     {
@@ -1750,7 +1750,7 @@
           ]
         }
       ],
-      "sfx": "https://v3b.fal.media/files/b/0aace00a/c6TRgFk-cdIpg7wE43ah1_normalized_audio.wav",
+      "sfx": "https://v3b.fal.media/files/b/0aace011/DiqqPy_eBwuD0NilP9JCZ_normalized_audio.wav",
       "sfx_vol": 0.22
     }
   ],
@@ -1807,7 +1807,8 @@
     "music_seed": 413128778,
     "builder_sha": "ae3180396316fc309c57013ea192101f1e3c8bc7",
     "audit_sha": "f8c637c9429a0d26d0d6003ef3633e8a340a2883",
-    "sfx_sha": "9480d980c268a03407f608c00ae6946bff3f83e7"
+    "sfx_sha": "9480d980c268a03407f608c00ae6946bff3f83e7",
+    "scene_sfx": "final SFX regenerated slightly longer than scene clips to avoid source-duration edge cases before first render"
   },
   "music": "https://v3b.fal.media/files/b/0aace009/pfrh-RbbR_UWyiPpKHD6z_normalized_audio.wav",
   "music_prompt": "Cinematic near-future military aviation documentary underscore, tense modern synth pulse, low strings, restrained brass, deep electronic percussion and subtle jet-engine texture, around 92 bpm. Start with immediate high-tech tension for the no-cockpit hook, build steadily through the explanation of uncrewed wingmen, rise into a strong dramatic impact and acceleration around 16.4 seconds for the missile live-fire moment, then briefly pull back for the human-authorization reveal around 19 to 24 seconds, rebuild with confident scale through production numbers around 24 to 31 seconds, and finish with an expansive futuristic aerial payoff through 35.7 seconds. Instrumental only. Negative: vocals, singing, choir, voice, lyrics, humming, speech, cheerful pop, comedy, EDM drop. 40.65 s. Seed 413128778."
