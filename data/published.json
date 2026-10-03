@@ -174,8 +174,8 @@
   "title": "It's 15 Billion Miles Away. NASA Fixed It Anyway.",
   "shotstack_render": "84d91bb1-d2a5-4a51-a80e-dda60691f742",
   "make_execution": "6e30cdaebd924692a2427219c820e03e",
-  "publish_at": "2026-10-06T12:00:00-04:00",
-  "status": "scheduled",
+  "publish_at": "2026-10-07T12:00:00-04:00",
+  "status": "scheduled (umgeplant vom Redaktionsplan 03.10. abends)",
   "sound": {
    "opener": "punch",
    "whooshes": [
@@ -201,8 +201,8 @@
   "shotstack_render": "3a55f71b-0329-401e-bed2-169e69061201",
   "make_execution": "7644d96b212d420f90749f0e1705e2f9",
   "youtube_id": "SwOBCjJqhro",
-  "publish_at": "2026-10-09T12:00:00-04:00",
-  "status": "scheduled",
+  "publish_at": "2026-10-12T12:00:00-04:00",
+  "status": "scheduled (umgeplant vom Redaktionsplan 03.10. abends)",
   "upload_file": "Render + lokaler Limiter (alimiter 0.708, Video-Stream kopiert), gehostet auf Branch media-tmp",
   "sound": {
    "opener": "op_bass",
