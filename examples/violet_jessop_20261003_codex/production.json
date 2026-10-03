@@ -1,0 +1,22 @@
+{
+  "run_id": "20261003-0628-codex-violet-jessop",
+  "status": "in_progress",
+  "topic": "Violet Jessop – Titanic und Britannic",
+  "narration": [
+    "She survived Titanic. Then its sister ship sank beneath her.",
+    "In nineteen twelve, stewardess Violet Jessop escaped the Titanic in a lifeboat.",
+    "Four years later, she was serving aboard its sister ship, Britannic.",
+    "An explosion struck. The hospital ship began sinking in the Aegean Sea.",
+    "Her lifeboat was pulled toward the ship's still turning propellers.",
+    "Violet jumped into the water. Injured, she was pulled into another boat.",
+    "After the war, she returned to sea. Surviving two sinking ships hadn't ended her career."
+  ],
+  "sources": [
+    "https://mollybrown.org/servants-at-sea-violet-jessop/",
+    "https://www.pbs.org/lostliners/britannic.html",
+    "https://nmmc.co.uk/object/cornish_maritime_collection/a-lucky-lady/"
+  ],
+  "model": "google/gemini-3.8-flash",
+  "g1": "A ranked first over Roy Sullivan and Apollo 13; rejected inaccurate proposed immediate sinking wording",
+  "base_commit": "83a137577554507a823517836d01dfe072d4c63d"
+}
