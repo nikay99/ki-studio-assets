@@ -53,3 +53,5 @@ Kosten pro Video: 12 Bilder GPT Image (je ca. 3–5 Cent) + Musik + 1 SFX + Rend
 
 ## Lehren
 Pro Episode in `episodes/<slug>/notes.md`. Stand nach NYC Taxis: Epochen-Sound pro Jahrzehnt, Split-Screen 1925|2025 vor der CTA und 1,1 s statt 1,3 s in der Mitte werden ab der nächsten Episode Standard.
+
+**Safe Zone (ab v3 Standard):** Auf dem Handy verdecken oben Notch/Shorts-Leiste (~18 %) und unten Kanalname/Titel/Buttons (~28 %) sowie die rechte Buttonleiste das Bild. Alle Texte daher mittig: Jahreszahl + Modell direkt über dem Auto, Hook bei y 0.2, Split-Labels zentriert über/unter der CTA. Nie Ecken oder obere/untere Ränder benutzen.

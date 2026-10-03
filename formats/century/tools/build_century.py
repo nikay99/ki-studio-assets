@@ -21,6 +21,8 @@ def build(spec):
     starts = [0.0]
     for i in range(1, n):
         starts.append(r(starts[-1] + (first if i == 1 else mid)))
+    L = spec.get("layout", {})          # vertical offsets (fraction of frame, + = up from center)
+    year_y, label_y, hook_y = L.get("year_y", 0.02), L.get("label_y", -0.055), L.get("hook_y", 0.2)
     split = T.get("split", 0)              # seconds of 1925|2025 split-screen after the last era
     last_end = r(starts[-1] + last)
     total = r(last_end + split)
@@ -47,14 +49,14 @@ def build(spec):
             "shadow": {"offsetX": 0, "offsetY": 6, "blur": 20, "color": "#000000", "opacity": 0.6},
             "align": {"horizontal": "center", "vertical": "middle"},
             "animation": {"preset": "ascend", "direction": "up", "duration": 0.2}},
-            "start": s, "length": r(end - s - 0.001), "width": 1000, "height": 240, "position": "top", "offset": {"x": 0, "y": -0.05}})
+            "start": s, "length": r(end - s - 0.001), "width": 1000, "height": 240, "position": "center", "offset": {"x": 0, "y": year_y}})
         labels.append({"asset": {"type": "rich-text", "text": e["label"],
             "font": {"family": MONT, "size": 46, "weight": "800", "color": "#FFC72C"},
             "stroke": {"width": 3, "color": "#000000"},
             "shadow": {"offsetX": 0, "offsetY": 3, "blur": 10, "color": "#000000", "opacity": 0.7},
             "style": {"textTransform": "uppercase", "letterSpacing": 2},
             "align": {"horizontal": "center", "vertical": "middle"}},
-            "start": s, "length": r(end - s - 0.001), "width": 1000, "height": 90, "position": "top", "offset": {"x": 0, "y": -0.168}})
+            "start": s, "length": r(end - s - 0.001), "width": 1000, "height": 90, "position": "center", "offset": {"x": 0, "y": label_y}})
     text_tracks += [{"clips": years}, {"clips": labels}]
 
     hook = spec["hook"]
@@ -65,7 +67,7 @@ def build(spec):
         "background": {"color": "#000000", "opacity": 0.55, "borderRadius": 18},
         "align": {"horizontal": "center", "vertical": "middle"},
         "animation": {"preset": "shift", "style": "word", "direction": "up", "duration": 0.33}},
-        "start": 0, "length": r(starts[1] - 0.15), "width": 940, "height": 260, "position": "center", "offset": {"x": 0, "y": 0.06},
+        "start": 0, "length": r(starts[1] - 0.15), "width": 940, "height": 260, "position": "center", "offset": {"x": 0, "y": hook_y},
         "transition": {"out": "fadeFast"}}
     cta = spec["cta"]
     cta_start = r(last_end if split else starts[-1] + 1.0)
@@ -90,9 +92,10 @@ def build(spec):
         for e, pos in ((a, "top"), (b, "bottom")):
             split_tracks.insert(0, {"clips": [{"asset": {"type": "rich-text", "text": str(e["year"]),
                 "font": {"family": ANTON, "size": 120, "color": "#FFFFFF"}, "stroke": {"width": 5, "color": "#000000"},
-                "align": {"horizontal": "left", "vertical": "middle"}},
-                "start": r(last_end + 0.2), "length": r(split - 0.2), "width": 400, "height": 150,
-                "position": "topLeft" if pos == "top" else "bottomLeft", "offset": {"x": 0.03, "y": -0.03 if pos == "top" else 0.03}}]})
+                "align": {"horizontal": "center", "vertical": "middle"}},
+                "start": r(last_end + 0.2), "length": r(split - 0.2), "width": 600, "height": 150,
+                # centered right above/below the CTA box: phone UI covers the corners and top/bottom edges
+                "position": "center", "offset": {"x": 0, "y": 0.13 if pos == "top" else -0.13}}]})
 
     # progress bar 1925 -> 2025 (reaches full width at the last cut)
     bar = {"asset": {"type": "svg", "src": '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="14"><rect width="1080" height="14" fill="#FFC72C"/></svg>'},

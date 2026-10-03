@@ -18,3 +18,9 @@
 - Neu: 11 Epochen-Sounds, neue Musik (Hit auf 12,1 s), Mitte 1,1 s, Split-Screen 1925|2025 ab 13,6 s mit CTA.
 - Fehler im ersten v2-Render (eef8bb27): `crop` + width/height auf Bild-Clips setzt Shotstack nicht wie erwartet um, 1925 landete als Streifen in der Mitte. Lösung im Builder: 1925-Vollbild mit offset.y = 0.5 (untere Bildhälfte = Taxi oben), 2025 läuft darunter weiter (Taxi unten), gelbe Trennlinie.
 - Zusatzkosten v2: ca. 0,25 $ (11 SFX, Musik, 2 Renders).
+- Upload: 03.10.2026 12:04 privat über Make 7731897 (Execution 0a79940c95d544f2bf7845e80b114534, SUCCESS) nach GO von Niklas.
+
+## v3 (03.10.2026, Layout nach Niklas' iPhone-Screenshots)
+- Problem v2: Jahreszahl oben wurde von Notch/Shorts-Leiste verdeckt, 1925/2025-Labels im Split an den Rändern abgeschnitten bzw. unter Kanalname/Titel.
+- Fix: Jahreszahl + Modell mittig direkt über dem Auto (year_y 0.02, label_y −0.055), Hook bei y 0.2, Split-Labels zentriert über/unter der CTA (±0.13). Neu im Builder als `layout` in spec.json.
+- Render 5bc501c3-dba3-4562-b7e8-487e0f6579f9, 16,2 s: https://shotstack-api-v1-output.s3-ap-southeast-2.amazonaws.com/rwr9s5liin/5bc501c3-dba3-4562-b7e8-487e0f6579f9.mp4
