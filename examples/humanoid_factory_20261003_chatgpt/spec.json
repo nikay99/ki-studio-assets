@@ -1,0 +1,56 @@
+{
+  "topic": "Humanoid robots in real automotive manufacturing — BMW / Figure 02 and Figure 03 (2025–2026)",
+  "status": "PARTIAL_BLOCKED_BEFORE_ASSET_GENERATION",
+  "producer": "ChatGPT",
+  "date": "2026-10-03",
+  "candidate_hook": "These humanoid robots aren't demos anymore. One helped build 30,000 BMWs.",
+  "sources": [
+    {
+      "name": "BMW Group — Premiere in Leipzig / Physical AI",
+      "url": "https://www.bmwgroup.com/de/news/allgemein/2026/humanoide-roboter-in-leipzig.html",
+      "notes": "BMW says Figure 02 supported production of >30,000 BMW X3 over ten months, moved >90,000 components, ~1,250 operating hours and ~1.2M steps; Leipzig AEON pilot."
+    },
+    {
+      "name": "BMW Group PressClub — Figure 03 project in Spartanburg",
+      "url": "https://www.press.bmwgroup.com/global/article/detail/T0458778EN/bmw-group-advances-the-use-of-physical-ai-in-production-with-figure-03-project-%20...",
+      "notes": "June 25 2026: Figure 03 demonstrated a new assembly/logistics use case; predecessor Figure 02 supported >30,000 X3."
+    },
+    {
+      "name": "Figure — F.03 Arrives at BMW",
+      "url": "https://www.figure.ai/news/f-03-at-bmw",
+      "notes": "June 30 2026: Figure 03 logistics workflow at BMW; Figure states Figure 02 contributed to assembly of 30,000 cars."
+    }
+  ],
+  "g1": {
+    "status": "INCOMPLETE_BLOCKED",
+    "completed_call": {
+      "model": "google/gemini-3.8-flash",
+      "request_id": "01a1013a-6668-7c90-be10-9be3dac86eec",
+      "result_summary": "Compared X-59, Liberty Lifter, humanoid factory robotics. Chose humanoid robotics; audience interest 9.5/10, visuals 9/10. X-59 8/8.5; Liberty Lifter 7/7.5."
+    },
+    "missing_required_dimensions": [
+      "Scroll-Stop/Hook explicit score",
+      "Surprise/Wow Factor explicit score",
+      "Technology Wow Factor explicit score",
+      "Relevance Now explicit score",
+      "Shareability explicit score",
+      "Overdone-Risk explicit score",
+      "sharper fact-safe hook per candidate"
+    ],
+    "error": "Follow-up Gemini G1 requests attempting to collect the mandatory dimensions were blocked by the execution environment's safety checks before model execution. They are not counted as G1."
+  },
+  "production_checkpoint": {
+    "stage": "G1",
+    "paid_asset_generation_started": false,
+    "images_generated": 0,
+    "voice_generated": false,
+    "music_generated": false,
+    "sfx_generated": false,
+    "builder_run": false,
+    "audit_run": false,
+    "render_count": 0,
+    "uploaded": false,
+    "blocker": "Mandatory G1 could not be completed in this environment. Per production rules, stopped before paid asset generation/render/upload.",
+    "coexistence": "Read latest main immediately before this write; latest commit observed 4671e96625502a1e4eadad916a2b5a6634a4215b. No shared data files modified in this checkpoint."
+  }
+}
