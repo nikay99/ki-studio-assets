@@ -1788,7 +1788,7 @@
     "image_checks": "all 7 unique images Gemini G0 PASS",
     "voice_status": "Liam generated; original ElevenLabs timestamps preserved",
     "audio_status": "music + 2 scene SFX generated and loudnorm processed",
-    "render_status": "not rendered",
+    "render_status": "done",
     "basis_commit_before_voice": "3b87b54ad0efe1bc6356f26868331264e34d7612",
     "timeline_pre_audio": {
       "length_s": 35.65,
@@ -1808,7 +1808,36 @@
     "builder_sha": "ae3180396316fc309c57013ea192101f1e3c8bc7",
     "audit_sha": "f8c637c9429a0d26d0d6003ef3633e8a340a2883",
     "sfx_sha": "9480d980c268a03407f608c00ae6946bff3f83e7",
-    "scene_sfx": "final SFX regenerated slightly longer than scene clips to avoid source-duration edge cases before first render"
+    "scene_sfx": "final SFX regenerated slightly longer than scene clips to avoid source-duration edge cases before first render",
+    "independent_qa": {
+      "verdict": "PASS",
+      "issues": [],
+      "request_id": "01a100fb-b6d7-70d0-984e-b65067945678"
+    },
+    "builder_integrity": "Local executable materialization differs from repo blob only by formatting/statement grouping; normalized logic comparison equals true for builder and audit; all used SFX records exact-match repo.",
+    "audit": "GREEN; 35.65 s; 855 frames; 0 black/wrong frames; whoosh peak deltas [0,-1,-5,0,-1,+5] ms; im_metal impact +15 ms; voice gaps [0.10,0.01,0.01,0.01,0.01,0.01]; images/voice/music/CTA end 35.65 s",
+    "render_id": "af21354d-5145-4e17-8d06-64bf6878f6e2",
+    "render_url": "https://shotstack-api-v1-output.s3-ap-southeast-2.amazonaws.com/rwr9s5liin/af21354d-5145-4e17-8d06-64bf6878f6e2.mp4",
+    "shotstack_credits": 0.59,
+    "g2": {
+      "verdict": "PASS",
+      "issues": [],
+      "request_id": "01a10108-5b3b-7e22-876a-6b6aa0e5c302",
+      "note": "Audio-visual elements, captions, hook framing PASS; no qa_at verification needed because issues=[]"
+    },
+    "g3": {
+      "score": 6,
+      "hook": "maybe",
+      "payoff": "partly",
+      "most_engaging_s": 14,
+      "request_id": "01a10108-b44c-7b21-b5ea-64fe4e859ea6",
+      "notes": [
+        "Static comic/pan-and-scan feel may reduce retention.",
+        "Human-authorization reveal and production-number section may feel technical to general audiences.",
+        "Gemini incorrectly called July 2026 a future date; current date is 2026-10-03, so this is a G3 false observation and not a factual issue.",
+        "No second render: G2 is PASS and G3 is advisory."
+      ]
+    }
   },
   "music": "https://v3b.fal.media/files/b/0aace009/pfrh-RbbR_UWyiPpKHD6z_normalized_audio.wav",
   "music_prompt": "Cinematic near-future military aviation documentary underscore, tense modern synth pulse, low strings, restrained brass, deep electronic percussion and subtle jet-engine texture, around 92 bpm. Start with immediate high-tech tension for the no-cockpit hook, build steadily through the explanation of uncrewed wingmen, rise into a strong dramatic impact and acceleration around 16.4 seconds for the missile live-fire moment, then briefly pull back for the human-authorization reveal around 19 to 24 seconds, rebuild with confident scale through production numbers around 24 to 31 seconds, and finish with an expansive futuristic aerial payoff through 35.7 seconds. Instrumental only. Negative: vocals, singing, choir, voice, lyrics, humming, speech, cheerful pop, comedy, EDM drop. 40.65 s. Seed 413128778."
