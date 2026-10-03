@@ -1,0 +1,84 @@
+{
+ "hook": {
+  "image_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures"
+  },
+  "image2_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "2 figures from behind, 2 arms each, hands hidden"
+  }
+ },
+ "scenes": {
+  "0": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacea27/gxChFQI_DmxHHn18yUo5P_normalized_audio.wav",
+   "sfx_vol": 0.5
+  },
+  "1": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "2": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "3": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "4": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "1 figure from behind, hands out of frame"
+   }
+  },
+  "5": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "6": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "7": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacea27/9QSY7xfmCR8gBm6ohJNnZ_normalized_audio.wav",
+   "sfx_vol": 0.8
+  }
+ },
+ "top": {
+  "music": "https://v3b.fal.media/files/b/0aacea2f/K7MjKS5hJZOVfe6Nt9eYs_normalized_audio.wav",
+  "music_prompt": "Cinematic space-mystery documentary underscore ... triumphant release at 30 s, resolve 35 s | negative: vocals, singing, choir, voice, lyrics, humming, speech | 40 s | seed 63567379 | loudnorm -16",
+  "music_vol": 0.4
+ }
+}

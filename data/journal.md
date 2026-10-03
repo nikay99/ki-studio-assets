@@ -156,3 +156,10 @@ Format:
 - Render v2 `dcdb9694-281b-4660-819a-c10d007ac9b6` (0,62 Credits). preflight GRÜN (Hinweise: Box 2 Textbreite, Button-Leiste rechts). Gemini G2 PASS, Niklas-Regeln alle erfüllt; Meldung „Overlap 26 s“ per qa_at.py als Fehlalarm belegt (SNAP! oben, Untertitel unten).
 - Upload v2 privat OHNE Termin (Execution bd1634ce53244be7bde43b809e755276), damit v1 und v2 nicht beide veröffentlicht werden. v1 muss Niklas in Studio löschen; danach Termin für v2 über Make 7750442.
 - Lehre: Für künftige Videos Stimmen immer gleich nach TTS auf −16 LUFS normalisieren (Musik-Default dann ~0.4).
+
+## 2026-10-03 – Voyager 1 per Funk repariert (Säule B, für Di 06.10.)
+- Showrunner: Voyager-Rettung 2023/24 (G1 vom SpaceX-Lauf: 6/8). Quellen JPL-News + JPL PIA26275 + The Register. Stimmung curious/thrill, Stimme Liam wie Referenz SpaceX.
+- Writer: Hook „This spacecraft is fifteen billion miles away. And engineers fixed it from Earth.“ US-Einheiten (Meilen). Pointe: „A computer from 1977, fixed with a radio message.“
+- Art Director: 10 Bilder in einem Versuch, G0 PASS (Menschen nur von hinten, Hände außerhalb). Kein ZAP, keine Karte (kein echter Knall/Zeitsprung).
+- Sound: punch / whoosh_1, wh_deep, wh_soft, wh_paper / im_stamp; Szenen-SFX Funkstörung (s1, 0.5) und klares Telemetrie-Signal (s8, 0.8). Musik stable-audio-3 seed 63567379, Release bei 30 s, music_vol 0.4. Stimmen direkt nach TTS auf −16 LUFS (Lehre aus SpaceX).
+- Ergebnis: 1 Render (84d91bb1), Preflight GRÜN beim ersten Mal (−15.1 LUFS), G2 PASS inkl. Niklas-Regeln. Upload privat mit publish_at 2026-10-06T12:00-04:00.
