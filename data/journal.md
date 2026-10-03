@@ -129,3 +129,20 @@ Format:
 - Kostenproblem: aktuelle fal-Preisabfrage meldete GPT Image 2.5 Flare text-to-image/edit mit $1 pro Unit. Nach bereits ~9 Bild-Jobs hätte reine Wiederherstellung durch 8 Neu-Edits weitere ~8 USD gekostet. Deshalb Kosten-Guard statt Doppelgenerierung.
 - Nicht durchgeführt: Musik, Szenen-SFX, vollständige Spec mit Original-Timestamps, Builder, Audit, unabhängige QA, Shotstack-Render, G2/G3, Make/YouTube-Upload. Nichts davon als PASS gewertet.
 - Lehre: Bei teuren Batch-Generierungen Result-URL + request_id im selben Tool-Call persistieren/ausgeben; nie per Regex die erste URL aus der Recipe nehmen.
+
+
+## 2026-10-03 – SpaceX Booster-Fang (Säule A, erstes Video der neuen Themenrichtung)
+- Ergebnis: **privat hochgeladen**, Make-Execution `038845117e84454dbe11468e1d207d7b` (status 1). YouTube-ID kam nicht in der Execution-Antwort zurück; Studio-Link per Make-Mail.
+- Showrunner/G1 (01a10190-4631-73c0-8152-7f520b7fda66): SpaceX Booster-Fang Hook 8 / Surprise 7 gewählt; Voyager 6/8 als Reserve; Bitcoin-Pizza 3/1 „overdone“ → verworfen.
+- Writer: Titel „A Tower Caught a Falling Rocket. First Try.“; Boxen „TALLER THAN / 20 STORIES“ + „A TOWER CAUGHT IT.“; 9 Szenen; Stimmung `wow`. Quellen NPR, Scientific American, The Engineer. Fakten-QA PASS (Hinweise optional: „ended up in the ocean“ verkürzt, „This rocket“ = 71-m-Booster).
+- Stimme Liam (multilingual-v2), Original-Timestamps.
+- Bilder: 10 Bilder (gpt-image-2.5/flare), alle G0 PASS, 0 verworfen. Keine Logos/Marken im Prompt.
+- Musik: stable-audio-3, Seed 371650267, loudnorm −16/−1. Prompt: „Epic modern space-launch documentary underscore, pulsing synth bass, tight electronic drums, shimmering pads and a soaring synth lead, 118 bpm … huge cinematic impact hit at 26.2 seconds, then a triumphant euphoric section … Instrumental only.“ (voll in extra.json)
+- Sound: op_slam; Whooshes dynamisch `wh_sharp / – / wh_reverse / wh_soft / – / whoosh_2 / – / wh_sharp`; im_metal auf Box 2; cl_snap + ri_reverse auf „catch“ mit ZAP „SNAP!“; 3 Szenen-SFX (Start-Rumble, Triebwerke, Fang).
+- Audit GRÜN 37,03 s: Whoosh-Peaks ±5 ms, im_metal +15 ms, cl_snap −5 ms; Bilder/Stimme/Musik/CTA enden bei 37,03 s.
+- Shotstack: 1 Render `298e1f28-45bb-49d1-b49e-d1c6cb733d4f`, 0,62 Credits. Übertragene Timeline maschinell gegen edit.json geprüft (nur Server-Defaults ergänzt).
+- Gemini G2: PASS, 0 Issues → kein qa_at.py-Fall.
+- Gemini G3: 6,5/10, Hook „maybe“. Stärkster Moment ~22 s (Triebwerke zünden am Turm). Swipe-Risiko: 6,5 s („Wikipedia-Modus“ Datum/Ort), 18,5 s (Ozean-Erklärung), 25,5 s (SNAP!-Sticker wirkt bei echtem Ereignis comichaft). Keine dieser Punkte rechtfertigt einen 2. Render.
+- Tags: auf Einzelwörter umgestellt (Mehrwort-Tags in Anführungszeichen riskant bei Leerzeichen-Trennung in Make).
+- Kosten grob: 10 Bilder à ~3–5 Cent, TTS, Musik, 3 SFX, Gemini (G0×10, G1, G2, G3 je < 1 Cent), Shotstack 0,62 Credits.
+- Lehren: (1) Bei Tech-Rekorden den Ausgang nicht im Hook verraten – Box 2 als offene Frage („CAN A TOWER CATCH IT?“) testen. (2) Datum/Ort-Einstieg kürzen, direkt in die Action. (3) ZAP-Lautwort bei realen Großereignissen sparsamer bzw. ernster wählen. (4) Bitcoin-Pizza laut G1 ausgelutscht – bei C (Geld & Internet) weniger bekannte Geschichten suchen.
