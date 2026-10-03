@@ -940,7 +940,9 @@
             5.898
           ]
         }
-      ]
+      ],
+      "sfx": "https://v3b.fal.media/files/b/0aace00a/5N_H0xzX_iKZ7-_UzNymK_normalized_audio.wav",
+      "sfx_vol": 0.27
     },
     {
       "narration": "But it didn't choose to shoot. A human still authorized weapon release.",
@@ -1747,7 +1749,9 @@
             4.551
           ]
         }
-      ]
+      ],
+      "sfx": "https://v3b.fal.media/files/b/0aace00a/c6TRgFk-cdIpg7wE43ah1_normalized_audio.wav",
+      "sfx_vol": 0.22
     }
   ],
   "keywords": {
@@ -1783,8 +1787,28 @@
     "image_generation_status": "7 unique images available; 1 base + 6 final edits; an earlier batch of 7 edit outputs was lost to parser bookkeeping and will be documented as a production mistake, not used",
     "image_checks": "all 7 unique images Gemini G0 PASS",
     "voice_status": "Liam generated; original ElevenLabs timestamps preserved",
-    "audio_status": "not generated yet",
+    "audio_status": "music + 2 scene SFX generated and loudnorm processed",
     "render_status": "not rendered",
-    "basis_commit_before_voice": "3b87b54ad0efe1bc6356f26868331264e34d7612"
-  }
+    "basis_commit_before_voice": "3b87b54ad0efe1bc6356f26868331264e34d7612",
+    "timeline_pre_audio": {
+      "length_s": 35.65,
+      "turn_s": 2.5,
+      "scene1_s": 4.12,
+      "scene_starts_s": [
+        4.12,
+        8.94,
+        13.69,
+        19.02,
+        23.66,
+        31.17
+      ],
+      "missile_word_approx_s": 16.37
+    },
+    "music_seed": 413128778,
+    "builder_sha": "ae3180396316fc309c57013ea192101f1e3c8bc7",
+    "audit_sha": "f8c637c9429a0d26d0d6003ef3633e8a340a2883",
+    "sfx_sha": "9480d980c268a03407f608c00ae6946bff3f83e7"
+  },
+  "music": "https://v3b.fal.media/files/b/0aace009/pfrh-RbbR_UWyiPpKHD6z_normalized_audio.wav",
+  "music_prompt": "Cinematic near-future military aviation documentary underscore, tense modern synth pulse, low strings, restrained brass, deep electronic percussion and subtle jet-engine texture, around 92 bpm. Start with immediate high-tech tension for the no-cockpit hook, build steadily through the explanation of uncrewed wingmen, rise into a strong dramatic impact and acceleration around 16.4 seconds for the missile live-fire moment, then briefly pull back for the human-authorization reveal around 19 to 24 seconds, rebuild with confident scale through production numbers around 24 to 31 seconds, and finish with an expansive futuristic aerial payoff through 35.7 seconds. Instrumental only. Negative: vocals, singing, choir, voice, lyrics, humming, speech, cheerful pop, comedy, EDM drop. 40.65 s. Seed 413128778."
 }
