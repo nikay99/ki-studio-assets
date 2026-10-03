@@ -1,0 +1,83 @@
+{
+ "hook": {
+  "image_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": ""
+  },
+  "image2_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": ""
+  }
+ },
+ "scenes": {
+  "0": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aace45a/86iQDEe8Vzzdf6bbffmbb_normalized_audio.wav",
+   "sfx_vol": 0.3
+  },
+  "1": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "2": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "3": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "4": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aace45b/WmEH5amEWdsQYhFLkAuYv_normalized_audio.wav",
+   "sfx_vol": 0.4
+  },
+  "5": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aace45b/U-VZZt5HKI6oqymAjYpKN_normalized_audio.wav",
+   "sfx_vol": 0.4
+  },
+  "6": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "1 figure, 2 arms, 2 hands"
+   }
+  },
+  "7": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  }
+ },
+ "top": {
+  "music": "https://v3b.fal.media/files/b/0aace468/KIPceYAr4tmNX6BSv3vkk_normalized_audio.wav",
+  "music_prompt": "Epic modern space-launch documentary underscore, pulsing synth bass, tight electronic drums, shimmering pads and a soaring synth lead, 118 bpm. Starts with a tense ticking synth pulse and a low rocket-like rumble for the first 5 seconds, builds momentum with driving electronic percussion from 5 to 20 seconds, tension rises sharply with a rising synth sweep and faster drums from 20 to 26 seconds, a huge cinematic impact hit at 26.2 seconds, then a triumphant euphoric section with bright soaring synth chords until the end, resolving warmly at 37 seconds. Instrumental only. | negative: vocals, singing, choir, voice, lyrics, humming, speech | 42 s | seed 371650267 | loudnorm -16"
+ }
+}

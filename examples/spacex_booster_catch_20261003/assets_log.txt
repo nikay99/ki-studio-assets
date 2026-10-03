@@ -1,0 +1,11 @@
+G1 req 01a10190-4631-73c0-8152-7f520b7fda66: pick A (SpaceX) hook 8 surprise 7; B Voyager 6/8; C Bitcoin-Pizza 3/1 overdone
+music job 01a10197-65f6-70f0-b7da-52649ac17ec6 (stable-audio-3, 42 s)
+sfx raw s1 launch rumble https://v3b.fal.media/files/b/0aace457/2ziQ25gBRdjoP54-osxtB_sound_effect.mp3
+sfx raw s5 engine roar https://v3b.fal.media/files/b/0aace457/8CYvPZdXo1j2MvEbxoq8o_sound_effect.mp3
+sfx raw s6 steel clang https://v3b.fal.media/files/b/0aace458/YVnHyGzKtAYLdLvPQewtP_sound_effect.mp3
+G0 s7 PASS req 01a10197-d10a-71a0-83ca-7d210171ed29 (1 figure, 2 arms, 2 hands)
+sfx norm s1 https://v3b.fal.media/files/b/0aace45a/86iQDEe8Vzzdf6bbffmbb_normalized_audio.wav
+sfx norm s5 https://v3b.fal.media/files/b/0aace45b/WmEH5amEWdsQYhFLkAuYv_normalized_audio.wav
+sfx norm s6 https://v3b.fal.media/files/b/0aace45b/U-VZZt5HKI6oqymAjYpKN_normalized_audio.wav
+G0 all other 9 images PASS (no prominent figures): s1 01a10198-788f hook 01a10198-998f image2 01a10198-bcd9 s2 01a10198-de31 s3 01a10198-fec9 s4 01a10199-2400 s5 01a10199-3cfb s6 01a10199-56cb s8 01a10199-783e
+music raw https://v3b.fal.media/files/b/0aace465/-bz7i_BQalB1aHEw73BcU_9A9jSQke.wav seed 371650267; norm https://v3b.fal.media/files/b/0aace468/KIPceYAr4tmNX6BSv3vkk_normalized_audio.wav
