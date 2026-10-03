@@ -1,0 +1,137 @@
+{
+  "topic": "FQ-44 Fury / FQ-42 Vengeance – uncrewed U.S. Air Force fighter aircraft, 2026",
+  "title": "This New Fighter Has No Cockpit",
+  "description": "The U.S. Air Force's new Collaborative Combat Aircraft are fighter-designated, semi-autonomous and built to fly with crewed jets. In 2026, the YFQ-44A even fired an AIM-120 during a live-fire test.\n\n🔔 Follow for the next true story.\n#shorts #technology #aviation #militarytech #futuretech",
+  "sources": [
+    {
+      "name": "U.S. Air Force – FQ-42 Vengeance / FQ-44 Fury names and production goals",
+      "url": "https://www.af.mil/News/Article-Display/Article/4600199/air-force-dubs-collaborative-combat-aircraft-fq-42-vengeance-fq-44-fury/"
+    },
+    {
+      "name": "U.S. Air Force – YFQ-44A live-fire AIM-120 test",
+      "url": "https://www.af.mil/News/Article-Display/Article/4545856/air-force-conducts-live-fire-test-for-collaborative-combat-aircraft-program/"
+    },
+    {
+      "name": "Defense News – Vengeance and Fury production/status coverage",
+      "url": "https://www.defensenews.com/industry/techwatch/2026/09/14/vengeance-and-fury-us-air-force-names-new-ccas-amid-ambitious-production-goal/"
+    }
+  ],
+  "mood": "thrill",
+  "voice_name": "Liam",
+  "hook": {
+    "narration": "This new fighter has no cockpit. And it already fired a missile.",
+    "image": "https://v3b.fal.media/files/b/0aacdf62/9iEEvevQCcnoV1yChjHAb_3tkuXTaj.png",
+    "image2": "https://v3b.fal.media/files/b/0aacdf86/cwRNJGQkFccsK9paOrmEH_Ibh8kveC.png",
+    "image_check": {
+      "gemini": "PASS",
+      "attempts": 1,
+      "issue": ""
+    },
+    "image2_check": {
+      "gemini": "PASS",
+      "attempts": 1,
+      "issue": ""
+    },
+    "turn_word": "And",
+    "line1": "NO\nCOCKPIT",
+    "line2": "FIRED A MISSILE."
+  },
+  "scenes": [
+    {
+      "narration": "It's the FQ-44 Fury, one of America's new uncrewed fighter aircraft.",
+      "image": "https://v3b.fal.media/files/b/0aacdf88/d5azBct5K7uoGC0NEPcHm_7BeI0FKj.png",
+      "image_check": {
+        "gemini": "PASS",
+        "attempts": 1,
+        "issue": ""
+      },
+      "focus": "center"
+    },
+    {
+      "narration": "Built to fly with crewed jets, it uses semi-autonomous mission software.",
+      "image": "https://v3b.fal.media/files/b/0aacdf8b/KFAyejwa7H9tzItZpjn7E_KtxPzl79.png",
+      "image_check": {
+        "gemini": "PASS",
+        "attempts": 1,
+        "issue": ""
+      },
+      "focus": "center"
+    },
+    {
+      "narration": "In July 2026, its prototype fired an AIM-120 at a digital target.",
+      "image": "https://v3b.fal.media/files/b/0aacdf62/9iEEvevQCcnoV1yChjHAb_3tkuXTaj.png",
+      "image_check": {
+        "gemini": "PASS",
+        "attempts": 1,
+        "issue": ""
+      },
+      "focus": "center"
+    },
+    {
+      "narration": "But it didn't choose to shoot. A human still authorized weapon release.",
+      "image": "https://v3b.fal.media/files/b/0aacdf8e/uT--i5VwuwNgfvhgzUcgU_C4NRQHsW.png",
+      "image_check": {
+        "gemini": "PASS",
+        "attempts": 1,
+        "issue": ""
+      },
+      "focus": "top"
+    },
+    {
+      "narration": "Both Fury and FQ-42 Vengeance entered production, with 500 combat-ready CCAs targeted by 2032.",
+      "image": "https://v3b.fal.media/files/b/0aacdf91/HMUuIORszw369rhCqTzH2_0w07qt2X.png",
+      "image_check": {
+        "gemini": "PASS",
+        "attempts": 1,
+        "issue": ""
+      },
+      "focus": "center"
+    },
+    {
+      "narration": "The next fighter wingman may carry missiles, autonomy, and no cockpit at all.",
+      "image": "https://v3b.fal.media/files/b/0aacdf94/TwADMWtK6_wwp43J6ocRC_7QEjdHoC.png",
+      "image_check": {
+        "gemini": "PASS",
+        "attempts": 1,
+        "issue": ""
+      },
+      "focus": "center"
+    }
+  ],
+  "keywords": {
+    "red": [
+      "MISSILE",
+      "SHOOT"
+    ],
+    "yellow": [
+      "FQ-44",
+      "2026",
+      "500",
+      "2032",
+      "NO COCKPIT"
+    ]
+  },
+  "cta": "FOLLOW FOR THE NEXT TRUE STORY",
+  "sound": {
+    "opener": "op_bass",
+    "whooshes": [
+      "whoosh_2",
+      "whoosh_3",
+      "wh_reverse"
+    ],
+    "impact": "im_metal",
+    "climax": null,
+    "riser": null,
+    "timeskip": null
+  },
+  "production_checkpoint": {
+    "created_by": "ChatGPT",
+    "basis_commit": "200308e3747f2dadfc616ad0aa802fe1eb253b0f",
+    "facts_verified": true,
+    "image_generation_status": "7 unique images available; 1 base + 6 final edits; an earlier batch of 7 edit outputs was lost to parser bookkeeping and will be documented as a production mistake, not used",
+    "image_checks": "all 7 unique images Gemini G0 PASS",
+    "voice_status": "not generated yet",
+    "audio_status": "not generated yet",
+    "render_status": "not rendered"
+  }
+}
