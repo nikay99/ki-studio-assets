@@ -101,3 +101,19 @@ Format:
 - Gemini G3: 6/10; Hook "maybe"; Missile-Szene bei ~14 s staerkster Moment. Hinweise: statischer Comic/Pan-and-Scan-Look, Human-Authorization-Teil und Produktionszahlen koennen fuer breite Zielgruppe trockener wirken. G3 behauptete faelschlich, Juli 2026 sei Zukunft; aktuelles Datum ist 03.10.2026, daher als Fehlbeobachtung verworfen. Keine G3-Idee hat einen zweiten Render gerechtfertigt.
 - Upload: Make v6 erfolgreich; YouTube-Modul bestaetigt `uploadStatus=uploaded`, `privacyStatus=private`, `containsSyntheticMedia=true`.
 - Lehre: Modern-Tech-Themen funktionieren inhaltlich stark, aber bei G3 lag die groesste Retention-Chance in sichtbarer Action (Missile-Moment). Bei kuenftigen Future-Tech-Shorts frueher konkrete Action/Capability zeigen und Beschaffungszahlen nur verwenden, wenn sie den Payoff staerken.
+
+
+## 2026-10-03 – FQ-44 Fury render v2 correction
+- Anlass: Nutzer bemerkte im ersten privaten Upload um ~28 s sichtbare Subtitle-Box-Ueberlappung/Auto-Wrap bei `500 COMBAT-READY` sowie zu laute/repetitive Whooshes.
+- Builder-Fix: konservativer Auto-Join fuer kurze Woerter (`CAP_JOIN_MAXCH=12`), damit grosse Keyword-Captions nicht in mehrzeilige Wraps gedrueckt werden. Audit ergaenzt um harten Wrap-Risiko-Check fuer hervorgehobene 145px-Captions.
+- Sound-Fix: Whooshes pro Szene dynamisch statt auf jedem Cut. FQ-44 v2: `wh_soft / none / wh_sharp / wh_paper / none / wh_deep` mit reduzierten Multiplikatoren `[0.35,0,0.55,0.25,0,0.45]`.
+- Kritischer Patch-Fehler waehrend Implementierung: erste GitHub-Patch-Version schrieb literal `\n` in Python-Quelltext und liess Teile des dynamischen Whoosh-Patches inkonsistent. Vor Render 2 entdeckt; kein Render damit gestartet. Repo-Code danach korrigiert und lokal/Repo nach Normalisierung 1:1 verifiziert.
+- Regression: FQ-44 v2 Build/Audit GRUEN. Vollstaendige Cross-Example-Regression wurde wegen lokal veraltetem SFX-Cache fuer Violet nicht komplett abgeschlossen; das war kein Builder-Fehler und wurde nicht als bestandene Vollregression behauptet.
+- Caption-Ergebnis im finalen Edit: `WITH 500` -> `COMBAT-READY` -> `CCAS`, jeweils separat; keine Ueberlappung.
+- Shotstack direct connector war waehrend v2 nicht als direkte Chat-Aktion geladen. Fuer Render 2 wurde deshalb ein separater temporaerer Make-On-Demand-Runner mit der bereits autorisierten Verbindung `Shotstack KI-Studio` erstellt; bestehende Produktionsszenarien wurden nicht veraendert. Der Runner wurde nach dem Render deaktiviert.
+- Erster Shotstack-POST ueber den Runner wurde mit HTTP 400 abgelehnt, weil Make den Body als `[object Object]` serialisierte; kein Render gestartet. Danach Body als JSON-Text mit `Content-Type: application/json` gesendet.
+- Finaler Render v2: `2b55f3f3-51a7-4902-98e2-a80df72a8253`, 35,65 s, 0,59 Shotstack-Credits.
+- G2 auf Render v2: PASS, 0 Issues. Extra gezielte QC nur auf die beiden Nutzerfehler: `layout_fixed=true`, `audio_fixed=true`; kein Caption-Wrap/Overlap im Bereich 26-31 s, Whooshes variiert/leiser, zwei Cuts bewusst ohne Whoosh.
+- Nutzer hat Render v2 explizit freigegeben.
+- Privater Upload v2: Make-Execution `93784db1257f4f6fa64f8e5cfe6e7276`, YouTube-ID `FiQNl8heBiQ`, `uploadStatus=uploaded`, `privacyStatus=private`, `containsSyntheticMedia=true`.
+- Alter privater v1-Upload `3-i1ExbPDQs` bleibt privat und gilt als superseded; `published.json` verweist jetzt auf v2 als finalen Stand.
