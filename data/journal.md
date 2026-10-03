@@ -85,3 +85,19 @@ Format:
 - Upload: Make v6 erfolgreich; YouTube-Modul bestaetigt `uploaded`, `privacyStatus=private`, `containsSyntheticMedia=true`.
 - Fehler/Transparenz: erster lokaler Builder-Versuch scheiterte nur an einem Transkriptionsfehler meiner lokalen Repo-Code-Kopie (turn-Zuweisung). Lokal korrigiert; gemeinsamer Repo-Builder/Design nicht geaendert. Erster G2/G3-Aufruf wurde wegen fehlendem Pflichtfeld `video_urls` mit HTTP 422 vor QA-Verarbeitung abgelehnt; danach korrekt mit aktuellem Schema ausgefuehrt. Keine dieser Pannen wurde als bestandene Pruefung gezaehlt.
 - Kosten dieses Abschlusslaufs, soweit direkt bestimmbar: Fal ca. $0,16 (TTS ca. $0,0505; Stable Audio $0,0376; Szenen-SFX ca. $0,0148; Loudnorm ca. $0,0072; Scale-Video ca. $0,0302; erfolgreiche OpenRouter-Pruefungen inkl. vorherigem G1-Umweg ca. $0,0231). Shotstack 0,5 Credits; Make 4 Credits. Keine Bildgenerierung in diesem Abschlusslauf.
+
+
+## 2026-10-03 – FQ-44 Fury / FQ-42 Vengeance – cockpitless CCA (ChatGPT)
+- Ergebnis: hochgeladen (privat), 35,65 s, Hook + 6 Szenen, Render `af21354d-5145-4e17-8d06-64bf6878f6e2`, Make-Execution `0567a885f7424bbcadba591902eac5d6`, YouTube-ID `3-i1ExbPDQs`.
+- Themenstrategie: moderner Future-Tech/Military-Short statt historischer WTF-Story. Hook: "This new fighter has no cockpit. And it already fired a missile."
+- Fakten: aktuelle U.S.-Air-Force-Quellen belegen YFQ-44A AIM-120 Live-Fire gegen digitales Ziel (15.07.2026), verpflichtende menschliche Waffenfreigabe, offizielle Namen FQ-42 Vengeance/FQ-44 Fury, Increment-1-Produktion von 150 Flugzeugen und Ziel 500 combat-ready semi-autonomous CCAs bis 2032. Defense News als dritte Quelle in der Spec.
+- Bilder: 7 eindeutige finale Comic-Bilder verwendet, alle Gemini G0 PASS. Ein früherer Batch von 7 Edit-Ausgaben ging durch Parser-/Bookkeeping-Fehler verloren und wurde nicht verwendet; als Produktionsfehler dokumentiert.
+- Voice: Liam, ElevenLabs multilingual-v2; Original-Timestamps in der Spec erhalten.
+- Musik/SFX: near-future military aviation underscore, Seed 413128778; opener op_bass; whooshes whoosh_2/whoosh_3/wh_reverse; impact im_metal; 2 eigene Szenen-SFX (Missile Live-Fire + finaler Jet/Air-Movement), loudnorm.
+- Builder/Audit: deterministischer Builder/Audit-Stand aus Repo verwendet. Integritätsprüfung vor Upload: lokal materialisierte Dateien hatten andere Git-Blob-Hashes wegen Formatierung/Statement-Gruppierung, aber nach normalisierter Logikprüfung Builder und Audit vollständig gleich; alle verwendeten SFX-Records exakt gleich zum Repo. Audit GRUEN: 35,65 s; 855 Frames; 0 schwarz/falsch; Whoosh-Peaks [0,-1,-5,0,-1,+5] ms; Impact +15 ms; Stimmenluecken [0,10,0,01,0,01,0,01,0,01,0,01] s; Bilder/Stimme/Musik/CTA Ende 35,65 s.
+- Unabhaengige Fakten-/Text-QA: PASS, keine Issues.
+- Shotstack: Render 1/2 erfolgreich, PAYG, 0,59 Credits. Kein zweiter Render.
+- Gemini G2: PASS, 0 Issues; deshalb kein qa_at.py-Fall.
+- Gemini G3: 6/10; Hook "maybe"; Missile-Szene bei ~14 s staerkster Moment. Hinweise: statischer Comic/Pan-and-Scan-Look, Human-Authorization-Teil und Produktionszahlen koennen fuer breite Zielgruppe trockener wirken. G3 behauptete faelschlich, Juli 2026 sei Zukunft; aktuelles Datum ist 03.10.2026, daher als Fehlbeobachtung verworfen. Keine G3-Idee hat einen zweiten Render gerechtfertigt.
+- Upload: Make v6 erfolgreich; YouTube-Modul bestaetigt `uploadStatus=uploaded`, `privacyStatus=private`, `containsSyntheticMedia=true`.
+- Lehre: Modern-Tech-Themen funktionieren inhaltlich stark, aber bei G3 lag die groesste Retention-Chance in sichtbarer Action (Missile-Moment). Bei kuenftigen Future-Tech-Shorts frueher konkrete Action/Capability zeigen und Beschaffungszahlen nur verwenden, wenn sie den Payoff staerken.
