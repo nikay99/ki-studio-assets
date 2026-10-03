@@ -1931,6 +1931,20 @@
         "Propeller sequence strongest moment.",
         "Olympic/loop ideas deferred: advisory only; would require content/design change and unnecessary second render."
       ]
+    },
+    "make_execution": "a01565e1c72d462fbf6137b65de4144a",
+    "make_status": "success",
+    "youtube_id": "8FaUaimY1gU",
+    "youtube_privacy": "private",
+    "contains_synthetic_media": true,
+    "definition_of_done": {
+      "facts_2plus_sources": true,
+      "all_used_images_g0_pass": true,
+      "deterministic_audit_green": true,
+      "independent_qa_pass": true,
+      "gemini_g2_pass": true,
+      "private_youtube_upload_success": true,
+      "repo_documented": true
     }
   }
 }
