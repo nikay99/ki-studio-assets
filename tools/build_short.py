@@ -20,7 +20,7 @@ RED, YEL, BLK, WHT = '#E63946', '#F4D35E', '#000000', '#FFFFFF'
 VO = 0.15          # Stimme startet bei 0,15 s (Punch davor)
 HOOK_GAP = 0.10    # Luft zwischen Hook-Satz und Szene 1
 CAP_EARLY = 0.05   # Untertitel 0,05 s vor dem Wort
-CAP_MAXCH = 16     # max. Zeichen je Untertitel (Bangers 145 ~51 px/Zeichen + 3 Spacing, Box 990 px inkl. Stroke)
+CAP_MAXCH = 16     # max. Zeichen fuer normale Untertitel\nCAP_JOIN_MAXCH = 12 # konservativer Join: verhindert Auto-Wrap bei grossen Keyword-Captions
 OVL = 0.05         # Ueberlappung der unteren Bildspur A
 SX, SY = 0.012, -0.008  # harter Schatten der Boxen
 r2 = lambda x: round(x + 0.0, 2)
@@ -74,11 +74,11 @@ def chunks_of(ws, d):
         txt, st, en = ws[k]; idx = [k]
         # zusammenziehen nur, wenn der Untertitel danach noch in die 990-px-Box passt (sonst Umbruch/abgeschnitten)
         if (len(re.sub(r'\W', '', txt)) <= 3 and k + 1 < len(ws) and not re.search(r'[.,;:!?]$', txt)
-                and len(clean(txt + ' ' + ws[k + 1][0])) <= CAP_MAXCH):
+                and len(clean(txt + ' ' + ws[k + 1][0])) <= CAP_JOIN_MAXCH):
             txt, en = txt + ' ' + ws[k + 1][0], ws[k + 1][2]; idx.append(k + 1); k += 1
         elif (len(re.sub(r'\W', '', txt)) <= 3 and k + 1 < len(ws) and ch
                 and not re.search(r'[.,;:!?]$', txt) and not re.search(r'[.,;:!?]$', ch[-1]['txt'])
-                and len(clean(ch[-1]['txt'] + ' ' + txt)) <= CAP_MAXCH):
+                and len(clean(ch[-1]['txt'] + ' ' + txt)) <= CAP_JOIN_MAXCH):
             # passt nicht nach vorne -> an das vorherige Wort haengen statt allein zu flackern
             ch[-1]['txt'] += ' ' + txt; ch[-1]['en'] = en; ch[-1]['idx'].append(k); k += 1; continue
         ch.append({'txt': txt, 'st': st, 'en': en, 'idx': idx}); k += 1
@@ -131,7 +131,7 @@ def audio(src, start, length, vol=1, effect=None):
 
 def pick_sounds(spec):
     """spec.sound waehlt pro Kategorie aus dem Pool (tools/sfx.json); fehlend = defaults."""
-    sel = dict(SFX['defaults']); sel.update({k: v for k, v in (spec.get('sound') or {}).items() if k in sel})
+    raw = spec.get('sound') or {}\n    sel = dict(SFX['defaults']); sel.update({k: v for k, v in raw.items() if k in sel})\n    sel['whoosh_vols'] = raw.get('whoosh_vols', [])
     want = {'opener': 'opener', 'impact': 'impact', 'climax': 'climax', 'timeskip': 'timeskip', 'riser': 'riser'}
     for k, c in want.items():
         n = sel.get(k)
@@ -255,7 +255,7 @@ def build(spec):
         voice.append(audio(s['voice'], s['_t'], r2(s['_d'] - 0.01)))
         if s.get('sfx'):
             scene_sfx.append(audio(s['sfx'], s['_t'], r2(s['_d'] - 0.01), s.get('sfx_vol', 1)))
-        wh.append(sfx_clip(SND['whooshes'][k % len(SND['whooshes'])], s['_t']))
+        wname = SND['whooshes'][k % len(SND['whooshes'])]\n        if wname is not None:\n            wc = sfx_clip(wname, s['_t'])\n            vols = SND.get('whoosh_vols') or []\n            mult = float(vols[k]) if k < len(vols) else 1.0\n            wc['asset']['volume'] = round(wc['asset']['volume'] * mult, 3)\n            wh.append(wc); wh_targets.append(s['_t'])
 
     # --- Hits
     hits = [sfx_clip(SND['impact'], CUT, align_peak=snd(SND['impact'])[1]['peak'] > 0.05)]
@@ -329,7 +329,7 @@ def build(spec):
     edit = {'timeline': {'background': BLK, 'fonts': [{'src': FONT_URL}], 'tracks': tracks},
             'output': {'format': 'mp4', 'size': {'width': 1080, 'height': 1920}, 'fps': 24}}
     meta = {'END': END, 'CUT': CUT, 'S1': S1, 'Z': Z, 'cuts': cuts, 'sound': SND,
-            'scene_starts': [s['_t'] for s in scs],
+            'scene_starts': [s['_t'] for s in scs], 'whoosh_targets': wh_targets,
             'track_names': [n for n, c in zip(names, order) if c],
             'card': [min(a for a, _ in card_span)] if card else None}
     return edit, meta
