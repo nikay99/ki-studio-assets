@@ -1,0 +1,89 @@
+{
+ "hook": {
+  "image_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "4 office workers, each 2 arms, hands ok"
+  },
+  "image2_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures (AD)"
+  }
+ },
+ "scenes": {
+  "0": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "1": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "1 man, 1 arm visible, ok"
+   }
+  },
+  "2": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacea83/Qz8JzQUERKumsNENfh7JX_normalized_audio.wav",
+   "sfx_vol": 0.7
+  },
+  "3": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "4": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "5": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacea83/5ILi_pnW_RWNjAWQ56sgJ_normalized_audio.wav",
+   "sfx_vol": 0.8
+  },
+  "6": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": ""
+   }
+  },
+  "7": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  }
+ },
+ "top": {
+  "music": "https://v3b.fal.media/files/b/0aacea8b/9sHU7rwY2LChDvbQDBVYE_normalized_audio.wav",
+  "music_prompt": "Instrumental tense finance-thriller underscore (pizzicato, ticking, pulsing synth bass, piano stabs, 110 BPM), brass hit 26.5 s, reversal 32 s, resolve 40 s | negative: vocals, singing, choir, voice, lyrics, humming, speech | 45 s | seed 343457774 | loudnorm -16",
+  "music_vol": 0.4
+ }
+}

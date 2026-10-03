@@ -175,7 +175,7 @@
   "shotstack_render": "84d91bb1-d2a5-4a51-a80e-dda60691f742",
   "make_execution": "6e30cdaebd924692a2427219c820e03e",
   "publish_at": "2026-10-06T12:00:00-04:00",
-  "status": "privat hochgeladen mit publish_at Di 06.10. 18:00 Wien",
+  "status": "scheduled",
   "sound": {
    "opener": "punch",
    "whooshes": [
@@ -190,6 +190,34 @@
    "timeskip": null
   },
   "rejected_images": 0,
-  "spec": "examples/voyager1_fix_20261003"
+  "spec": "examples/voyager1_fix_20261003",
+  "youtube_id": "Txd4uHgKexw"
+ },
+ {
+  "date": "2026-10-03",
+  "topic": "Citibank überweist im Aug 2020 versehentlich ~900 Mio. $ (Revlon-Gläubiger); Urteil Feb 2021 behalten, 2nd Circuit kippt Sep 2022",
+  "pillar": "C",
+  "title": "A Bank Sent $900 Million by Mistake. A Judge Said Keep It.",
+  "shotstack_render": "3a55f71b-0329-401e-bed2-169e69061201",
+  "make_execution": "7644d96b212d420f90749f0e1705e2f9",
+  "youtube_id": "SwOBCjJqhro",
+  "publish_at": "2026-10-09T12:00:00-04:00",
+  "status": "scheduled",
+  "upload_file": "Render + lokaler Limiter (alimiter 0.708, Video-Stream kopiert), gehostet auf Branch media-tmp",
+  "sound": {
+   "opener": "op_bass",
+   "whooshes": [
+    "whoosh_2",
+    "wh_sharp",
+    "whoosh_3",
+    "wh_wind"
+   ],
+   "impact": "impact_box",
+   "climax": null,
+   "riser": null,
+   "timeskip": null
+  },
+  "rejected_images": 0,
+  "spec": "examples/citibank_900m_20261003"
  }
 ]

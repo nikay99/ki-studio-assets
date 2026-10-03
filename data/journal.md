@@ -163,3 +163,12 @@ Format:
 - Art Director: 10 Bilder in einem Versuch, G0 PASS (Menschen nur von hinten, Hände außerhalb). Kein ZAP, keine Karte (kein echter Knall/Zeitsprung).
 - Sound: punch / whoosh_1, wh_deep, wh_soft, wh_paper / im_stamp; Szenen-SFX Funkstörung (s1, 0.5) und klares Telemetrie-Signal (s8, 0.8). Musik stable-audio-3 seed 63567379, Release bei 30 s, music_vol 0.4. Stimmen direkt nach TTS auf −16 LUFS (Lehre aus SpaceX).
 - Ergebnis: 1 Render (84d91bb1), Preflight GRÜN beim ersten Mal (−15.1 LUFS), G2 PASS inkl. Niklas-Regeln. Upload privat mit publish_at 2026-10-06T12:00-04:00.
+- Nachtrag Voyager: YouTube-ID Txd4uHgKexw, Termin 2026-10-06T16:00Z bestätigt (vidIQ).
+
+## 2026-10-03 – Citibank 900 Mio. (Säule C, Fr 09.10.)
+- Showrunner: Citibank/Revlon-Fehlüberweisung Aug 2020 (~900 Mio. $ statt ~7,8 Mio. Zinsen), Urteil Feb 2021 „behalten“, 2nd Circuit kippt Sep 2022. Quellen Torys, Bloomberg Law, Business Standard. Stimme Jessica, mood curious.
+- Writer: Hook „A bank sent nine hundred million dollars by mistake. And a judge said: keep it.“ Pointe: „The mistake took one click. Getting the money back took two years.“ CTA „WOULD YOU GIVE IT BACK?“
+- Art Director: 10 Bilder in einem Versuch, G0 PASS (Hook 4 Büroleute, s2 eine Figur).
+- Sound: op_bass / whoosh_2, wh_sharp, whoosh_3, wh_wind / impact_box; Szenen-SFX Klick (s3, 0.7) und Hammer (s6, 0.8). Musik stable-audio-3 seed 343457774 (Finanz-Thriller, Bruch bei 32 s), music_vol 0.4. Nur drei Opener nutzbar (op_flash gesperrt) – Wiederholung nach 3 Videos unvermeidbar.
+- Ergebnis: 1 Render (3a55f71b, 0 Diffs). Preflight ROT: True Peak +0,1 dBTP bei 26,5 s (Hammer-SFX 0.8 + Stimme + Musik), −0,4 bei 3,5 s (impact_box). Fix ohne 2. Render: lokal `alimiter limit=0.708`, Video-Stream kopiert → Preflight GRÜN (−16,1 LUFS, TP −2,8). G2 PASS, alle Niklas-Regeln ja. Upload privat mit publish_at 2026-10-09T12:00-04:00, YouTube SwOBCjJqhro, Termin bestätigt.
+- Lehre: Szenen-SFX mit sfx_vol ≤ 0.5 ansetzen, wenn sie auf Stimme + Musik fallen; fal-CDN-Upload und GitHub-Branch-Löschen sind aus der Shell gesperrt (Datei lag auf Branch media-tmp).
