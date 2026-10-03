@@ -1,56 +1,92 @@
 {
   "topic": "Humanoid robots in real automotive manufacturing — BMW / Figure 02 and Figure 03 (2025–2026)",
-  "status": "PARTIAL_BLOCKED_BEFORE_ASSET_GENERATION",
+  "status": "PARTIAL_ABORTED_COST_GUARD",
   "producer": "ChatGPT",
   "date": "2026-10-03",
   "candidate_hook": "These humanoid robots aren't demos anymore. One helped build 30,000 BMWs.",
   "sources": [
     {
-      "name": "BMW Group — Premiere in Leipzig / Physical AI",
-      "url": "https://www.bmwgroup.com/de/news/allgemein/2026/humanoide-roboter-in-leipzig.html",
-      "notes": "BMW says Figure 02 supported production of >30,000 BMW X3 over ten months, moved >90,000 components, ~1,250 operating hours and ~1.2M steps; Leipzig AEON pilot."
+      "name": "BMW Group — First humanoid robot introduced in Plant Leipzig",
+      "url": "https://www.bmwgroup.com/en/news/general/2026/humanoid-robot-in-leipzig.html",
+      "notes": "Figure 02: >30,000 X3, >90,000 components, ~1,250 operating hours, ~1.2M steps over ten months."
     },
     {
       "name": "BMW Group PressClub — Figure 03 project in Spartanburg",
-      "url": "https://www.press.bmwgroup.com/global/article/detail/T0458778EN/bmw-group-advances-the-use-of-physical-ai-in-production-with-figure-03-project-%20...",
-      "notes": "June 25 2026: Figure 03 demonstrated a new assembly/logistics use case; predecessor Figure 02 supported >30,000 X3."
+      "url": "https://www.press.bmwgroup.com/global/article/detail/T0458778EN/bmw-group-advances-the-use-of-physical-ai-in-production-with-figure-03-project-in-spartanburg?language=en",
+      "notes": "Figure 03 project/demonstration for complex sequencing logistics; development ongoing."
     },
     {
-      "name": "Figure — F.03 Arrives at BMW",
-      "url": "https://www.figure.ai/news/f-03-at-bmw",
-      "notes": "June 30 2026: Figure 03 logistics workflow at BMW; Figure states Figure 02 contributed to assembly of 30,000 cars."
+      "name": "Ars Technica — humanoid robot reality / BMW deployment",
+      "url": "https://arstechnica.com/ai/2026/05/the-internet-cant-stop-watching-figure-ais-humanoid-robots-handling-packages/",
+      "notes": "Independent reporting on Figure 02 real-world BMW deployment and 30,000-X3 claim."
+    },
+    {
+      "name": "Figure — F.02 Contributed to the Production of 30,000 Cars at BMW",
+      "url": "https://www.figure.ai/news/production-at-bmw",
+      "notes": "Primary source for hardware learnings; forearm identified as top hardware failure point."
     }
   ],
   "g1": {
-    "status": "INCOMPLETE_BLOCKED",
-    "completed_call": {
-      "model": "google/gemini-3.8-flash",
-      "request_id": "01a1013a-6668-7c90-be10-9be3dac86eec",
-      "result_summary": "Compared X-59, Liberty Lifter, humanoid factory robotics. Chose humanoid robotics; audience interest 9.5/10, visuals 9/10. X-59 8/8.5; Liberty Lifter 7/7.5."
+    "status": "PASS_COMPLETE",
+    "model": "google/gemini-3.8-flash",
+    "request_id": "01a10155-6f4f-77c1-aaa9-09dcc3cbd948",
+    "scores": {
+      "humanoid_factory": {
+        "hook": 8,
+        "surprise": 7,
+        "tech_wow": 9,
+        "relevance_now": 9,
+        "visual": 9,
+        "shareability": 8,
+        "overdone_risk": 7
+      },
+      "x59": {
+        "note": "Evaluated in G1; not selected."
+      },
+      "liberty_lifter": {
+        "hook": 8,
+        "surprise": 8,
+        "tech_wow": 9,
+        "relevance_now": 6,
+        "visual": 8,
+        "shareability": 8,
+        "overdone_risk": 3
+      }
     },
-    "missing_required_dimensions": [
-      "Scroll-Stop/Hook explicit score",
-      "Surprise/Wow Factor explicit score",
-      "Technology Wow Factor explicit score",
-      "Relevance Now explicit score",
-      "Shareability explicit score",
-      "Overdone-Risk explicit score",
-      "sharper fact-safe hook per candidate"
-    ],
-    "error": "Follow-up Gemini G1 requests attempting to collect the mandatory dimensions were blocked by the execution environment's safety checks before model execution. They are not counted as G1."
+    "decision": "Continue humanoid factory checkpoint: strongest combination of verified present-day capability, relevance and visuals."
   },
   "production_checkpoint": {
-    "stage": "G1",
-    "paid_asset_generation_started": false,
-    "images_generated": 0,
-    "voice_generated": false,
+    "stage": "ASSET_GENERATION_ABORTED",
+    "paid_asset_generation_started": true,
+    "voice_generation": "8 original TTS calls completed; scenes 4-6 were re-run once because the first batched tool output was truncated before their URLs/timestamps could be safely captured. Original timestamps were not fabricated.",
+    "images": "1 anchor text-to-image + 8 edit jobs completed. Anchor URL captured and G0 PASS. Due a response-parsing mistake, the 8 edit result URLs were not retained; only the reference URL was extracted from their recipes.",
+    "anchor_image": "https://v3b.fal.media/files/b/0aace2b4/5rTlrq4zamhK0SLx5NbtG_4DpwZCVA.png",
+    "anchor_g0": {
+      "status": "PASS",
+      "request_id": "01a10158-21e6-7cf0-9261-c0125094e8f6"
+    },
+    "image_pricing_checked": "Current fal pricing returned $1/unit for GPT Image 2.5 Flare text-to-image/edit. Re-generating 8 lost edit outputs would add about $8 after about $9 of image jobs had already been submitted.",
     "music_generated": false,
     "sfx_generated": false,
     "builder_run": false,
     "audit_run": false,
     "render_count": 0,
     "uploaded": false,
-    "blocker": "Mandatory G1 could not be completed in this environment. Per production rules, stopped before paid asset generation/render/upload.",
-    "coexistence": "Read latest main immediately before this write; latest commit observed 4671e96625502a1e4eadad916a2b5a6634a4215b. No shared data files modified in this checkpoint."
+    "blocker": "Cost guard triggered. Continuing would require re-running eight $1 image edits solely to recover outputs lost by tool-response parsing. Per skill rule to keep usage sparse and abort when costs run out of hand, production stopped before music/SFX/builder/render/upload.",
+    "coexistence": "Fresh main observed before write; no published.json change because no upload occurred."
+  },
+  "script": {
+    "hook": "This humanoid robot helped build 30,000 BMWs. And BMW is already testing its replacement.",
+    "scenes": [
+      "In 2025, BMW put Figure 02 on a real X3 line in South Carolina.",
+      "It positioned sheet-metal parts for welding, five days a week.",
+      "In ten months: 90,000 parts, 1,250 hours, and 1.2 million steps.",
+      "The test exposed weaknesses too. Figure says its forearm was the biggest hardware failure point.",
+      "Those lessons shaped Figure 03, now back at BMW for harder logistics work.",
+      "It sorts mixed parts into the exact sequence assembly workers need.",
+      "The future didn't arrive with a robot uprising. It arrived one repetitive job at a time."
+    ],
+    "title": "This Robot Helped Build 30,000 BMWs",
+    "description": "A humanoid robot spent months on a real BMW production line, moving tens of thousands of parts. Now its successor is being tested on harder factory logistics. 🔔 Follow for the next true story. #shorts #robotics #AI #BMW #futuretech"
   }
 }
