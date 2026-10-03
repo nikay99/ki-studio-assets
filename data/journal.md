@@ -117,3 +117,15 @@ Format:
 - Nutzer hat Render v2 explizit freigegeben.
 - Privater Upload v2: Make-Execution `93784db1257f4f6fa64f8e5cfe6e7276`, YouTube-ID `FiQNl8heBiQ`, `uploadStatus=uploaded`, `privacyStatus=private`, `containsSyntheticMedia=true`.
 - Alter privater v1-Upload `3-i1ExbPDQs` bleibt privat und gilt als superseded; `published.json` verweist jetzt auf v2 als finalen Stand.
+
+
+## 2026-10-03 – Humanoid factory robotics / BMW Figure 02→03 (ChatGPT, fortgesetzter Checkpoint)
+- Ergebnis: **abgebrochen vor Builder/Render/Upload (Kosten-Guard)**. Kein YouTube-Upload.
+- G1: vollständig mit Gemini 3.8 Flash (Request 01a10155-6f4f-77c1-aaa9-09dcc3cbd948). Humanoid Factory gewählt: Hook 8/10, Surprise 7, Tech-Wow 9, Relevance 9, Visual 9, Shareability 8, Overdone-Risk 7. Liberty Lifter ungewöhnlicher, aber Relevance 6; X-59 nicht gewählt.
+- Fakten: BMW + Ars Technica + Figure geprüft. Figure 02 unterstützte >30.000 X3, bewegte >90.000 Teile, ~1.250 h, ~1,2 Mio. Schritte; Figure 03 ist 2026 im BMW-Projekt für komplexere Sequenzierungslogistik. Forearm-Failure-Point stammt ausdrücklich von Figure.
+- Writer: Titel „This Robot Helped Build 30,000 BMWs“; Hook „This humanoid robot helped build 30,000 BMWs. And BMW is already testing its replacement.“; 7 Szenen, curious → Jessica.
+- Voice: 8 ElevenLabs multilingual-v2 Calls abgeschlossen; Szenen 4–6 einmal erneut erzeugt, weil die erste Batch-Ausgabe im Tool-Result gekürzt wurde und URLs/Timestamps deshalb nicht sicher übernommen werden konnten. Keine Timestamps erfunden.
+- Bilder: 1 GPT Image 2.5 Flare Anchor + 8 Flare-Edit-Jobs tatsächlich ausgeführt. Anchor https://v3b.fal.media/files/b/0aace2b4/5rTlrq4zamhK0SLx5NbtG_4DpwZCVA.png, Gemini-G0 PASS (01a10158-21e6-7cf0-9261-c0125094e8f6). Fehler: beim Batch wurden aus den Edit-Responses versehentlich die Referenz-URLs statt der result.images-URLs extrahiert; die 8 erzeugten Result-URLs waren danach nicht mehr abrufbar.
+- Kostenproblem: aktuelle fal-Preisabfrage meldete GPT Image 2.5 Flare text-to-image/edit mit $1 pro Unit. Nach bereits ~9 Bild-Jobs hätte reine Wiederherstellung durch 8 Neu-Edits weitere ~8 USD gekostet. Deshalb Kosten-Guard statt Doppelgenerierung.
+- Nicht durchgeführt: Musik, Szenen-SFX, vollständige Spec mit Original-Timestamps, Builder, Audit, unabhängige QA, Shotstack-Render, G2/G3, Make/YouTube-Upload. Nichts davon als PASS gewertet.
+- Lehre: Bei teuren Batch-Generierungen Result-URL + request_id im selben Tool-Call persistieren/ausgeben; nie per Regex die erste URL aus der Recipe nehmen.
