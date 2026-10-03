@@ -67,3 +67,21 @@ Format:
 - Daily-Task: Schritt 0 = add_repo push + `git push --dry-run`, frueh pushen, bei Fehler "PUSH FEHLGESCHLAGEN" + format-patch.
 - Shotstack laeuft auf Plan "payg" (Render 02.10. abends) – freeTrial-/Wasserzeichen-Hinweis erledigt.
 - Nachtrag 20:30 – Kalibrierung Koepcke (Render fe071f63, 10 Bilder via includeData): Gemini findet S4-Zusatzarm, Opus auch, GPT-6 nicht; uebrige Bilder alle PASS. Entscheidung Niklas: nur Gemini als Pruefer (FAIL/UNSURE → neu), Opus vermeidet als Art Director schon im Prompt (neu: keine Selbstberuehrung). Weitere von Niklas gesehene Fehler noch nicht zugeordnet.
+
+
+## 2026-10-03 – Violet Jessop – Titanic und Britannic (ChatGPT setzt bestehenden Claude/Codex-Checkpoint fort)
+- Ergebnis: hochgeladen (privat), 30,16 s, Hook + 6 Szenen, Render 2e0bf22c-26d8-4dcc-ae2a-a6885d1998ce, Make-Execution a01565e1c72d462fbf6137b65de4144a, YouTube-ID 8FaUaimY1gU.
+- Koexistenz: bestehenden Violet-Pfad `examples/violet_jessop_20261003_codex/` weitergefuehrt; vor Writes/Upload Repo-Historie frisch gelesen; keine Claude-Commits ueberschrieben; kein Force-Push.
+- Quellen/Fakten: Molly Brown House Museum, PBS Lost Liners/NOVA, National Maritime Museum Cornwall. Titanic-Lifeboat, Britannic 1916/Hospitalship, Propeller-Gefahr, Sprung/Rescue und Rueckkehr zur See gegen Quellen geprueft.
+- Crew: Stimmung `thrill` -> Liam. Vorhandene, bereits per Gemini-G0 gepruefte Violet-Bilder unveraendert weiterverwendet; in diesem Abschlusslauf 0 neue Bilder generiert.
+- Stimmen: 7 Liam-Clips (Hook + 6 Szenen) mit ElevenLabs multilingual-v2 neu erzeugt; Original-Timestamps in der Spec gespeichert.
+- Sounds: opener op_slam; whooshes wh_wind/wh_sharp/wh_deep; impact impact_box; climax cl_boom auf "explosion"/BOOM!; kein Riser; timeskip ts_clock auf "FOUR YEARS LATER". Neue Szenen-SFX nur fuer Propeller-Gefahr und Sprung/Wasserrettung, jeweils loudnorm.
+- Musik: "Cinematic maritime survival documentary underscore, early 20th century ocean-liner atmosphere, tense low strings, restrained brass, pulsing percussion and deep nautical ambience, around 88 bpm. Start urgent but controlled, build tension through the Titanic setup and four-year jump, rise sharply toward a powerful orchestral impact around 12 seconds for the Britannic explosion, then sustain fast nervous momentum with churning low strings and percussion through the propeller danger around 17 to 22 seconds, release into a breathless rescue section, then finish with resilient uplifting-but-serious strings for the final return-to-sea payoff. Instrumental only." Negative: vocals/singing/choir/voice/lyrics/humming/speech/cheerful pop/EDM/comedy. 35,2 s, seed 1013718263, loudnorm.
+- Audit: GRUEN. END 30,16 s; CUT 1,90 s; BOOM 12,07 s; FOUR YEARS LATER 8,44 s; Whoosh-Peaks [-5,-5,+5,+5,+5,+5] ms; Stimmenluecken [0,10,0,01,0,01,0,01,0,01,0,01] s; Bilder/Stimme/Musik/CTA alle 30,16 s; keine schwarzen/falschen Frames.
+- Unabhaengige QA: PASS, keine Issues.
+- Shotstack: Render 1/2 erfolgreich, Plan payg, 0,5 Credits. Kein zweiter Render noetig.
+- Gemini G2: PASS, 0 Issues. Daher kein qa_at.py-Fall zu verifizieren.
+- Gemini G3: 7/10; Hook "yes"; staerkster Moment ca. 17 s (Propeller). Hinweise: kleiner Pacing-Dip am Zeitsprung, Olympic als moeglicher spaeterer Kicker, Loop-Ende. Nicht umgesetzt, weil G3 beratend ist und dafuer unnoetiger zweiter Render/inhaltliche Aenderung erforderlich waere.
+- Upload: Make v6 erfolgreich; YouTube-Modul bestaetigt `uploaded`, `privacyStatus=private`, `containsSyntheticMedia=true`.
+- Fehler/Transparenz: erster lokaler Builder-Versuch scheiterte nur an einem Transkriptionsfehler meiner lokalen Repo-Code-Kopie (turn-Zuweisung). Lokal korrigiert; gemeinsamer Repo-Builder/Design nicht geaendert. Erster G2/G3-Aufruf wurde wegen fehlendem Pflichtfeld `video_urls` mit HTTP 422 vor QA-Verarbeitung abgelehnt; danach korrekt mit aktuellem Schema ausgefuehrt. Keine dieser Pannen wurde als bestandene Pruefung gezaehlt.
+- Kosten dieses Abschlusslaufs, soweit direkt bestimmbar: Fal ca. $0,16 (TTS ca. $0,0505; Stable Audio $0,0376; Szenen-SFX ca. $0,0148; Loudnorm ca. $0,0072; Scale-Video ca. $0,0302; erfolgreiche OpenRouter-Pruefungen inkl. vorherigem G1-Umweg ca. $0,0231). Shotstack 0,5 Credits; Make 4 Credits. Keine Bildgenerierung in diesem Abschlusslauf.
