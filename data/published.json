@@ -79,5 +79,31 @@
   "voice": "Jessica",
   "mood": "curious",
   "video_qa": "gemini-3.8-flash GRUEN"
+ },
+ {
+  "date": "2026-10-03",
+  "topic": "Violet Jessop – Titanic und Britannic 1912/1916",
+  "title": "She Survived Titanic. Then Its Sister Ship Sank",
+  "status": "privat auf YouTube hochgeladen (Make-Execution a01565e1c72d462fbf6137b65de4144a)",
+  "youtube_id": "8FaUaimY1gU",
+  "shotstack_render": "2e0bf22c-26d8-4dcc-ae2a-a6885d1998ce",
+  "spec": "examples/violet_jessop_20261003_codex/spec.json",
+  "sound": {
+   "opener": "op_slam",
+   "whooshes": [
+    "wh_wind",
+    "wh_sharp",
+    "wh_deep"
+   ],
+   "impact": "impact_box",
+   "climax": "cl_boom",
+   "riser": null,
+   "timeskip": "ts_clock"
+  },
+  "voice": "Liam",
+  "mood": "thrill",
+  "video_qa": "gemini-3.8-flash PASS",
+  "viewer_score": 7,
+  "image_generation_this_completion_run": 0
  }
 ]
