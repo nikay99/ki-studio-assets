@@ -1837,6 +1837,20 @@
         "Gemini incorrectly called July 2026 a future date; current date is 2026-10-03, so this is a G3 false observation and not a factual issue.",
         "No second render: G2 is PASS and G3 is advisory."
       ]
+    },
+    "make_execution": "0567a885f7424bbcadba591902eac5d6",
+    "make_status": "success",
+    "youtube_id": "3-i1ExbPDQs",
+    "youtube_privacy": "private",
+    "contains_synthetic_media": true,
+    "definition_of_done": {
+      "facts_2plus_sources": true,
+      "all_used_images_g0_pass": true,
+      "deterministic_audit_green": true,
+      "independent_qa_pass": true,
+      "gemini_g2_pass": true,
+      "private_youtube_upload_success": true,
+      "repo_documented": true
     }
   },
   "music": "https://v3b.fal.media/files/b/0aace009/pfrh-RbbR_UWyiPpKHD6z_normalized_audio.wav",
