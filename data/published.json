@@ -110,9 +110,9 @@
   "date": "2026-10-03",
   "topic": "FQ-44 Fury / FQ-42 Vengeance – uncrewed U.S. Air Force fighter aircraft, 2026",
   "title": "This New Fighter Has No Cockpit",
-  "status": "privat auf YouTube hochgeladen (Make-Execution 0567a885f7424bbcadba591902eac5d6)",
-  "youtube_id": "3-i1ExbPDQs",
-  "shotstack_render": "af21354d-5145-4e17-8d06-64bf6878f6e2",
+  "status": "korrigierte v2 privat auf YouTube hochgeladen (Make-Execution 93784db1257f4f6fa64f8e5cfe6e7276); v1 privat superseded",
+  "youtube_id": "FiQNl8heBiQ",
+  "shotstack_render": "2b55f3f3-51a7-4902-98e2-a80df72a8253",
   "spec": "examples/fq44_fury_20261003_chatgpt/spec.json",
   "sound": {
    "opener": "op_bass",
@@ -128,7 +128,9 @@
   },
   "voice": "Liam",
   "mood": "thrill",
-  "video_qa": "gemini-3.8-flash PASS",
-  "viewer_score": 6
+  "video_qa": "gemini-3.8-flash PASS + targeted layout/audio QC PASS",
+  "viewer_score": 6,
+  "previous_private_youtube_id": "3-i1ExbPDQs",
+  "previous_shotstack_render": "af21354d-5145-4e17-8d06-64bf6878f6e2"
  }
 ]
