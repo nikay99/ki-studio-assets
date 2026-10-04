@@ -192,3 +192,17 @@ Format:
 - Stimme Liam, 9 TTS auf −16 LUFS. 10 Bilder, 0 verworfen; G0 für die 2 Figurenbilder (von hinten): PASS. Szenen-SFX Müllsack (0.45), Münzen (0.4); Musik stable-audio-3 Seed 1897625544, 0.35.
 - Audit GRÜN (35,77 s), 1 Render (b9071d90), Diff 0. Preflight GRÜN (−16,0 LUFS, TP −1,8; Hinweise 1-Frame-Hänger 12,04 s, line2-Box rechts 0,86). G2 PASS, alle Owner-Regeln inkl. Loop-Ende ja.
 - Upload Make 5a5eda76…, YouTube JAYElpBEDXc, geplant 16.10. 12:00 ET (16:00Z bestätigt).
+
+## 2026-10-04 – Neuralink: Gelähmter Mann spielt Schach mit Gedanken (Säule A, Mo 05.10.)
+- Auftrag Redaktionsplan (Keyword „neuralink“ vorne im Titel, in Tags und im 1. Satz). Quellen: Wikipedia Noland Arbaugh, Neuralink-Blog, LBC.
+- Retention-Vorab v1 29 % Wegwischen / 68 % Ø: Namens-/Datums-Intro und 2016-Vorgeschichte gestrichen, Loop-Ende „And he still can't move a finger.“. „beating gamers“ nicht übernommen (unbelegt).
+- Stimme Chris, 9 TTS auf −16 LUFS. 10 Bilder; G0 FAIL bei der Hand am Schluss (6 Finger) → 1 Neuversuch als lockere Faust, PASS. Sound punch / im_metal; SFX Roboterarm (S2), Glitch (S5); Musik stable-audio-3 Seed 1826753939.
+- Audit GRÜN (30,83 s), 1 Render (3d25a7a5), Diff 0, Preflight GRÜN, G2 PASS. Upload qB6w9ky-O_o, geplant 05.10. 16:00Z bestätigt; first_comment, DE-Titel/Beschreibung mitgegeben.
+
+## 2026-10-04 – NASA DART rammt einen Asteroiden (Säule A, Di 06.10.)
+- Keyword „nasa asteroid“. Quellen: NASA DART-Missionsseite, NASA-Pressemitteilung (32 min), Wikipedia.
+- Retention-Vorab v1 31,5 % / 68,4 %: Missionsname/Datum vorne gestrichen, Loop-Grammatik. Stimme Eric, 9 TTS auf −16 LUFS, 10 Bilder, G0 PASS (3 Forscher von hinten). Sound op_slam / impact_box; SFX Telemetrie (S4), Einschlag (S5); Musik Seed 2020369174.
+- Builder-Audit ROT wegen „FIVE-HUNDRED-FOOT“ (zu breit) → Bindestriche in den Zeitstempeln als Leerzeichen (make_spec), danach GRÜN (34,00 s).
+- 1 Render (6df5803a), Diff 0. Preflight ROT: True Peak 0,0 dBTP. Fix ohne neuen Render: fal loudnorm −15/TP −2 auf die MP4 + merge-audio-video, Nachmessung −15,1 LUFS / −1,4 dBTP, Bild 1080x1920/24 fps unverändert. Hochgeladen wurde die fal-Datei. G2 PASS.
+- Upload G7JTVi4m5YQ, geplant 06.10. 16:00Z bestätigt. Tags waren direkt nach Upload leer → per 7758812 tags_en nachgesetzt (beide Videos), Termin unverändert.
+- Lehre: Impact-SFX (0.45) + Musik + Stimme können clippen; bei lauten Einschlag-SFX sfx_vol ≤ 0.35 ansetzen.

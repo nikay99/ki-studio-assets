@@ -1,0 +1,91 @@
+{
+ "hook": {
+  "image_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "1 man from behind in wheelchair, arms under blanket (G0 01a10648-4034)"
+  },
+  "image2_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures (AD)"
+  }
+ },
+ "scenes": {
+  "0": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "1": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aad0310/Znw0pzyjrOubbbMa5rEvd_normalized_audio.wav",
+   "sfx_vol": 0.4
+  },
+  "2": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "3": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "4": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aad0311/_j_b-AShafIDE1BCLNURy_normalized_audio.wav",
+   "sfx_vol": 0.4
+  },
+  "5": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "2 men from behind, hands in pockets (G0 01a10648-612b)"
+   }
+  },
+  "6": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "1 man from behind in wheelchair, both hands on armrests (G0 01a10648-6a88)"
+   }
+  },
+  "7": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 2,
+    "issue": "",
+    "detail": "1 hand loose fist, 1st attempt FAIL six fingers (G0 01a1064a-876b)"
+   }
+  }
+ },
+ "top": {
+  "music": "https://v3b.fal.media/files/b/0aad0310/-8fy_b7KSE_OorIImDxCF_normalized_audio.wav",
+  "music_prompt": "Instrumental futuristic wonder underscore (shimmering synth arpeggio, heartbeat kick, 95 BPM), swell 5 s, driving 8-22 s, glitchy tension 24 s, triumphant lift 28 s, bittersweet piano 31 s, loopable end 36 s | negative: vocals, singing, choir, voice, lyrics, humming, speech | 40 s | seed 1826753939 | loudnorm -16",
+  "music_vol": 0.35
+ }
+}

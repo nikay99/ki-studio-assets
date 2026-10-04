@@ -1,0 +1,79 @@
+{
+ "END": 30.83,
+ "CUT": 2.84,
+ "S1": 4.91,
+ "Z": null,
+ "cuts": [
+  0,
+  2.84,
+  4.91,
+  6.62,
+  8.33,
+  10.46,
+  12.6,
+  14.15,
+  15.7,
+  17.62,
+  19.53,
+  20.91,
+  22.29,
+  24.2,
+  26.1,
+  27.64,
+  29.18,
+  30.0
+ ],
+ "sound": {
+  "opener": "punch",
+  "whooshes": [
+   "wh_soft",
+   "wh_sharp",
+   "wh_reverse",
+   "whoosh_1"
+  ],
+  "impact": "im_metal",
+  "climax": null,
+  "timeskip": null,
+  "riser": null,
+  "whoosh_vols": []
+ },
+ "scene_starts": [
+  4.91,
+  8.33,
+  12.6,
+  15.7,
+  19.53,
+  22.29,
+  26.1,
+  29.18
+ ],
+ "whoosh_targets": [
+  4.91,
+  8.33,
+  12.6,
+  15.7,
+  19.53,
+  22.29,
+  26.1,
+  29.18
+ ],
+ "track_names": [
+  "flash",
+  "box2_text",
+  "box2",
+  "box2_shadow",
+  "box1_text",
+  "box1",
+  "box1_shadow",
+  "captions",
+  "images_B",
+  "images_A",
+  "voice",
+  "scene_sfx",
+  "whooshes",
+  "punch",
+  "hits",
+  "music"
+ ],
+ "card": null
+}

@@ -1,0 +1,91 @@
+{
+ "hook": {
+  "image_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures (AD)"
+  },
+  "image2_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures (AD)"
+  }
+ },
+ "scenes": {
+  "0": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "1": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "2": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "3": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aad0311/uQklE21pMNOY4tbYKshH7_normalized_audio.wav",
+   "sfx_vol": 0.35
+  },
+  "4": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aad0311/OY8a27s-c3DMufsjlFWdn_normalized_audio.wav",
+   "sfx_vol": 0.45
+  },
+  "5": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "3 people from behind, hands hidden (G0 01a10648-8e62)"
+   }
+  },
+  "6": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "7": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  }
+ },
+ "top": {
+  "music": "https://v3b.fal.media/files/b/0aad0310/m8GZyQQjrCYSTBaoxI7GR_normalized_audio.wav",
+  "music_prompt": "Instrumental epic space suspense underscore (deep boom, pulsing low strings, ticking countdown, 110 BPM), brass 6 s, build 10-21 s, impact hit 22 s, heroic brass 26 s, triumphant theme 30 s, loopable end 38 s | negative: vocals, singing, choir, voice, lyrics, humming, speech | 42 s | seed 2020369174 | loudnorm -16",
+  "music_vol": 0.35
+ }
+}
