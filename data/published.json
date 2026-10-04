@@ -165,7 +165,7 @@
   "previous_shotstack_render": "298e1f28-45bb-49d1-b49e-d1c6cb733d4f",
   "previous_status": "privat auf YouTube hochgeladen (Make-Execution 038845117e84454dbe11468e1d207d7b)",
   "cta": "WOULD YOU WATCH IT LIVE?",
-  "publish_at": "2026-10-12T12:00:00-04:00"
+  "publish_at": "2026-10-15T15:00:00-04:00"
  },
  {
   "date": "2026-10-03",
@@ -174,7 +174,7 @@
   "title": "It's 15 Billion Miles Away. NASA Fixed It Anyway.",
   "shotstack_render": "84d91bb1-d2a5-4a51-a80e-dda60691f742",
   "make_execution": "6e30cdaebd924692a2427219c820e03e",
-  "publish_at": "2026-10-13T12:00:00-04:00",
+  "publish_at": "2026-10-17T15:00:00-04:00",
   "status": "scheduled (umgeplant vom Redaktionsplan 03.10. abends)",
   "sound": {
    "opener": "punch",
@@ -311,7 +311,7 @@
   "title": "Neuralink's First Patient Plays Chess With His Mind",
   "shotstack_render": "3d25a7a5-1021-42e8-9ab6-759ffcab0bc1",
   "make_execution": "18d6a7652611478b8a97349d7a0ff831",
-  "publish_at": "2026-10-05T12:00:00-04:00",
+  "publish_at": "2026-10-04T14:00:00-04:00",
   "status": "scheduled",
   "sound": {
    "opener": "punch",
@@ -338,7 +338,7 @@
   "title": "NASA Asteroid Test: They Smashed a Spacecraft Into It on Purpose",
   "shotstack_render": "6df5803a-da7e-4a2d-942c-c67328c24434",
   "make_execution": "730200a087e742bda1e6198d3bb26cef",
-  "publish_at": "2026-10-06T12:00:00-04:00",
+  "publish_at": "2026-10-05T12:00:00-04:00",
   "status": "scheduled",
   "sound": {
    "opener": "op_slam",
