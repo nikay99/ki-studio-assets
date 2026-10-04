@@ -177,3 +177,11 @@ Format:
 - Basis: ChatGPT-Checkpoint (Bilder G0 PASS, Stimmen, Musik, Szenen-SFX). Claude: Stimmen auf −16 LUFS normalisiert, line2 „NOW THE UPGRADE.“, CTA „WOULD YOU WORK NEXT TO ONE?“, US-Beschreibung, op_slam/im_metal, music_vol 0.35, Szenen-SFX ≤ 0.45 → `finalize.py` → `spec_final.json`.
 - Builder-Fix `tools/build_short.py clean()`: Punkt/Komma zwischen Ziffern bleiben erhalten. Vorher stand „AND 12 MILLION STEPS“ statt 1.2 Millionen und „90000“ im Untertitel. Citibank-Edit unverändert (geprüft).
 - Ergebnis: 1 Render (7b7b37d3, 0 Diffs), Preflight GRÜN (−16,0 LUFS, TP −1,1; Hinweise 1-Frame-Hänger 38,67 s, Hook-Box rechts 0,94), G2 PASS inkl. Niklas-Regeln. Upload privat mit publish_at 2026-10-10T10:00-04:00 (Make 89163b83…).
+
+## 2026-10-04 – KJ Muldoon / Gen-Editor für ein Baby (Säule B, Mi 14.10.)
+- Quellen: Penn Medicine (Mai 2025), Penn Gazette, FOX29 (Entlassung Juni 2025). Unsichere Detailzahlen (z. B. Klinik-Tage) bewusst weggelassen.
+- Stimme Brian (Abwechslung zu Jessica), 9 TTS, alle sofort auf −16 LUFS. 10 Bilder, 0 verworfen; G0 nur für Bilder mit Figuren (Baby gewickelt, Hände verdeckt; 2 Ärzte von hinten, Hände in Taschen): PASS.
+- Sound punch / impact_box, Whooshes wh_soft, whoosh_1, wh_deep, wh_reverse. Szenen-SFX gezielt: Herzmonitor (S3, 0.4), Tropfen (S6, 0.45). Musik stable-audio-3 Seed 458104256, music_vol 0.35.
+- Audit GRÜN (37,52 s), 1 Render (93b29b9e), Render-Diff 0. Preflight GRÜN (−15,9 LUFS, TP −0,6 Hinweis; Hook-Box rechts 0,94). G2 PASS, alle Owner-Regeln ja.
+- Upload Make 20bc964e…, YouTube a782coC5ymc, geplant 14.10. 12:00 ET (16:00Z bestätigt).
+- Lehre/Werkzeug: TTS-Zeitstempel nicht mehr abtippen, sondern per Skript aus dem Transkript ziehen (voices.json + voices.py-Loader) – spart viel Zeit und Fehler.

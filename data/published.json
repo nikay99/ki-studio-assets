@@ -249,5 +249,32 @@
   "spec": "examples/humanoid_factory_20261003_chatgpt/spec_final.json",
   "producer": "ChatGPT (Assets) + Claude (Fertigstellung)",
   "youtube_id": "IZJkVXnk2XE"
+ },
+ {
+  "date": "2026-10-04",
+  "topic": "KJ Muldoon: erste maßgeschneiderte Base-Editing-Therapie (CHOP/Penn 2025, CPS1-Mangel)",
+  "pillar": "B",
+  "title": "Doctors Built a Gene Editor for One Baby. It Worked.",
+  "shotstack_render": "93b29b9e-39ac-4a3f-adb8-4bd297bbd932",
+  "make_execution": "20bc964eb1e0456b8768b0a20ad309e1",
+  "publish_at": "2026-10-14T12:00:00-04:00",
+  "status": "scheduled",
+  "sound": {
+   "opener": "punch",
+   "whooshes": [
+    "wh_soft",
+    "whoosh_1",
+    "wh_deep",
+    "wh_reverse"
+   ],
+   "impact": "impact_box",
+   "climax": null,
+   "riser": null,
+   "timeskip": null
+  },
+  "rejected_images": 0,
+  "spec": "examples/kj_muldoon_base_editing_20261004/spec.json",
+  "producer": "Claude (Story-Shorts-Thread)",
+  "youtube_id": "a782coC5ymc"
  }
 ]

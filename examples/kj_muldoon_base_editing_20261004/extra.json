@@ -1,0 +1,91 @@
+{
+ "hook": {
+  "image_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "swaddled baby, arms hidden"
+  },
+  "image2_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures (AD)"
+  }
+ },
+ "scenes": {
+  "0": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "1": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "2": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacff76/ZZ8nysTIWoh0Vvm1AUjeX_normalized_audio.wav",
+   "sfx_vol": 0.4
+  },
+  "3": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "2 doctors from behind, hands in pockets"
+   }
+  },
+  "4": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "5": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacff76/vN4uKJZiAdFBS99fDYsrU_normalized_audio.wav",
+   "sfx_vol": 0.45
+  },
+  "6": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "7": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  }
+ },
+ "top": {
+  "music": "https://v3b.fal.media/files/b/0aacff75/IFgr0DWfb_AP4r5fQePtB_normalized_audio.wav",
+  "music_prompt": "Instrumental cinematic medical-drama underscore (synth heartbeat, piano, rising strings, 95 BPM), tense to 16 s, driving to 28 s, hopeful lift 28 s, resolve 42 s | negative: vocals, singing, choir, voice, lyrics, humming, speech | 46 s | seed 458104256 | loudnorm -16",
+  "music_vol": 0.35
+ }
+}
