@@ -75,7 +75,7 @@ def chunks_of(ws, d):
     ch, k = [], 0
     while k < len(ws):
         txt, st, en = ws[k]; idx = [k]
-        # zusammenziehen nur, wenn der Untertitel danach noch in die 990-px-Box passt (sonst Umbruch/abgeschnitten)
+        # zusammenziehen nur, wenn der Untertitel danach noch in die 860-px-Box passt (sonst Umbruch/abgeschnitten)
         if (len(re.sub(r'\W', '', txt)) <= 3 and k + 1 < len(ws) and not re.search(r'[.,;:!?]$', txt)
                 and len(clean(txt + ' ' + ws[k + 1][0])) <= CAP_JOIN_MAXCH):
             txt, en = txt + ' ' + ws[k + 1][0], ws[k + 1][2]; idx.append(k + 1); k += 1
@@ -220,7 +220,7 @@ def build(spec):
                                    'font': {'family': 'Bangers', 'size': size, 'color': col},
                                    'style': {'letterSpacing': 3}, 'stroke': {'width': 16, 'color': BLK},
                                    'shadow': {'offsetX': 4, 'offsetY': 6, 'color': BLK, 'opacity': 1}},
-                         'start': a, 'length': ln, 'width': 990, 'height': 200, 'position': 'center',
+                         'start': a, 'length': ln, 'width': 860, 'height': 200, 'position': 'center',
                          'offset': {'x': 0, 'y': -0.2}, 'scale': pop(1.3, 0.1, 'easeOutCubic')})
     # Float-Overlaps auf der Untertitelspur in 0,01-Schritten kuerzen (transparent, unkritisch)
     caps.sort(key=lambda c: c['start'])
@@ -294,11 +294,11 @@ def build(spec):
             rsrc, rs = snd(SND['riser'])
             riser.append(audio(rsrc, r2(max(0, Z - rs['len'])), rs['len'], rs['vol']))
 
-    # --- Boxen / Karte / CTA
+    # --- Boxen / Karte / CTA (Seitenraender: Handy schneidet links/rechts je ~9 % ab -> sichtbare Breite max. ~860 px, Niklas 04.10.)
     l1, l2 = hook['line1'], hook['line2']
-    box2_text = [text(l2, 960, 200, WHT, 130, CUT, r2(BOX_END - CUT), 0, -0.17, 2)]
-    box2 = [rect(960, 200, RED, True, CUT, r2(BOX_END - CUT), 0, -0.17, 2)]
-    box2_sh = [rect(960, 200, BLK, False, CUT, r2(BOX_END - CUT), SX, -0.17 + SY, 2)]
+    box2_text = [text(l2, 780, 200, WHT, 130, CUT, r2(BOX_END - CUT), 0, -0.17, 2)]
+    box2 = [rect(780, 200, RED, True, CUT, r2(BOX_END - CUT), 0, -0.17, 2)]
+    box2_sh = [rect(780, 200, BLK, False, CUT, r2(BOX_END - CUT), SX, -0.17 + SY, 2)]
     if card:
         cs_, ce_ = min(a for a, _ in card_span), r2(max(b for _, b in card_span) + CAP_EARLY)
         cl = r2(ce_ - cs_)
@@ -310,10 +310,10 @@ def build(spec):
                      'font': {'family': 'Bangers', 'size': 76, 'color': RED}, 'style': {'letterSpacing': 3},
                      'stroke': {'width': 12, 'color': BLK},
                      'shadow': {'offsetX': 4, 'offsetY': 6, 'color': BLK, 'opacity': 1}},
-           'start': r2(END - 2), 'length': 2, 'width': 990, 'height': 220, 'position': 'center', 'offset': {'x': 0, 'y': 0.25}}  # Safe Zone: Mitte bei 25 % Hoehe (preflight: unten ab 75 % liegen Titel/Kanalname)
-    box1_text = [text(l1, 900, 330, BLK, 130, VO, r2(BOX_END - VO), 0, -0.04, -2), cta]
-    box1 = [rect(900, 330, YEL, True, VO, r2(BOX_END - VO), 0, -0.04, -2)]
-    box1_sh = [rect(900, 330, BLK, False, VO, r2(BOX_END - VO), SX, -0.04 + SY, -2)]
+           'start': r2(END - 2), 'length': 2, 'width': 860, 'height': 220, 'position': 'center', 'offset': {'x': 0, 'y': 0.25}}  # Safe Zone: Mitte bei 25 % Hoehe (preflight: unten ab 75 % liegen Titel/Kanalname)
+    box1_text = [text(l1, 800, 330, BLK, 130, VO, r2(BOX_END - VO), 0, -0.04, -2), cta]
+    box1 = [rect(800, 330, YEL, True, VO, r2(BOX_END - VO), 0, -0.04, -2)]
+    box1_sh = [rect(800, 330, BLK, False, VO, r2(BOX_END - VO), SX, -0.04 + SY, -2)]
 
     # --- Musik mit Fades + Ducking am ZAP
     MV = spec.get('music_vol', 0.18)
