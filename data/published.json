@@ -276,5 +276,32 @@
   "spec": "examples/kj_muldoon_base_editing_20261004/spec.json",
   "producer": "Claude (Story-Shorts-Thread)",
   "youtube_id": "a782coC5ymc"
+ },
+ {
+  "date": "2026-10-04",
+  "topic": "James Howells: Festplatte mit 8.000 BTC auf der Deponie Newport (2013–2025)",
+  "pillar": "C",
+  "title": "A Hard Drive Worth $500 Million Is Buried in a Dump",
+  "shotstack_render": "b9071d90-0c9b-4ed6-b0e7-dbbc2d0447d1",
+  "make_execution": "5a5eda7655604b06b3428255233a44ce",
+  "publish_at": "2026-10-16T12:00:00-04:00",
+  "status": "scheduled",
+  "sound": {
+   "opener": "op_bass",
+   "whooshes": [
+    "wh_sharp",
+    "whoosh_2",
+    "wh_paper",
+    "whoosh_3"
+   ],
+   "impact": "im_stamp",
+   "climax": null,
+   "riser": null,
+   "timeskip": null
+  },
+  "rejected_images": 0,
+  "spec": "examples/bitcoin_landfill_20261004/spec.json",
+  "producer": "Claude (Story-Shorts-Thread)",
+  "youtube_id": "JAYElpBEDXc"
  }
 ]

@@ -185,3 +185,10 @@ Format:
 - Audit GRÜN (37,52 s), 1 Render (93b29b9e), Render-Diff 0. Preflight GRÜN (−15,9 LUFS, TP −0,6 Hinweis; Hook-Box rechts 0,94). G2 PASS, alle Owner-Regeln ja.
 - Upload Make 20bc964e…, YouTube a782coC5ymc, geplant 14.10. 12:00 ET (16:00Z bestätigt).
 - Lehre/Werkzeug: TTS-Zeitstempel nicht mehr abtippen, sondern per Skript aus dem Transkript ziehen (voices.json + voices.py-Loader) – spart viel Zeit und Fehler.
+
+## 2026-10-04 – Bitcoin-Festplatte auf der Müllhalde (Säule C, Fr 16.10.)
+- Quellen: Wikipedia „Bitcoin buried in Newport landfill“, Fortune (11.02.2025), Daily Galaxy (08/2026). Wert ≈ 510 Mio. $ bei 63.804 $/BTC (Aug 2026), am Hoch ≈ 1 Mrd. $. Klage £495 Mio. → im Skript „more than six hundred million dollars“.
+- Erstmals Retention-Vorabschätzung (Gemini, siehe retention_pre.md): v1 28 % Wegwischen / 58 % Ø gesehen. Umgesetzt: Betrag in den Hook, 2009-Vorgeschichte gestrichen, Loop-Ende („And the drive is still down there.“ → Hook). Gemini-Zahlen ($150M/$600M) nicht übernommen, weil unbelegt.
+- Stimme Liam, 9 TTS auf −16 LUFS. 10 Bilder, 0 verworfen; G0 für die 2 Figurenbilder (von hinten): PASS. Szenen-SFX Müllsack (0.45), Münzen (0.4); Musik stable-audio-3 Seed 1897625544, 0.35.
+- Audit GRÜN (35,77 s), 1 Render (b9071d90), Diff 0. Preflight GRÜN (−16,0 LUFS, TP −1,8; Hinweise 1-Frame-Hänger 12,04 s, line2-Box rechts 0,86). G2 PASS, alle Owner-Regeln inkl. Loop-Ende ja.
+- Upload Make 5a5eda76…, YouTube JAYElpBEDXc, geplant 16.10. 12:00 ET (16:00Z bestätigt).

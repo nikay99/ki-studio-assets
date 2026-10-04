@@ -1,0 +1,91 @@
+{
+ "hook": {
+  "image_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures (AD)"
+  },
+  "image2_check": {
+   "gemini": "PASS",
+   "attempts": 1,
+   "issue": "",
+   "detail": "no figures (AD)"
+  }
+ },
+ "scenes": {
+  "0": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacffd4/XVXfZErJyFSLsBBkh4qni_normalized_audio.wav",
+   "sfx_vol": 0.45
+  },
+  "1": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   },
+   "sfx": "https://v3b.fal.media/files/b/0aacffd5/NWhlHUwa2pDcN2jf6HkFR_normalized_audio.wav",
+   "sfx_vol": 0.4
+  },
+  "2": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "1 man from behind, hands in pockets"
+   }
+  },
+  "3": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "4": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "5": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  },
+  "6": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "1 man from behind, hands in pockets"
+   }
+  },
+  "7": {
+   "image_check": {
+    "gemini": "PASS",
+    "attempts": 1,
+    "issue": "",
+    "detail": "no figures (AD)"
+   }
+  }
+ },
+ "top": {
+  "music": "https://v3b.fal.media/files/b/0aacffd4/KtKoCLCxVNrgShccunFPC_normalized_audio.wav",
+  "music_prompt": "Instrumental tense mystery underscore (low synth pulse, plucked strings, ticking, 100 BPM), hit 6 s, driving 10-26 s, melancholic piano 30 s, loopable end 38 s | negative: vocals, singing, choir, voice, lyrics, humming, speech | 44 s | seed 1897625544 | loudnorm -16",
+  "music_vol": 0.35
+ }
+}
