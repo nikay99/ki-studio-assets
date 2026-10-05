@@ -28,17 +28,21 @@ function countryOf(text) {
 
 // ---------- Zustand ----------
 const STATE_FILE = path.join(DATA, 'state.json');
-let st = { day: '', countryWins: {}, playerWins: {}, races: 0, totalRaces: 0 };
+let st = { day: '', countryWins: {}, playerWins: {}, fans: {}, races: 0, totalRaces: 0 };
 try { st = { ...st, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }; } catch {}
 const today = () => new Date().toISOString().slice(0, 10);
-function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.races = 0; } }
+function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.races = 0; } }
 const save = () => fs.writeFile(STATE_FILE, JSON.stringify(st), () => {});
 rollDay();
 
 const picks = new Map();          // user → {code, ts}
 const events = [];                // {id, user, code}
 let evId = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal gesetzt' }, msgCount = 0, joinCount = 0;
+const lastFan = new Map();
 function addPick(user, code) {
+  const prev = picks.get(user);
+  // +1 Fanpunkt fürs Land, höchstens einmal pro Minute und Zuschauer (gegen Spam)
+  if (!prev || prev.code !== code || Date.now() - (lastFan.get(user) || 0) > 60000) { rollDay(); st.fans = st.fans || {}; st.fans[code] = (st.fans[code] || 0) + 1; lastFan.set(user, Date.now()); save(); }
   picks.set(user, { code, ts: Date.now() });
   events.push({ id: ++evId, user, code }); if (events.length > 500) events.shift();
   joinCount++;
@@ -93,7 +97,7 @@ http.createServer(async (req, res) => {
 
 function board() {
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
-  return { races: st.races, countries: top(st.countryWins, 5), players: top(st.playerWins, 5) };
+  return { races: st.races, countries: top(st.countryWins, 5), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5) };
 }
 
 // Statusseite nach außen: nur /s/<TOKEN>/…

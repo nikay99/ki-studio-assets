@@ -7,7 +7,7 @@
 // Länder-Kugelrennen LIVE. Physik: Matter.js (fester 60-Hz-Takt), Darstellung: eigenes Canvas, Ton: WebAudio.
 // Daten vom lokalen server.js: /api/lineup (Teilnehmer), /api/events (Chat-Beitritte), /api/result, /api/music.
 const {Engine, Bodies, Body, Composite, Events} = Matter;
-const W = 1920, H = 1080, TW = 1300, FINISH_Y = 6550, WORLD_H = 6900, START_WAIT = 60*5;
+const W = 1920, H = 1080, TW = 1300, FINISH_Y = 6550, WORLD_H = 6900, START_WAIT = 60*8;
 const Q = new URLSearchParams(location.search), OFFLINE = Q.has('offline');
 const OUT_W = +(Q.get('w')||1280), SC = OUT_W/W;     // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
@@ -15,7 +15,7 @@ cv.width = OUT_W; cv.height = Math.round(H*SC);
 const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
 
 let engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, trackLayer, trackSeed = 0;
-let thirdT = 0, lastEv = -1, board = {races:0, countries:[], players:[]}, nextUp = [];
+let thirdT = 0, leader = null, callout = null, lastEv = -1, board = {races:0, countries:[], players:[]}, nextUp = [];
 
 function seedRand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
 
@@ -70,7 +70,7 @@ async function newRace(){
   let lu;
   try { lu = OFFLINE ? null : await (await fetch('/api/lineup')).json(); } catch { lu = null; }
   if(!lu) lu = COUNTRY_LIST.slice(0,200).sort(()=>rand()-0.5).slice(0,30).map(c=>({code:c[0],players:[]}));
-  engine = Engine.create({gravity:{y:1}, positionIterations:8, velocityIterations:6});
+  engine = Engine.create({gravity:{y:1.3}, positionIterations:8, velocityIterations:6});
   [statics,spinners] = buildTrack(rand, raceNo % 3);
   bakeTrack();
   const order = lu.slice().sort(()=>rand()-0.5);
@@ -99,13 +99,15 @@ function step(){
     b.still = b.speed<0.25 ? b.still+1 : 0;
     if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(4+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
   }
-  if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*25))){   // Nachzügler nicht ewig abwarten
+  if(phase==='race' && t>60*3 && t%15===0){ const l=ranking()[0]; if(l && l!==leader){ if(leader) { callout={txt:`${l.flag} ${l.name} takes the lead!`, t:0}; sfx.lead() } leader=l } }
+  if(callout) callout.t++;
+  if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
     phase='podium'; phaseT=0; sfx.fanfare();
     const w=finished[0];
     if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players})})
       .then(r=>r.json()).then(b=>board=b).catch(()=>{});
   }
-  if(phase==='podium' && phaseT>60*9){ if(reloadPending){ location.reload(); phase='loading'; return } phase='loading'; newRace()}
+  if(phase==='podium' && phaseT>60*8){ if(reloadPending){ location.reload(); phase='loading'; return } phase='loading'; newRace()}
 }
 
 // ---------- Chat ----------
@@ -141,6 +143,7 @@ const sfx = {
   beep:f=>tone(f,0.25,'square',0.25), go:()=>{tone(1046,0.5,'square',0.3);tone(1318,0.5,'square',0.2,0.05)},
   plink:(y)=>{ if(hitBudget<=0) return; hitBudget--; tone(SCALE[Math.floor(Math.random()*SCALE.length)]*(y>4500?0.5:1),0.18,'triangle',0.12)},
   join:()=>{tone(1318,0.08,'sine',0.2);tone(1760,0.12,'sine',0.2,0.07)},
+  lead:()=>{tone(784,0.1,'square',0.2);tone(1175,0.18,'square',0.2,0.08)},
   finish:k=>tone([0,1046,880,784][k],0.35,'triangle',0.35),
   fanfare:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i===3?0.8:0.18,'square',0.22,i*0.14)),
 };
@@ -172,8 +175,8 @@ function ballSprite(b,r){
   const k=b.code+r; if(ballImg.has(k)) return ballImg.get(k);
   const c=document.createElement('canvas'); c.width=c.height=2*r+6; flagBall(r+3,r+3,r,b,c.getContext('2d')); ballImg.set(k,c); return c;
 }
-function drawBody(g,b){
-  g.fillStyle=b.col; g.shadowColor=b.col; g.shadowBlur=18;
+function drawBody(g,b,flat){
+  g.fillStyle=b.col; g.shadowColor=b.col; g.shadowBlur=flat?0:18;
   g.beginPath(); const v=b.vertices;
   if(b.circleRadius){g.arc(b.position.x,b.position.y,b.circleRadius,0,7)}
   else {g.moveTo(v[0].x,v[0].y); for(const p of v) g.lineTo(p.x,p.y); g.closePath()}
@@ -190,13 +193,14 @@ const who = b => b.players.length ? b.players[0] + (b.players.length>1?` +${b.pl
 function draw(){
   ctx.setTransform(SC,0,0,SC,0,0);
   const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
-  const target=Math.min(Math.max(lead.position.y-H*0.55,0),WORLD_H-H);
+  const pack=rank.filter(b=>!b.done).slice(0,5), fy=pack.length?pack.reduce((s,b)=>s+b.position.y,0)/pack.length:lead.position.y;   // Kamera auf die Spitzengruppe, nicht nur den Ersten
+  const target=Math.min(Math.max(Math.max(fy,lead.position.y-H*0.7)-H*0.5,0),WORLD_H-H);
   camY += (target-camY)*0.08;
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
   ctx.drawImage(trackLayer,0,Math.round(camY),TW,H,0,0,TW,H);
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,TW,H); ctx.clip(); ctx.translate(0,-camY);
-  for(const s of spinners) drawBody(ctx,s);
+  for(const s of spinners) drawBody(ctx,s,true);
   for(const s of statics) if(s.gate) drawBody(ctx,s);
   for(const b of balls){ b.trail.push({x:b.position.x,y:b.position.y}); if(b.trail.length>14) b.trail.shift() }
   if(phase==='race') rank.slice(0,3).forEach((b,i)=>{ctx.strokeStyle=['#ffd700','#d1d5db','#cd7f32'][i]; ctx.lineWidth=8; ctx.globalAlpha=0.5;
@@ -212,7 +216,9 @@ function draw(){
     ctx.fillStyle='rgba(5,6,18,0.45)'; ctx.fillRect(0,0,TW,H);
     txt(`RACE #${raceNo}`,TW/2,300,54,'#94a3b8','700','center');
     txt(n>0?String(n):'GO!',TW/2,560,220,'#fde047','700','center');
-    txt('Type your country in chat to get a ball!',TW/2,720,44,'#fff','700','center');
+    txt('✍️ Type your COUNTRY in the chat',TW/2,700,48,'#fff','700','center');
+    txt('→ your flag races with YOUR NAME on it  +1 point for your nation',TW/2,760,32,'#fde047','700','center');
+    txt(`${balls.filter(b=>b.players.length).length} viewers' countries in this race`,TW/2,820,28,'#94a3b8','400','center');
   }
   // Seitenleiste
   ctx.fillStyle='rgba(8,10,24,0.94)'; ctx.fillRect(TW,0,W-TW,H);
@@ -228,12 +234,20 @@ function draw(){
     txt(b.name,TW+150,y,24,'#fff','700');
     if(b.players.length) txt(who(b),W-48,y,19,'#fde047','400','right');
   });
-  txt('Type your country in chat!',TW+40,712,30,'#fde047');
-  txt('e.g.  Germany · 🇧🇷 · USA · Japan',TW+40,748,22,'#94a3b8','400');
-  chatLog.forEach((c,i)=>txt(`${c.user} ${c.flag} ${c.txt}`,TW+40,792+i*34,22,'#cbd5e1','400'));
-  txt(`TODAY · ${board.races} races`,TW+40,948,22,'#64748b');
-  if(board.countries.length) txt(board.countries.slice(0,4).map(([c,n])=>`${flagOf(c)} ${n}`).join('   '),TW+40,988,28,'#e2e8f0','400');
-  if(board.players.length) txt('🏆 '+board.players.slice(0,2).map(([p,n])=>`${p} ${n}`).join(' · '),TW+40,1036,22,'#fde047','400');
+  // Mitmachen + Fan-Zähler (Länder-Battle): jede Chat-Meldung = +1 für das eigene Land
+  ctx.fillStyle='rgba(253,224,71,0.10)'; ctx.beginPath(); ctx.roundRect(TW+30,692,W-TW-60,92,12); ctx.fill();
+  txt('✍️ TYPE YOUR COUNTRY IN CHAT',TW+48,728,26,'#fde047');
+  txt('= your own ball + 1 point for your nation',TW+48,764,20,'#e2e8f0','400');
+  txt('🔥 COUNTRY BATTLE · fans today',TW+40,826,22,'#94a3b8');
+  const fans=(board.fans||[]).slice(0,5);
+  if(fans.length) fans.forEach(([c,n],i)=>{const x=TW+40+i*114; txt(`${flagOf(c)} ${n}`,x,866,28,i===0?'#fde047':'#e2e8f0','700')});
+  else txt('no fans yet – be the first!',TW+40,866,24,'#64748b','400');
+  chatLog.slice(0,3).forEach((c,i)=>txt(`+1 ${c.flag} ${c.user}${c.txt==='next race'?' (next race)':''}`,TW+40,912+i*30,20,'#cbd5e1','400'));
+  txt(`🏁 ${board.races} races today`+(board.countries.length?' · wins '+board.countries.slice(0,3).map(([c,n])=>`${flagOf(c)}${n}`).join(' '):''),TW+40,1050,20,'#94a3b8','400');
+  // Führungswechsel-Banner
+  if(callout && callout.t<150 && phase==='race'){ const a=Math.min(1,(150-callout.t)/20);
+    ctx.globalAlpha=a; ctx.fillStyle='rgba(5,6,18,0.8)'; ctx.beginPath(); ctx.roundRect(TW/2-380,40,760,80,16); ctx.fill();
+    txt(callout.txt,TW/2,95,40,'#fde047','700','center'); ctx.globalAlpha=1 }
   // Siegerehrung
   if(phase==='podium'||phase==='loading'){
     const a=Math.min(phaseT/30,1); ctx.fillStyle=`rgba(5,6,18,${0.78*a})`; ctx.fillRect(0,0,TW,H);
@@ -242,7 +256,7 @@ function draw(){
       if(w.players.length) txt(`🏆 ${w.players.slice(0,3).join(', ')}`,TW/2,690,34,'#fde047','400','center')}
     [1,2].forEach(k=>{const b=finished[k]; if(!b) return; const x=TW/2+(k===1?-360:360);
       flagBall(x,500,60,b); txt(`${k+1}. ${b.name}`,x,610,36,'#e5e7eb','700','center')});
-    txt(`Next race in ${Math.max(0,Math.ceil((60*9-phaseT)/60))} s · type your country!`,TW/2,850,36,'#22d3ee','700','center');
+    txt(`Next race in ${Math.max(0,Math.ceil((60*8-phaseT)/60))} s · type your country!`,TW/2,850,36,'#22d3ee','700','center');
     ctx.globalAlpha=1;
   }
 }
@@ -260,7 +274,7 @@ function loop(now){
 const origNew = newRace;
 newRace = async()=>{ phase='loading'; await origNew() };
 document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
-  await newRace(); setInterval(pollChat,1000); setInterval(pollBoard,15000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
+  await newRace(); setInterval(pollChat,1000); setInterval(pollBoard,5000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
   AC.resume(); playNext(); requestAnimationFrame(loop);
 });
 </script></body></html>

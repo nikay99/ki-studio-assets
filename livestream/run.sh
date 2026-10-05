@@ -8,7 +8,7 @@ DATA_DIR="${DATA_DIR:-/var/lib/marble}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/stream.env ] && . /etc/marble/stream.env
 BLOCK_S="${BLOCK_S:-41400}"          # 11,5 h pro Sendung
 PAUSE_S="${PAUSE_S:-60}"
-VBIT="${VBIT:-3000k}"; RES="${RES:-1280x720}"; PRESET="${PRESET:-superfast}"; FPS="${FPS:-30}"
+VBIT="${VBIT:-3000k}"; RES="${RES:-1280x720}"; PRESET="${PRESET:-ultrafast}"; FPS="${FPS:-30}"
 CHROME="${CHROME:-$(command -v chromium || command -v chromium-browser || command -v google-chrome)}"
 export DISPLAY=:99 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/marble-xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
