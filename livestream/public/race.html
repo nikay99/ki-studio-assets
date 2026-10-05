@@ -22,40 +22,72 @@ let thirdT = 0, leader = null, lastEv = -1, board = {races:0, countries:[], play
 function shuffle(a,r=Math.random){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}   // fair mischen (sort(()=>rand()-0.5) bevorzugt manche Plätze)
 function seedRand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
 
-// ---------- Bahn (3 Varianten, wechseln jedes Rennen) ----------
+// ---------- Bahn: jedes Rennen neu aus Bausteinen gewürfelt (Zufall aus rand(), pro Rennen neu geseedet) ----------
 const PALETTES = [
   {peg:'#f472b6', ramp:'#22d3ee', paddle:'#facc15', bump:'#a78bfa', fun:'#34d399', bg:['#111733','#1a0f2e']},
   {peg:'#fb923c', ramp:'#a3e635', paddle:'#38bdf8', bump:'#f43f5e', fun:'#facc15', bg:['#0f1f1a','#0b1426']},
   {peg:'#60a5fa', ramp:'#f472b6', paddle:'#34d399', bump:'#fbbf24', fun:'#c084fc', bg:['#1f1020','#0d1530']},
 ];
 let PAL = PALETTES[0];
-function buildTrack(variant){
+// Bausteine: jeder bekommt die Start-Höhe y und baut nach unten; Rückgabe = verbrauchte Höhe.
+// Regeln: Abstand zur Wand und zwischen Hindernissen ≥ 2 Kugeldurchmesser, sonst klemmen Kugeln.
+const MODULES = {
+  pegs(T,y){ const sp=56+Math.floor(rand()*16), rows=7+Math.floor(rand()*4), r=6+rand()*4, off=rand()*sp;
+    for(let i=0;i<rows;i++) for(let x=off+(i%2?sp/2:0);x<TW;x+=sp) if(x>=90&&x<=TW-90) T.peg(x,y+40+i*(sp+28),r,PAL.peg);
+    return rows*(sp+28)+80 },
+  zigzag(T,y){ const n=4+Math.floor(rand()*3), gap=220+rand()*60, ang=0.13+rand()*0.08, first=rand()<0.5;
+    for(let i=0;i<n;i++){ const left=(i%2===0)===first; T.wall(left?260:TW-260,y+80+i*gap,440,22,left?ang:-ang,PAL.ramp) }
+    return n*gap+120 },
+  paddles(T,y){ const rows=2+Math.floor(rand()*2), v=0.02+rand()*0.02;
+    for(let i=0;i<rows;i++) for(let j=0;j<2;j++) T.spin(j?TW-180:180,y+120+i*290,200+rand()*20,18,((i+j)%2?1:-1)*(v+0.008*i),PAL.paddle);
+    return rows*290+120 },
+  bumpers(T,y){ const rows=4+Math.floor(rand()*2), cols=4, dx=150;
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const x=120+c*dx+(r%2?75:0); if(x>=110&&x<=TW-110) T.peg(x,y+80+r*160,20+rand()*7,PAL.bump) }
+    return rows*160+120 },
+  funnel(T,y){ const g=200+rand()*40, w=(TW-80-g)/2, a=0.55+rand()*0.1, cx=TW/2+(rand()-0.5)*120;
+    T.wall(40+w/2+(cx-TW/2)/2,y+120,w+40,22,a,PAL.fun); T.wall(TW-40-w/2+(cx-TW/2)/2,y+120,w+40,22,-a,PAL.fun);
+    return 340 },
+  windmill(T,y){ const two=rand()<0.5, v=(rand()<0.5?1:-1)*(0.04+rand()*0.02);
+    const xs=two?[TW/2-150,TW/2+150]:[TW/2];
+    for(const x of xs){ T.spin(x,y+200,two?200:300,18,v,PAL.paddle); T.spin(x,y+200,two?200:300,18,v,PAL.paddle,Math.PI/2) }
+    return 440 },
+  slalom(T,y){ const n=4+Math.floor(rand()*3), gap=190+rand()*30;
+    for(let i=0;i<n;i++){ const left=i%2===0; T.wall(left?40+140:TW-40-140,y+80+i*gap,300,22,left?0.32:-0.32,PAL.fun) }
+    return n*gap+120 },
+  flats(T,y){ const n=3+Math.floor(rand()*2), first=rand()<0.5;
+    for(let i=0;i<n;i++){ const left=(i%2===0)===first; T.wall(left?260:TW-260,y+80+i*260,440,22,left?0.12:-0.12,PAL.ramp) }
+    return n*260+80 },
+};
+const START_Y = 480, END_Y = 6850;
+let trackName = '';
+function buildTrack(){
   const S = [], sp = [];
-  const wall = (x,y,w,h,a=0,col='#1e293b')=>{const b=Bodies.rectangle(x,y,w,h,{isStatic:true,angle:a,friction:0.02,restitution:0.3});b.col=col;S.push(b);return b};
-  const peg  = (x,y,r,col)=>{const b=Bodies.circle(x,y,r,{isStatic:true,restitution:0.7});b.col=col;b.peg=true;S.push(b)};
-  wall(20,WORLD_H/2,40,WORLD_H); wall(TW-20,WORLD_H/2,40,WORLD_H);
+  const T = {
+    wall:(x,y,w,h,a=0,col='#1e293b')=>{const b=Bodies.rectangle(x,y,w,h,{isStatic:true,angle:a,friction:0.02,restitution:0.3});b.col=col;S.push(b);return b},
+    peg:(x,y,r,col)=>{const b=Bodies.circle(x,y,r,{isStatic:true,restitution:0.7});b.col=col;b.peg=true;S.push(b)},
+    spin:(x,y,w,h,v,col,a0=0)=>{const b=Bodies.rectangle(x,y,w,h,{isStatic:true,restitution:0.4,angle:a0});b.col=col;b.spin=v;S.push(b);sp.push(b)},
+  };
+  T.wall(20,WORLD_H/2,40,WORLD_H); T.wall(TW-20,WORLD_H/2,40,WORLD_H);
   // Startgitter (öffnet sich nach dem Countdown)
-  const gate = wall(TW/2,300,TW-80,14,0,'#e2e8f0'); gate.gate = true;
-  // 1) Stift-Feld (Abstand zur Wand ≥ Kugeldurchmesser, sonst klemmen Kugeln)
-  const off = variant===1 ? 16 : 0;
-  for(let r=0;r<9;r++) for(let c=0;c<10;c++){const x=64+off+c*64+(r%2?32:0); if(x>=90&&x<=TW-90) peg(x,560+r*92,8,PAL.peg)}
-  // 2) Zickzack-Rampen
-  const n = variant===2 ? 5 : 6;
-  for(let i=0;i<n;i++){const left=i%2===0, y=1500+i*(1400/n); wall(left?260:TW-260,y,440,22,left?0.18:-0.18,PAL.ramp)}
-  // 3) Drehende Paddel
-  for(let i=0;i<3;i++) for(let j=0;j<2;j++){
-    const b=Bodies.rectangle(j?TW-180:180,3100+i*300,210,18,{isStatic:true,restitution:0.4});
-    b.col=PAL.paddle; b.spin=((i+j)%2?1:-1)*(0.025+0.01*i+(variant*0.004)); S.push(b); sp.push(b)}
-  // 4) zweites Stift-Feld + flache Rampen (mischt das Feld nochmal durch)
-  for(let r=0;r<8;r++) for(let c=0;c<10;c++){const x=64+c*64+(r%2?32:0)+(variant===0?16:0); if(x>=90&&x<=TW-90) peg(x,3950+r*90,9,PAL.bump)}
-  for(let i=0;i<4;i++){const left=(i+variant)%2===0; wall(left?260:TW-260,4850+i*260,440,22,left?0.12:-0.12,PAL.ramp)}
-  // 5) Bumper + feine Stifte
-  for(let r=0;r<5;r++) for(let c=0;c<4;c++){const x=120+c*150+(r%2?75:0); if(x>=110&&x<=TW-110) peg(x,6000+r*160,22+rand()*5,PAL.bump)}
-  for(let r=0;r<4;r++) for(let c=0;c<11;c++){const x=48+c*56+(r%2?28:0); if(x>=90&&x<=TW-90) peg(x,6900+r*80,6,PAL.peg)}
-  // 6) Trichter
-  wall(150,7500,300,24,0.62,PAL.fun); wall(TW-150,7500,300,24,-0.62,PAL.fun);
-  wall(TW/2-46,7750,20,200,0,PAL.fun); wall(TW/2+46,7750,20,200,0,PAL.fun);
-  wall(TW/2,WORLD_H-20,TW,40);
+  const gate = T.wall(TW/2,300,TW-80,14,0,'#e2e8f0'); gate.gate = true;
+  // Erst ein Stift-Feld (verteilt das Feld), dann zufällige Bausteine ohne direkte Wiederholung, bis die Strecke voll ist
+  const keys=Object.keys(MODULES), used=['pegs'];
+  let y = START_Y + MODULES.pegs(T, START_Y), last='pegs', ramps=0;
+  const RAMPS=['zigzag','flats','slalom'];   // höchstens 2 Rampen-Bausteine, sonst wird das Rennen zäh (Simulation)
+  while(true){
+    const opts=keys.filter(k=>k!==last && !(ramps>=2 && RAMPS.includes(k))), k=opts[Math.floor(rand()*opts.length)];
+    if(RAMPS.includes(k)) ramps++;
+    if(y + 800 > END_Y) break;
+    const before=S.length, spBefore=sp.length, h=MODULES[k](T,y);
+    if(y+h > END_Y){ S.length=before; sp.length=spBefore; if(y+460<END_Y){ y+=MODULES.funnel(T,y); used.push('funnel') } break }
+    y+=h; used.push(k); last=k;
+  }
+  trackName = used.join(' · ');
+  // Schluss (fest): feine Stifte, Trichter, Zielkanal
+  for(let r=0;r<4;r++) for(let c=0;c<11;c++){const x=48+c*56+(r%2?28:0); if(x>=90&&x<=TW-90) T.peg(x,6950+r*80,6,PAL.peg)}
+  T.wall(150,7500,300,24,0.62,PAL.fun); T.wall(TW-150,7500,300,24,-0.62,PAL.fun);
+  T.wall(TW/2-46,7750,20,200,0,PAL.fun); T.wall(TW/2+46,7750,20,200,0,PAL.fun);
+  T.wall(TW/2,WORLD_H-20,TW,40);
   return [S,sp];
 }
 
@@ -88,7 +120,7 @@ async function newRace(){
   try { lu = OFFLINE ? null : await (await fetch('/api/lineup')).json(); } catch { lu = null; }
   if(!lu) lu = shuffle(COUNTRY_LIST.slice(0,200),rand).slice(0,30).map(c=>({code:c[0],players:[]}));
   engine = Engine.create({gravity:{y:1.3}, positionIterations:8, velocityIterations:6});
-  [statics,spinners] = buildTrack(raceNo % 3);
+  [statics,spinners] = buildTrack();
   bakeTrack();
   Composite.add(engine.world, statics);
   balls = [];
