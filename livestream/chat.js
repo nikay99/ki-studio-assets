@@ -14,8 +14,21 @@ async function hasChat(videoId) {
 
 async function findLiveVideo(channel) {
   if (process.env.VIDEO_ID) return process.env.VIDEO_ID;
-  // Nicht gelistete Sendungen tauchen nicht unter /live auf: Video-ID dann in video_id.txt (öffentlich, kein Geheimnis).
-  try { const v = require('fs').readFileSync(__dirname + '/video_id.txt', 'utf8').trim(); if (/^[\w-]{11}$/.test(v)) return v; } catch {}
+  // Erst die Kanalseite (öffentliche Sendung, auch nach dem automatischen Neustart mit neuer ID),
+  // dann video_id.txt – aber nur, wenn diese Sendung gerade wirklich live ist (nicht gelistete Sendungen fehlen unter /live).
+  const v = await liveOnChannel(channel).catch(() => null);
+  if (v) return v;
+  try {
+    const f = require('fs').readFileSync(__dirname + '/video_id.txt', 'utf8').trim();
+    if (/^[\w-]{11}$/.test(f)) {
+      const html = await (await fetch(`https://www.youtube.com/watch?v=${f}`, { headers: hdr })).text();
+      if (/"isLiveNow":true/.test(html)) return f;
+    }
+  } catch {}
+  return null;
+}
+
+async function liveOnChannel(channel) {
   const base = channel.startsWith('UC') ? `https://www.youtube.com/channel/${channel}` : `https://www.youtube.com/${channel}`;
   const html = await (await fetch(base + '/live', { headers: hdr })).text();
   const m = html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/);
