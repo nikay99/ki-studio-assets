@@ -109,6 +109,8 @@ if (TOKEN) http.createServer((req, res) => {
       load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, board: board(), totalRaces: st.totalRaces });
   }
   if (['snap.jpg', 'log.txt'].includes(p) || /^test\d\.mp4$/.test(p)) return file(res, path.join(DATA, p));
+  if (p === 'update.txt') return file(res, path.join(DATA, 'update.log'));
+  if (p === 'setup.txt') return file(res, '/var/log/marble-setup.log');
   send(res, 404, 'not found', 'text/plain');
 }).listen(+process.env.STATUS_PORT || 80, '0.0.0.0');
 
