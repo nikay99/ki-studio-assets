@@ -51,21 +51,40 @@ const events = [];                // {id, user, code}
 const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
 const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
 let evId = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal gesetzt' }, msgCount = 0, joinCount = 0;
-function addPick(user, code) {
-  const prev = picks.get(user);
+function fanPoint(user, code, prev) {
   // +1 Fanpunkt fürs Land, höchstens einmal pro Minute und Zuschauer (gegen Spam)
   if (!prev || prev.code !== code || Date.now() - (lastFan.get(user) || 0) > 60000) { rollDay(); st.fans = st.fans || {}; st.fans[code] = (st.fans[code] || 0) + 1; lastFan.set(user, Date.now()); save(); }
+}
+function addPick(user, code) {
+  fanPoint(user, code, picks.get(user));
   picks.set(user, { code, ts: Date.now() });
   events.push({ id: ++evId, user, code }); if (events.length > 500) events.shift();
   joinCount++;
 }
+// CHEER: jede weitere Nachricht eines Mitspielers gibt seiner Kugel einen Schub – höchstens alle 10 s pro Person,
+// damit mehr verschiedene Fans zählen, nicht schnelles Tippen
+const lastCheer = new Map();
+let cheerCount = 0;
+function cheer(user) {
+  const p = picks.get(user); if (!p) return;
+  fanPoint(user, p.code, p); p.ts = Date.now();
+  if (Date.now() - (lastCheer.get(user) || 0) < 10000) return;
+  lastCheer.set(user, Date.now());
+  events.push({ id: ++evId, user, code: p.code, cheer: 1 }); if (events.length > 500) events.shift();
+  cheerCount++;
+}
+function onChat(user, text) {
+  const c = countryOf(text), prev = picks.get(user);
+  if (c && (!prev || prev.code !== c)) addPick(user, c); else if (prev) cheer(user);
+}
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = { ...s, since: new Date().toISOString() }; },
-  onMessage: m => { msgCount++; const c = countryOf(m.text); if (c) addPick(cleanName(m.user.replace(/^@/, '').slice(0, 20)), c); } });
+  onMessage: m => { msgCount++; onChat(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.text); } });
 
 // Demo-Zuschauer, solange niemand im Chat ist (DEMO=1): damit die Seitenleiste im Test nicht leer bleibt.
 if (process.env.DEMO === '1') {
   const names = ['lena_k', 'mike_tx', 'joao.br', 'aziz99', 'tom_uk', 'sakura', 'pierre', 'marta_pl', 'ravi', 'kim.s'];
   setInterval(() => { if (Math.random() < 0.5) addPick(names[Math.floor(Math.random() * names.length)], COUNTRY_LIST[Math.floor(Math.random() * COUNTRY_LIST.length)][0]); }, 9000);
+  setInterval(() => { const u = names[Math.floor(Math.random() * names.length)]; if (picks.has(u)) onChat(u, 'go go go'); }, 1500);
 }
 
 const DEFAULT_POOL = ['US','GB','DE','AT','FR','IT','ES','NL','PL','UA','TR','BR','MX','CA','AR','JP','KR','IN','ID','UZ','AU','SE','NO','CH','PT','EG','NG','PH','VN','SA','CO','CL','ZA','MA','GR','IE','RO','HU','CZ','PK','BD','TH','MY','NZ','DK','FI','BE','IL','KE','PE'];
@@ -126,7 +145,7 @@ if (TOKEN) http.createServer((req, res) => {
     let run = {}; try { run = JSON.parse(fs.readFileSync(path.join(DATA, 'run.json'), 'utf8')); } catch {}
     const load = fs.readFileSync('/proc/loadavg', 'utf8').split(' ').slice(0, 3);
     return send(res, 200, { time: new Date().toISOString(), run, ffmpeg: Object.fromEntries(prog.trim().split('\n').map(l => l.split('=')).filter(x => x.length === 2)),
-      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, board: board(), totalRaces: st.totalRaces });
+      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, cheers: cheerCount, board: board(), totalRaces: st.totalRaces });
   }
   if (['snap.jpg', 'log.txt'].includes(p) || /^test\d\.mp4$/.test(p)) return file(res, path.join(DATA, p));
   if (p === 'diag') return execFile('bash', ['-c', `echo "git: ${gitHead}"; uptime; nproc; free -m | head -2; ps -eo pcpu,pmem,comm --sort=-pcpu | head -8; echo; tail -20 ${DATA}/ffmpeg.err; echo; tail -5 ${DATA}/log.txt`], { timeout: 10000 }, (e, out) => send(res, 200, out || String(e), 'text/plain; charset=utf-8'));

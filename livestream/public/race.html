@@ -131,6 +131,12 @@ function step(){
 }
 
 // ---------- Chat ----------
+// CHEER-Schub: Kugel nach unten beschleunigen (gedeckelt, damit sie nicht durch Stifte tunnelt) + Funken
+function boost(b, user){
+  Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+7,17)});
+  b.boostT=45; if(!b.players.includes(user)) b.players.push(user);
+  toast(`💬 ${user} boosted ${b.flag} ${b.name}!`, '#22d3ee', 120); sfx.boost();
+}
 function toast(s, col='#fde047', life=240){ toasts.push({s,col,t:0,life}); if(toasts.length>3) toasts.shift() }
 async function pollChat(){
   if(OFFLINE) return;
@@ -140,6 +146,7 @@ async function pollChat(){
     for(const e of r.events){
       const flag=flagOf(e.code), nm=NAME[e.code]||e.code;
       let b = balls && balls.find(x=>x.code===e.code);
+      if(e.cheer){ if(b && phase==='race' && !b.done) boost(b, e.user); continue }
       if(!b && phase==='countdown' && balls.length<MAX_BALLS) b = addBall(e.code, []);   // vor dem Start: sofort eigene Kugel
       if(b && (phase==='countdown'||phase==='race')){
         if(!b.players.includes(e.user)) b.players.unshift(e.user);
@@ -177,6 +184,7 @@ const sfx = {
   join:()=>{tone(1318,0.08,'sine',0.2);tone(1760,0.12,'sine',0.2,0.07)},
   lead:()=>{tone(784,0.1,'square',0.2);tone(1175,0.18,'square',0.2,0.08)},
   finish:k=>tone([0,1046,880,784][k],0.35,'triangle',0.35),
+  boost:()=>{tone(660,0.07,'square',0.15);tone(990,0.07,'square',0.15,0.05);tone(1480,0.12,'square',0.15,0.1)},
   fanfare:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i===3?0.8:0.18,'square',0.22,i*0.14)),
 };
 setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
@@ -250,6 +258,10 @@ function draw(){
   for(const b of balls){
     if(b.position.y<camY-40||b.position.y>camY+H+40) continue;
     if(b.players.length){ ctx.strokeStyle='#fde047'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,R+4,0,7); ctx.stroke() }
+    if(b.boostT>0){ b.boostT--; const k=b.boostT/45; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=5; ctx.globalAlpha=k;
+      ctx.beginPath(); ctx.arc(b.position.x,b.position.y,R+8+(1-k)*26,0,7); ctx.stroke();
+      for(let j=0;j<6;j++){ const a=j*1.047+b.boostT*0.3, rr=R+10+(1-k)*30; ctx.fillStyle=j%2?'#fde047':'#22d3ee'; ctx.fillRect(b.position.x+Math.cos(a)*rr-3,b.position.y-Math.sin(a)*rr*0.6-rr*0.5-3,6,6) }
+      ctx.globalAlpha=1 }
     const sp=ballSprite(b,R); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); ctx.drawImage(sp,-R-3,-R-3); ctx.restore();
   }
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H+40)
@@ -268,10 +280,13 @@ function drawColumn(rank){
   txt(phase==='race'?`⏱ ${(t/60).toFixed(0)}s`:phase==='countdown'?`⏳ ${secs(START_WAIT-phaseT)}s`:'🏁',Rt,104,26,'#22d3ee','700','right');
   rank.slice(0,3).forEach((b,i)=>{ const x=MID-105+i*80; txt(['1','2','3'][i],x,104,22,['#ffd700','#d1d5db','#cd7f32'][i],'700','center'); ctx.drawImage(ballSprite(b,16),x+12,78) });
   // Mitmach-Aufruf oben (unten und rechts verdeckt am Handy die YouTube-Oberfläche/der Chat), im Wechsel mit „Next race: …“
-  const F=128, showNext = nextUp.length && phase==='race' && Math.floor(Date.now()/5000)%2===1;
+  const F=128, slot=Math.floor(Date.now()/5000)%3, showNext = nextUp.length && phase==='race' && slot===1, showBoost = phase==='race' && slot===2;
   const fg=ctx.createLinearGradient(0,F,0,F+110); fg.addColorStop(0,'rgba(146,64,14,0.95)'); fg.addColorStop(1,'rgba(69,26,3,0.95)');
   ctx.fillStyle=fg; ctx.fillRect(CX,F,CW,110); ctx.fillStyle='#fde047'; ctx.fillRect(CX,F+106,CW,4);
-  if(showNext){
+  if(showBoost){
+    txt('💬 CHAT = BOOST!',MID,F+48,44,'#22d3ee','700','center',CW-40);
+    txt('racing? type anything to push your ball',MID,F+92,28,'#fff','700','center',CW-40);
+  } else if(showNext){
     txt('⏭ NEXT RACE',MID,F+44,34,'#fde047','700','center');
     txt(nextUp.slice(-4).map(x=>`${flagOf(x.code)} ${x.user}`).join('  '),MID,F+88,28,'#fff','700','center',CW-40);
   } else {
@@ -291,7 +306,7 @@ function drawColumn(rank){
     txt(n>0?String(n):'GO!',MID,745,170,'#fde047','700','center');
     txt('Type your COUNTRY in the chat 👇',MID,815,34,'#fff','700','center',CW-40,true);
     txt('→ your flag races with YOUR name on it',MID,858,26,'#fde047','700','center',CW-40,true);
-    txt('e.g.  Brazil · USA · Germany · 🇯🇵',MID,898,24,'#cbd5e1','400','center',CW-40);
+    txt('💬 chat during the race = BOOST your ball!',MID,898,24,'#22d3ee','700','center',CW-40,true);
     if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,960,24,'#4ade80','700','center',CW-40,true);
   }
   if(phase==='podium'||phase==='loading'){
@@ -365,7 +380,7 @@ function drawRight(rank){
   box(x0,580,w,128,'rgba(253,224,71,0.12)',14,'#fde047');
   txt('🎯 GET YOUR OWN BALL',x0+22,628,32,'#fde047','700','left',w-44);
   txt('type your country in the chat',x0+22,666,24,'#fff','700','left',w-44);
-  txt('→ your flag races with YOUR name',x0+22,696,20,'#e2e8f0','400','left',w-44);
+  txt('💬 then chat in the race = BOOST!',x0+22,696,20,'#22d3ee','700','left',w-44);
   txt('JUST JOINED',x0,766,24,'#94a3b8','700');
   if(!chatLog.length) txt('be the first – type your country!',x0,806,22,'#64748b','400');
   chatLog.slice(0,6).forEach((c,i)=>{ const y=806+i*42;
