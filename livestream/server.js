@@ -113,10 +113,32 @@ if (TOKEN) http.createServer((req, res) => {
       load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, board: board(), totalRaces: st.totalRaces });
   }
   if (['snap.jpg', 'log.txt'].includes(p) || /^test\d\.mp4$/.test(p)) return file(res, path.join(DATA, p));
+  if (p === 'diag') return execFile('bash', ['-c', `echo "git: ${gitHead}"; uptime; nproc; free -m | head -2; ps -eo pcpu,pmem,comm --sort=-pcpu | head -8; echo; tail -20 ${DATA}/ffmpeg.err; echo; tail -5 ${DATA}/log.txt`], { timeout: 10000 }, (e, out) => send(res, 200, out || String(e), 'text/plain; charset=utf-8'));
   if (p === 'update.txt') return file(res, path.join(DATA, 'update.log'));
   if (p === 'setup.txt') return file(res, '/var/log/marble-setup.log');
   send(res, 404, 'not found', 'text/plain');
 }).listen(+process.env.STATUS_PORT || 80, '0.0.0.0');
+
+
+// ---------- Selbst-Update (ohne cron): alle 2 Min. Repo prüfen; bei Änderung beendet sich der Server, systemd startet ihn neu ----------
+const { execFile } = require('child_process');
+const REPO = path.resolve(__dirname, '..');
+const git = (...a) => new Promise(r => execFile('git', ['-C', REPO, ...a], { timeout: 60000 }, (e, out) => r(e ? '' : out.trim())));
+let gitHead = '';
+if (fs.existsSync(path.join(REPO, '.git')) && process.env.SELF_UPDATE !== '0') {
+  git('rev-parse', 'HEAD:livestream').then(h => gitHead = h);
+  setInterval(async () => {
+    await git('fetch', '-q', '--depth', '1', 'origin', 'main');
+    const now = await git('rev-parse', 'HEAD:livestream'), remote = await git('rev-parse', 'origin/main:livestream');
+    if (!remote || remote === now) return;
+    const pkgOld = await git('rev-parse', 'HEAD:livestream/package.json');
+    await git('reset', '-q', '--hard', 'origin/main');
+    if (pkgOld !== await git('rev-parse', 'HEAD:livestream/package.json'))
+      await new Promise(r => execFile('npm', ['install', '--omit=dev', '-q'], { cwd: __dirname, timeout: 300000 }, r));
+    fs.appendFileSync(path.join(DATA, 'update.log'), `${new Date().toISOString()} update ${remote}\n`);
+    process.exit(0);
+  }, 120000);
+}
 
 console.log('server läuft', { CHANNEL, DATA });
 module.exports = { countryOf };

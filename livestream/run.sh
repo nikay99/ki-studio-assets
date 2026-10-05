@@ -35,6 +35,9 @@ start_chrome(){
 for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8080/api/board && break; sleep 2; done
 start_chrome
 sleep 8
+# Wenn sich dieses Skript (per Selbst-Update) ändert: beenden, systemd startet die Sendung mit der neuen Fassung neu
+SELF_SUM=$(md5sum "$0" | cut -d' ' -f1)
+( while sleep 60; do [ "$(md5sum "$0" | cut -d' ' -f1)" != "$SELF_SUM" ] && { log "run.sh geändert, Neustart"; kill $$; pkill -P $$ -x ffmpeg; exit; }; done ) &
 
 while true; do
   [ -f /etc/marble/stream.env ] && . /etc/marble/stream.env
