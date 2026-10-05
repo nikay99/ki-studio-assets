@@ -35,6 +35,15 @@ const today = () => new Date().toISOString().slice(0, 10);
 function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.races = 0; lastFan.clear(); } }
 const save = () => fs.writeFile(STATE_FILE, JSON.stringify(st), () => {});
 rollDay();
+// Nation of the Hour: Siege pro volle Stunde (UTC); beim Stundenwechsel wird der Stundensieger festgehalten
+const hourKey = () => new Date().toISOString().slice(0, 13);
+function rollHour() {
+  if (st.hour === hourKey()) return;
+  const fans = st.fans || {}, best = Object.entries(st.hourWins || {}).sort((a, b) => b[1] - a[1] || (fans[b[0]] || 0) - (fans[a[0]] || 0))[0];
+  if (best && st.hour) st.champ = { code: best[0], wins: best[1], hour: st.hour };
+  st.hour = hourKey(); st.hourWins = {}; save();
+}
+rollHour(); setInterval(rollHour, 5000);
 
 const picks = new Map();          // user → {code, ts}
 const events = [];                // {id, user, code}
@@ -92,7 +101,8 @@ http.createServer(async (req, res) => {
   if (u.pathname.startsWith('/music/')) return file(res, path.join(DATA, 'music', path.basename(u.pathname)));
   if (u.pathname === '/api/result' && req.method === 'POST') {
     const r = await body(req); rollDay();
-    if (r.winner) st.countryWins[r.winner] = (st.countryWins[r.winner] || 0) + 1;
+    rollHour();
+    if (r.winner) { st.countryWins[r.winner] = (st.countryWins[r.winner] || 0) + 1; st.hourWins[r.winner] = (st.hourWins[r.winner] || 0) + 1; }
     for (const p of r.players || []) st.playerWins[p] = (st.playerWins[p] || 0) + 1;
     st.races++; st.totalRaces++; save(); return send(res, 200, board());
   }
@@ -101,7 +111,9 @@ http.createServer(async (req, res) => {
 
 function board() {
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
-  return { races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5) };
+  const hourEnds = new Date(st.hour + ':00:00Z').getTime() + 3600000;
+  return { races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5),
+    hour: top(st.hourWins || {}, 3), hourEnds, champ: st.champ || null };
 }
 
 // Statusseite nach außen: nur /s/<TOKEN>/…

@@ -91,6 +91,7 @@ async function newRace(){
   shuffle(lu.slice(),rand).forEach(({code,players},i)=>addBall(code,players,i));
   Events.on(engine,'collisionStart',onHit);
   if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
+  if(finalMin()) toast('🔥 FINAL RACES of the hour – type your country!','#f87171',300);
   t=0; finished=[]; phase='countdown'; phaseT=0; nextUp=[]; leader=null;
 }
 
@@ -154,7 +155,11 @@ async function pollChat(){
 }
 let myVersion=null, reloadPending=false;
 async function pollVersion(){ if(OFFLINE) return; try{ const v=(await (await fetch('/api/version')).json()).v; if(myVersion===null) myVersion=v; else if(v!==myVersion) reloadPending=true }catch{} }
-async function pollBoard(){ if(!OFFLINE) try{ board = await (await fetch('/api/board')).json() }catch{} }
+let seenChamp, champShow=null;
+async function pollBoard(){ if(OFFLINE) return; try{ board = await (await fetch('/api/board')).json();
+  const ch=board.champ&&board.champ.hour; if(seenChamp===undefined) seenChamp=ch; else if(ch&&ch!==seenChamp){ seenChamp=ch; champShow={...board.champ, at:Date.now()}; sfx.fanfare() } }catch{} }
+const finalMin = ()=>board.hourEnds && board.hourEnds-Date.now()<5*60000;
+const hourLeft = ()=>{ const ms=Math.max(0,(board.hourEnds||0)-Date.now()); return board.hourEnds?`${Math.floor(ms/60000)}:${String(Math.floor(ms/1000)%60).padStart(2,'0')}`:'' };
 
 // ---------- Ton ----------
 const AC = new (window.AudioContext||window.webkitAudioContext)();
@@ -200,7 +205,9 @@ function flagBall(x,y,r,b,g=ctx){
 const ballImg = new Map();
 function ballSprite(b,r){
   const k=b.code+r; if(ballImg.has(k)) return ballImg.get(k);
-  const c=document.createElement('canvas'); c.width=c.height=2*r+6; flagBall(r+3,r+3,r,b,c.getContext('2d')); ballImg.set(k,c); return c;
+  const c=document.createElement('canvas'), g=c.getContext('2d'); c.width=c.height=2*r+6; flagBall(r+3,r+3,r,b,g);
+  g.globalCompositeOperation='destination-in'; g.beginPath(); g.arc(r+3,r+3,r+2,0,7); g.fill();   // Ecken sauber rund (sonst bei großen Kugeln sichtbar)
+  ballImg.set(k,c); return c;
 }
 const flagSprite = (code,r)=>ballSprite({code,flag:flagOf(code)},r);
 function drawBody(g,b,flat){
@@ -271,12 +278,16 @@ function drawColumn(rank){
     txt('🎯 GET YOUR OWN BALL!',MID,F+48,44,'#fde047','700','center',CW-40);
     txt('type your COUNTRY in the chat',MID,F+92,32,'#fff','700','center',CW-40);
   }
+  // Stunden-Wertung: Countdown bis zur Nation of the Hour
+  const fin=finalMin(); ctx.fillStyle=fin?(Date.now()%1000<500?'rgba(185,28,28,0.95)':'rgba(127,29,29,0.95)'):'rgba(8,10,24,0.88)'; ctx.fillRect(CX,F+110,CW,46);
+  txt(fin?`🔥 FINAL MINUTES! Hour champ in ${hourLeft()}`:`👑 NATION OF THE HOUR in ${hourLeft()}`,L,F+143,24,'#fff','700','left',CW-190);
+  (board.hour||[]).slice(0,2).forEach(([c,n],i)=>{ const x=Rt-150+i*78; ctx.drawImage(flagSprite(c,15),x,F+118); txt(String(n),x+40,F+143,24,i?'#e2e8f0':'#fde047','700') });
   // Ansagen mit Benutzernamen
-  toasts.forEach((o,i)=>{ const y=252+i*62; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
+  toasts.forEach((o,i)=>{ const y=298+i*62; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
     box(CX+14,y,CW-28,52,'rgba(5,6,18,0.88)',14,o.col); txt(o.s,MID,y+36,26,o.col,'700','center',CW-64); ctx.globalAlpha=1 });
   if(phase==='countdown'){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
-    const oy=Math.max(238,Math.round(320-camY)); ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
+    const oy=Math.max(284,Math.round(320-camY)); ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
     txt(n>0?String(n):'GO!',MID,745,170,'#fde047','700','center');
     txt('Type your COUNTRY in the chat 👇',MID,815,34,'#fff','700','center',CW-40,true);
     txt('→ your flag races with YOUR name on it',MID,858,26,'#fde047','700','center',CW-40,true);
@@ -284,33 +295,50 @@ function drawColumn(rank){
     if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,960,24,'#4ade80','700','center',CW-40,true);
   }
   if(phase==='podium'||phase==='loading'){
-    const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,238,CW,H-238);
-    ctx.globalAlpha=a; txt('🏆 WINNER',MID,300,54,'#ffd700','700','center');
-    if(w){ ctx.drawImage(ballSprite(w,95),MID-98,430-98); txt(w.name,MID,580,56,'#fff','700','center',CW-40);
-      if(w.players.length) txt(`🎉 ${w.players[0]} WINS!`,MID,636,42,'#fde047','700','center',CW-40);
-      else txt(`Type ${w.name.toUpperCase()} in chat to claim it!`,MID,636,28,'#cbd5e1','700','center',CW-40) }
+    const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,284,CW,H-284);
+    ctx.globalAlpha=a; txt('🏆 WINNER',MID,345,54,'#ffd700','700','center');
+    if(w){ ctx.drawImage(ballSprite(w,90),MID-93,470-93); txt(w.name,MID,615,56,'#fff','700','center',CW-40);
+      if(w.players.length) txt(`🎉 ${w.players[0]} WINS!`,MID,668,42,'#fde047','700','center',CW-40);
+      else txt(`Type ${w.name.toUpperCase()} in chat to claim it!`,MID,668,28,'#cbd5e1','700','center',CW-40) }
     [1,2].forEach(k=>{const b=finished[k]; if(!b) return; const x=MID+(k===1?-150:150);
-      ctx.drawImage(ballSprite(b,42),x-45,740-45); txt(`${k+1}. ${b.name}`,x,816,24,'#e5e7eb','700','center',260);
-      if(b.players.length) txt(b.players[0],x,846,20,'#fde047','400','center',260)});
+      ctx.drawImage(ballSprite(b,40),x-43,765-43); txt(`${k+1}. ${b.name}`,x,838,24,'#e5e7eb','700','center',260);
+      if(b.players.length) txt(b.players[0],x,866,20,'#fde047','400','center',260)});
     const top=(board.countries||[])[0];
-    if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,920,26,'#94a3b8','700','center',CW-40);
+    if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,935,26,'#94a3b8','700','center',CW-40);
     ctx.globalAlpha=1;
   }
+  // Stundensieger-Ehrung (12 s nach dem Stundenwechsel)
+  if(champShow && Date.now()-champShow.at<12000){ const c=champShow, a=Math.min(1,(Date.now()-c.at)/400,(12000-(Date.now()-c.at))/600);
+    ctx.globalAlpha=a; box(CX+14,330,CW-28,400,'rgba(30,20,4,0.95)',20,'#ffd700');
+    txt('👑 NATION OF THE HOUR 👑',MID,395,38,'#ffd700','700','center',CW-60);
+    ctx.drawImage(flagSprite(c.code,70),MID-73,420); txt(NAME[c.code]||c.code,MID,620,52,'#fff','700','center',CW-60);
+    txt(`${c.wins} ${c.wins===1?'win':'wins'} this hour`,MID,665,28,'#fde047','700','center');
+    txt('New hour – new chance! Type your country',MID,708,22,'#cbd5e1','400','center',CW-60); ctx.globalAlpha=1 }
 }
 
 // links: Siege pro Land heute + Länder-Battle (nur im 16:9-Bild)
 function drawLeft(){
   const x0=40, x1=CX-40, w=x1-x0;
   ctx.fillStyle='rgba(8,10,24,0.9)'; ctx.fillRect(0,0,CX,H);
-  txt('🏆 NATION WINS TODAY',x0,74,36,'#ffd700','700','left',w);
-  const list=(board.countries||[]).slice(0,10), max=list.length?list[0][1]:1;
-  if(!list.length) txt('No winner yet – race on!',x0,140,26,'#64748b','400');
-  list.forEach(([c,n],i)=>{ const y=104+i*62;
-    box(x0,y,w,52,i<3?['#ffd70030','#d1d5db22','#cd7f3222'][i]:'rgba(255,255,255,0.04)',10);
-    ctx.fillStyle='rgba(253,224,71,0.18)'; ctx.fillRect(x0,y+46,w*n/max,6);
-    txt(`${i+1}`,x0+30,y+37,26,'#fff','700','center'); ctx.drawImage(flagSprite(c,18),x0+56,y+5);
-    txt(NAME[c]||c,x0+106,y+36,26,'#fff','700','left',w-210);
-    txt(`${n} ${n===1?'win':'wins'}`,x1-16,y+36,24,'#fde047','700','right') });
+  txt('👑 NATION OF THE HOUR',x0,70,34,'#ffd700','700','left',w-150);
+  txt(`⏱ ${hourLeft()}`,x1,70,30,finalMin()?'#f87171':'#22d3ee','700','right');
+  const hl=(board.hour||[]).slice(0,3);
+  if(!hl.length) txt('next win takes the lead!',x0,130,26,'#64748b','400');
+  hl.forEach(([c,n],i)=>{ const y=92+i*58;
+    box(x0,y,w,50,['#ffd70030','#d1d5db22','#cd7f3222'][i],10);
+    txt(`${i+1}`,x0+30,y+36,26,'#fff','700','center'); ctx.drawImage(flagSprite(c,17),x0+56,y+5);
+    txt(NAME[c]||c,x0+104,y+35,26,'#fff','700','left',w-210);
+    txt(`${n} ${n===1?'win':'wins'}`,x1-16,y+35,24,'#fde047','700','right') });
+  if(board.champ) txt(`last hour: ${flagOf(board.champ.code)} ${NAME[board.champ.code]||board.champ.code} (${board.champ.wins})`,x0,292,22,'#94a3b8','700','left',w);
+  txt('🏆 NATION WINS TODAY',x0,350,28,'#ffd700','700','left',w);
+  const list=(board.countries||[]).slice(0,6), max=list.length?list[0][1]:1;
+  if(!list.length) txt('No winner yet – race on!',x0,404,24,'#64748b','400');
+  list.forEach(([c,n],i)=>{ const y=368+i*56;
+    box(x0,y,w,48,'rgba(255,255,255,0.04)',10);
+    ctx.fillStyle='rgba(253,224,71,0.18)'; ctx.fillRect(x0,y+43,w*n/max,5);
+    txt(`${i+1}`,x0+30,y+34,24,'#fff','700','center'); ctx.drawImage(flagSprite(c,16),x0+56,y+6);
+    txt(NAME[c]||c,x0+100,y+33,24,'#fff','700','left',w-200);
+    txt(`${n} ${n===1?'win':'wins'}`,x1-16,y+33,22,'#fde047','700','right') });
   const fy=760;
   txt('🔥 COUNTRY BATTLE · fans today',x0,fy,26,'#94a3b8','700','left',w);
   const fans=(board.fans||[]).slice(0,5);
