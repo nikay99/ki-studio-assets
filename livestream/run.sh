@@ -38,8 +38,8 @@ for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8080/api/board &
 start_chrome
 sleep 8
 # Wenn sich dieses Skript (per Selbst-Update) ändert: beenden, systemd startet die Sendung mit der neuen Fassung neu
-SELF_SUM=$(cat "$0" /etc/marble/stream.env 2>/dev/null | md5sum | cut -d' ' -f1)
-( while sleep 60; do [ "$(cat "$0" /etc/marble/stream.env 2>/dev/null | md5sum | cut -d' ' -f1)" != "$SELF_SUM" ] && { log "run.sh oder Schlüssel geändert, Neustart"; kill $$; pkill -P $$ -x ffmpeg; exit; }; done ) &
+SELF_SUM=$(cat "$0" /etc/marble/stream.env "$DIR/PAUSE" 2>/dev/null | md5sum | cut -d' ' -f1)
+( while sleep 60; do [ "$(cat "$0" /etc/marble/stream.env "$DIR/PAUSE" 2>/dev/null | md5sum | cut -d' ' -f1)" != "$SELF_SUM" ] && { log "run.sh oder Schlüssel geändert, Neustart"; kill $$; pkill -P $$ -x ffmpeg; exit; }; done ) &
 
 while true; do
   [ -f /etc/marble/stream.env ] && . /etc/marble/stream.env
@@ -49,6 +49,9 @@ while true; do
   ENC=(-c:v libx264 -preset "$PRESET" -b:v "$VBIT" -maxrate "$VBIT" -bufsize 6000k -pix_fmt yuv420p -g $((FPS*2)) -keyint_min $((FPS*2)) -sc_threshold 0
        -c:a aac -b:a 128k -ar 44100 -ac 2)
   snap(){ SNAP=(-map 0:v -t "$1" -vf fps=1/10,scale=640:-2 -update 1 -q:v 4 "$DATA_DIR/snap.jpg"); }
+  if [ -f "$DIR/PAUSE" ]; then                       # Pause per Repo-Datei livestream/PAUSE (z. B. zum Umstellen in YouTube Studio)
+    runjson pause "PAUSE-Datei im Repo"; sleep 20; continue
+  fi
   if [ -n "${STREAM_KEY:-}" ] && [ "${STREAM_ENABLED:-1}" = "1" ]; then
     snap "$BLOCK_S"; runjson live; log "Sendung startet (Block ${BLOCK_S}s)"
     if [ "$VERT" = 1 ]; then
