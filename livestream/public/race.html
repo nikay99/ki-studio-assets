@@ -105,7 +105,7 @@ function step(){
     if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players})})
       .then(r=>r.json()).then(b=>board=b).catch(()=>{});
   }
-  if(phase==='podium' && phaseT>60*9 && !phase.loading){phase='loading'; newRace()}
+  if(phase==='podium' && phaseT>60*9){ if(reloadPending){ location.reload(); phase='loading'; return } phase='loading'; newRace()}
 }
 
 // ---------- Chat ----------
@@ -123,6 +123,8 @@ async function pollChat(){
     chatLog = chatLog.slice(0,4); lastEv = r.last;
   }catch{}
 }
+let myVersion=null, reloadPending=false;
+async function pollVersion(){ if(OFFLINE) return; try{ const v=(await (await fetch('/api/version')).json()).v; if(myVersion===null) myVersion=v; else if(v!==myVersion) reloadPending=true }catch{} }
 async function pollBoard(){ if(!OFFLINE) try{ board = await (await fetch('/api/board')).json() }catch{} }
 
 // ---------- Ton ----------
@@ -258,7 +260,7 @@ function loop(now){
 const origNew = newRace;
 newRace = async()=>{ phase='loading'; await origNew() };
 document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
-  await newRace(); setInterval(pollChat,1000); setInterval(pollBoard,15000); pollBoard();
+  await newRace(); setInterval(pollChat,1000); setInterval(pollBoard,15000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
   AC.resume(); playNext(); requestAnimationFrame(loop);
 });
 </script></body></html>

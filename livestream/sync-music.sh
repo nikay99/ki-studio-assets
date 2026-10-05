@@ -8,3 +8,6 @@ python3 -c "import json,sys;[print(t['name'],t['url']) for t in json.load(open('
   rm -f "/tmp/$NAME.raw.mp3"
 done
 chown -R marble:marble "$OUT" 2>/dev/null || true
+
+# neues Update-Skript aus dem Repo übernehmen (sync-music läuft beim Update als root)
+[ "$(id -u)" = 0 ] && [ -f "$DIR/marble-update.sh" ] && install -m 755 "$DIR/marble-update.sh" /usr/local/bin/marble-update
