@@ -14,6 +14,8 @@ async function hasChat(videoId) {
 
 async function findLiveVideo(channel) {
   if (process.env.VIDEO_ID) return process.env.VIDEO_ID;
+  // Nicht gelistete Sendungen tauchen nicht unter /live auf: Video-ID dann in video_id.txt (öffentlich, kein Geheimnis).
+  try { const v = require('fs').readFileSync(__dirname + '/video_id.txt', 'utf8').trim(); if (/^[\w-]{11}$/.test(v)) return v; } catch {}
   const base = channel.startsWith('UC') ? `https://www.youtube.com/channel/${channel}` : `https://www.youtube.com/${channel}`;
   const html = await (await fetch(base + '/live', { headers: hdr })).text();
   const m = html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/);
