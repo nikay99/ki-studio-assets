@@ -11,3 +11,5 @@ chown -R marble:marble "$OUT" 2>/dev/null || true
 
 # neues Update-Skript aus dem Repo übernehmen (sync-music läuft beim Update als root)
 [ "$(id -u)" = 0 ] && [ -f "$DIR/marble-update.sh" ] && install -m 755 "$DIR/marble-update.sh" /usr/local/bin/marble-update
+# Cron fehlt im DO-Ubuntu-Image → ohne ihn läuft das Selbst-Update nie
+if [ "$(id -u)" = 0 ] && ! command -v cron >/dev/null; then apt-get -o DPkg::Lock::Timeout=900 -y -q install cron && systemctl enable --now cron; fi
