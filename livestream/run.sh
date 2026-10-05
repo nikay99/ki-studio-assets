@@ -16,6 +16,11 @@ export DISPLAY=:99 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/marble-xdg}"; mkdir 
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
 runjson(){ printf '{"mode":"%s","block_start":"%s","note":"%s"}' "$1" "$(date -u +%FT%TZ)" "${2:-}" > "$DATA_DIR/run.json"; }
 
+# Hardware-Kodierung nur nutzen, wenn ein Probelauf klappt
+HW=none
+if [ -e /dev/dri/renderD128 ] && ffmpeg -hide_banner -loglevel error -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc=size=1280x720:rate=30 -t 1 -vf format=nv12,hwupload -c:v h264_vaapi -f null - 2>/dev/null; then HW=vaapi; fi
+log "Kodierung: $HW"
+
 cleanup(){ pkill -P $$ 2>/dev/null; kill $(jobs -p) 2>/dev/null; }
 trap cleanup EXIT
 
@@ -44,10 +49,16 @@ SELF_SUM=$(cat "$0" /etc/marble/stream.env "$DIR/PAUSE" 2>/dev/null | md5sum | c
 while true; do
   [ -f /etc/marble/stream.env ] && . /etc/marble/stream.env
   kill -0 $CHROME_PID 2>/dev/null || { log "Chrome neu gestartet"; start_chrome; sleep 8; }
-  IN=(-thread_queue_size 1024 -f x11grab -draw_mouse 0 -video_size "${SW}x${SH}" -framerate "$FPS" -i :99.0
+  HWDEV=(); [ "$HW" = vaapi ] && HWDEV=(-vaapi_device /dev/dri/renderD128)
+  IN=("${HWDEV[@]}" -thread_queue_size 1024 -f x11grab -draw_mouse 0 -video_size "${SW}x${SH}" -framerate "$FPS" -i :99.0
       -thread_queue_size 1024 -f pulse -i race.monitor)
-  ENC=(-c:v libx264 -preset "$PRESET" -b:v "$VBIT" -maxrate "$VBIT" -bufsize 6000k -pix_fmt yuv420p -g $((FPS*2)) -keyint_min $((FPS*2)) -sc_threshold 0
-       -c:a aac -b:a 128k -ar 44100 -ac 2)
+  if [ "$HW" = vaapi ]; then   # Intel Quick Sync (z. B. N95): Kodierung auf der Grafik, CPU bleibt fürs Rennen frei
+    ENC=(-vf format=nv12,hwupload -c:v h264_vaapi -b:v "$VBIT" -maxrate "$VBIT" -bufsize 6000k -g $((FPS*2)) -keyint_min $((FPS*2))
+         -c:a aac -b:a 128k -ar 44100 -ac 2)
+  else
+    ENC=(-c:v libx264 -preset "$PRESET" -b:v "$VBIT" -maxrate "$VBIT" -bufsize 6000k -pix_fmt yuv420p -g $((FPS*2)) -keyint_min $((FPS*2)) -sc_threshold 0
+         -c:a aac -b:a 128k -ar 44100 -ac 2)
+  fi
   snap(){ SNAP=(-map 0:v -t "$1" -vf fps=1/10,scale=640:-2 -update 1 -q:v 4 "$DATA_DIR/snap.jpg"); }
   if [ -f "$DIR/PAUSE" ]; then                       # Pause per Repo-Datei livestream/PAUSE (z. B. zum Umstellen in YouTube Studio)
     runjson pause "PAUSE-Datei im Repo"; sleep 20; continue
