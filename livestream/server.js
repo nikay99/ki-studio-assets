@@ -28,17 +28,20 @@ function countryOf(text) {
 
 // ---------- Zustand ----------
 const STATE_FILE = path.join(DATA, 'state.json');
+const lastFan = new Map();        // user → Zeit des letzten Fanpunkts
 let st = { day: '', countryWins: {}, playerWins: {}, fans: {}, races: 0, totalRaces: 0 };
 try { st = { ...st, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }; } catch {}
 const today = () => new Date().toISOString().slice(0, 10);
-function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.races = 0; } }
+function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.races = 0; lastFan.clear(); } }
 const save = () => fs.writeFile(STATE_FILE, JSON.stringify(st), () => {});
 rollDay();
 
 const picks = new Map();          // user → {code, ts}
 const events = [];                // {id, user, code}
+// Namen erscheinen groß im Stream: grobe Beleidigungen nicht anzeigen (zusätzlich YouTube-Studio „Blockierte Wörter“ nutzen)
+const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
+const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
 let evId = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal gesetzt' }, msgCount = 0, joinCount = 0;
-const lastFan = new Map();
 function addPick(user, code) {
   const prev = picks.get(user);
   // +1 Fanpunkt fürs Land, höchstens einmal pro Minute und Zuschauer (gegen Spam)
@@ -48,7 +51,7 @@ function addPick(user, code) {
   joinCount++;
 }
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = { ...s, since: new Date().toISOString() }; },
-  onMessage: m => { msgCount++; const c = countryOf(m.text); if (c) addPick(m.user.replace(/^@/, '').slice(0, 20), c); } });
+  onMessage: m => { msgCount++; const c = countryOf(m.text); if (c) addPick(cleanName(m.user.replace(/^@/, '').slice(0, 20)), c); } });
 
 // Demo-Zuschauer, solange niemand im Chat ist (DEMO=1): damit die Seitenleiste im Test nicht leer bleibt.
 if (process.env.DEMO === '1') {
@@ -65,7 +68,8 @@ function lineup(n = 30) {
     recent.get(p.code).push(user);
   }
   const codes = [...recent.keys()].slice(0, n);
-  const pool = DEFAULT_POOL.filter(c => !codes.includes(c)).sort(() => Math.random() - 0.5);
+  const pool = DEFAULT_POOL.filter(c => !codes.includes(c));
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   while (codes.length < n) codes.push(pool.shift());
   return codes.map(c => ({ code: c, players: (recent.get(c) || []).slice(0, 5) }));
 }

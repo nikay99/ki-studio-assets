@@ -19,6 +19,7 @@ const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
 let engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, trackLayer, trackSeed = 0, rand;
 let thirdT = 0, leader = null, lastEv = -1, board = {races:0, countries:[], players:[], fans:[]}, nextUp = [], toasts = [];
 
+function shuffle(a,r=Math.random){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}   // fair mischen (sort(()=>rand()-0.5) bevorzugt manche Plätze)
 function seedRand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
 
 // ---------- Bahn (3 Varianten, wechseln jedes Rennen) ----------
@@ -81,14 +82,15 @@ async function newRace(){
   rand = seedRand(1000+trackSeed%100000);
   let lu;
   try { lu = OFFLINE ? null : await (await fetch('/api/lineup')).json(); } catch { lu = null; }
-  if(!lu) lu = COUNTRY_LIST.slice(0,200).sort(()=>rand()-0.5).slice(0,30).map(c=>({code:c[0],players:[]}));
+  if(!lu) lu = shuffle(COUNTRY_LIST.slice(0,200),rand).slice(0,30).map(c=>({code:c[0],players:[]}));
   engine = Engine.create({gravity:{y:1.3}, positionIterations:8, velocityIterations:6});
   [statics,spinners] = buildTrack(raceNo % 3);
   bakeTrack();
   Composite.add(engine.world, statics);
   balls = [];
-  lu.slice().sort(()=>rand()-0.5).forEach(({code,players},i)=>addBall(code,players,i));
+  shuffle(lu.slice(),rand).forEach(({code,players},i)=>addBall(code,players,i));
   Events.on(engine,'collisionStart',onHit);
+  if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
   t=0; finished=[]; phase='countdown'; phaseT=0; nextUp=[]; leader=null;
 }
 
@@ -180,7 +182,7 @@ const mnode = AC.createMediaElementSource(music); mnode.connect(master);
 music.onended = ()=>playNext(); music.onerror = ()=>setTimeout(playNext, 3000);
 async function playNext(){ try{ if(!playlist.length) playlist = await (await fetch('/api/music')).json() }catch{}
   if(!playlist.length){ setTimeout(playNext, 30000); return }
-  if(pi % playlist.length === 0) playlist.sort(()=>Math.random()-0.5);
+  if(pi % playlist.length === 0) shuffle(playlist);
   music.src = '/music/'+encodeURIComponent(playlist[pi++ % playlist.length]); music.play().catch(()=>setTimeout(playNext,3000)) }
 
 // ---------- Darstellung ----------
@@ -284,11 +286,11 @@ function drawColumn(rank){
   if(phase==='podium'||phase==='loading'){
     const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,238,CW,H-238);
     ctx.globalAlpha=a; txt('🏆 WINNER',MID,300,54,'#ffd700','700','center');
-    if(w){ flagBall(MID,430,95,w); txt(w.name,MID,580,56,'#fff','700','center',CW-40);
+    if(w){ ctx.drawImage(ballSprite(w,95),MID-98,430-98); txt(w.name,MID,580,56,'#fff','700','center',CW-40);
       if(w.players.length) txt(`🎉 ${w.players[0]} WINS!`,MID,636,42,'#fde047','700','center',CW-40);
       else txt(`Type ${w.name.toUpperCase()} in chat to claim it!`,MID,636,28,'#cbd5e1','700','center',CW-40) }
     [1,2].forEach(k=>{const b=finished[k]; if(!b) return; const x=MID+(k===1?-150:150);
-      flagBall(x,740,42,b); txt(`${k+1}. ${b.name}`,x,816,24,'#e5e7eb','700','center',260);
+      ctx.drawImage(ballSprite(b,42),x-45,740-45); txt(`${k+1}. ${b.name}`,x,816,24,'#e5e7eb','700','center',260);
       if(b.players.length) txt(b.players[0],x,846,20,'#fde047','400','center',260)});
     const top=(board.countries||[])[0];
     if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,920,26,'#94a3b8','700','center',CW-40);
@@ -344,13 +346,13 @@ function drawRight(rank){
 }
 
 // ---------- Takt ----------
-let acc=0, last=performance.now(), fpsN=0, fpsT=last; window.fps=0;
+let acc=0, last=performance.now(), lastDraw=0, fpsN=0, fpsT=last; window.fps=0;
 function loop(now){
   acc += Math.min(now-last, 250); last=now;
   let n=0; while(acc>=1000/60 && n<6){ if(phase!=='loading') step(); acc-=1000/60; n++ }
   if(acc>1000/60) acc=0;                   // zu langsam: lieber Zeit verlieren als ruckeln
-  if(phase!=='loading') draw();
-  fpsN++; if(now-fpsT>2000){ window.fps=fpsN*1000/(now-fpsT); fpsN=0; fpsT=now }
+  if(phase!=='loading' && now-lastDraw>=31){ lastDraw = now-lastDraw>100 ? now : lastDraw+1000/30; draw(); fpsN++ }   // 30 Bilder/s reichen (ffmpeg greift 30 ab), spart ~1/3 Chrome-CPU
+  if(now-fpsT>2000){ window.fps=fpsN*1000/(now-fpsT); fpsN=0; fpsT=now }
   requestAnimationFrame(loop);
 }
 const origNew = newRace;
