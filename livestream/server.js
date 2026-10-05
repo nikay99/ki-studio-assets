@@ -156,5 +156,8 @@ if (fs.existsSync(path.join(REPO, '.git')) && process.env.SELF_UPDATE !== '0') {
   }, 120000);
 }
 
+// Musik aus music.json nachladen (fehlende Stücke laden, entfernte löschen) – bei jedem Start, im Hintergrund
+execFile('bash', [path.join(__dirname, 'sync-music.sh')], { timeout: 900000, env: { ...process.env, DATA_DIR: DATA } },
+  (e, out, err) => fs.appendFileSync(path.join(DATA, 'update.log'), `${new Date().toISOString()} musik ${e ? 'Fehler ' + (err || e.message).slice(0, 200) : (out.trim() || 'ok')}\n`));
 console.log('server läuft', { CHANNEL, DATA });
 module.exports = { countryOf };

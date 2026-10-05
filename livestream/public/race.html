@@ -185,7 +185,7 @@ function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s
 const music = new Audio(); music.volume = 0.55; let playlist = [], pi = 0;
 const mnode = AC.createMediaElementSource(music); mnode.connect(master);
 music.onended = ()=>playNext(); music.onerror = ()=>setTimeout(playNext, 3000);
-async function playNext(){ try{ if(!playlist.length) playlist = await (await fetch('/api/music')).json() }catch{}
+async function playNext(){ try{ if(!playlist.length || pi % playlist.length === 0){ playlist = await (await fetch('/api/music')).json(); pi = 0 } }catch{}   // Liste nach jeder Runde neu holen (neue Stücke)
   if(!playlist.length){ setTimeout(playNext, 30000); return }
   if(pi % playlist.length === 0) shuffle(playlist);
   music.src = '/music/'+encodeURIComponent(playlist[pi++ % playlist.length]); music.play().catch(()=>setTimeout(playNext,3000)) }
