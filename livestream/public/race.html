@@ -60,6 +60,35 @@ const MODULES = {
 };
 const START_Y = 480, END_Y = 6850;
 let trackName = '';
+// Felder auf der Bahn: wer hineinrollt, wird kurz verändert (reiner Zufall, kein Land ist bevorzugt). 3 pro Rennen, je eins pro Streckendrittel.
+const ZONES = {
+  speed:  {icon:'⚡', name:'SPEED',  col:'#22d3ee', dur:0},     // einmaliger Schub nach unten
+  mud:    {icon:'🟤', name:'MUD',    col:'#b45309', dur:60},    // einmal stark abbremsen (dauerhafte Reibung ließ Kugeln auf Rampen stehen bleiben)
+  shrink: {icon:'🔻', name:'SHRINK', col:'#c084fc', dur:300},   // 5 s kleine Kugel (assist() skaliert), rutscht durch Engstellen
+  bouncy: {icon:'🏀', name:'BOUNCE', col:'#f472b6', dur:210},   // 3,5 s Flummi
+};
+let zones = [];
+function placeZones(){
+  const types = shuffle(Object.keys(ZONES), rand), seg = (END_Y-START_Y-500)/3;
+  zones = [0,1,2].map(i=>{ const w=170+rand()*70; return {type:types[i], x:50+rand()*(TW-100-w), y:START_Y+400+i*seg+rand()*(seg-140), w, h:110, id:i} });
+}
+// Feld betreten: Wirkung starten (jede Kugel löst jedes Feld höchstens einmal aus).
+function enterZone(b, z){
+  b.zHit=(b.zHit||0)|(1<<z.id); endFx(b);
+  if(z.type==='speed'){ Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45 }
+  else { b.fx=z.type; b.fxT=ZONES[z.type].dur;
+    if(z.type==='mud') Body.setVelocity(b,{x:b.velocity.x*0.25, y:b.velocity.y*0.25});
+    if(z.type==='bouncy'){ b.rest0=b.restitution; b.restitution=0.95 } }
+}
+function endFx(b){ if(b.fx==='bouncy') b.restitution=b.rest0; b.fx=null; b.fxT=0 }
+// Pro Takt für alle laufenden Kugeln: Wirkung herunterzählen, Felder prüfen. Gibt [Kugel, Feld]-Paare zurück (Töne/Toasts macht der Aufrufer)
+function zoneStep(bs){
+  const hits=[];
+  for(const b of bs){ if(b.done) continue;
+    if(b.fxT>0 && --b.fxT===0) endFx(b);
+    for(const z of zones) if(!((b.zHit||0)&(1<<z.id)) && b.position.x>z.x && b.position.x<z.x+z.w && b.position.y>z.y && b.position.y<z.y+z.h){ enterZone(b,z); hits.push([b,z]) } }
+  return hits;
+}
 function buildTrack(){
   const S = [], sp = [];
   const T = {
@@ -88,6 +117,7 @@ function buildTrack(){
   T.wall(150,7500,300,24,0.62,PAL.fun); T.wall(TW-150,7500,300,24,-0.62,PAL.fun);
   T.wall(TW/2-46,7750,20,200,0,PAL.fun); T.wall(TW/2+46,7750,20,200,0,PAL.fun);
   T.wall(TW/2,WORLD_H-20,TW,40);
+  placeZones();
   return [S,sp];
 }
 
@@ -98,6 +128,11 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
   for(let y=0;y<WORLD_H;y+=120){g.beginPath();g.moveTo(0,y);g.lineTo(TW,y);g.stroke()}
   for(let i=0;i<13;i++){g.fillStyle=i%2?'#fff':'#111'; g.fillRect(i*48,FINISH_Y,48,14)}
   g.font='700 36px "DejaVu Sans"'; g.fillStyle='rgba(255,255,255,0.25)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-20);
+  for(const z of zones){ const Z=ZONES[z.type];
+    g.globalAlpha=0.22; g.fillStyle=Z.col; g.fillRect(z.x,z.y,z.w,z.h); g.globalAlpha=0.9;
+    g.strokeStyle=Z.col; g.lineWidth=3; g.setLineDash([10,7]); g.strokeRect(z.x,z.y,z.w,z.h); g.setLineDash([]);
+    g.font='700 22px "DejaVu Sans"'; g.fillStyle='#fff'; g.textAlign='center'; g.fillText(Z.name,z.x+z.w/2,z.y+z.h-14);
+    g.font='40px "Noto Color Emoji"'; g.fillText(Z.icon,z.x+z.w/2,z.y+54); g.globalAlpha=1 }
   for(const s of statics) if(!s.gate && !s.spin) drawBody(g,s);   // Paddel drehen sich, werden live gezeichnet
 }
 
@@ -145,7 +180,7 @@ function assist(bs, tt, nFin){
   const run=bs.filter(b=>!b.done).sort((a,b)=>b.position.y-a.position.y);
   run.forEach((b,i)=>{ const gap=i<3&&run[4]?b.position.y-run[4].position.y:0; b.frictionAir=0.004+Math.min(Math.max(gap-200,0)/800,1)*0.022;
     b.crown = i===0 && !nFin;
-    const want = b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1, cur=b.circleRadius/R;
+    const want = (b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1)*(b.fx==='shrink'?0.7:1), cur=b.circleRadius/R;
     if(Math.abs(want-cur)>0.005){ const f=Math.min(Math.max(want/cur,0.992),1.008); Body.scale(b,f,f) }
     if(b.turboT>0){ b.turboT--; b.frictionAir=0.001; b.force.y += b.mass*0.0011;   // ~85 % mehr Schwerkraft
       if(b.velocity.y>17) Body.setVelocity(b,{x:b.velocity.x,y:17}) } });   // gedeckelt, sonst tunnelt sie durch Stifte
@@ -155,6 +190,21 @@ function assist(bs, tt, nFin){
   b.hadTurbo=true; b.turboT=TURBO_LEN; Body.setVelocity(b,{x:b.velocity.x*0.5, y:Math.min(Math.max(b.velocity.y,0)+5,17)}); return b;
 }
 
+// Highlight-Clips (clips.js auf dem Server): wie spannend war das Rennen? Die besten werden als Short-Kandidaten mitgeschnitten.
+let goAt=0, leadTimes=[];
+function reportHighlight(w, s){
+  if(OFFLINE) return;
+  const gap=s ? s.ft-w.ft : 99, late=leadTimes.filter(x=>x>w.ft-60*5).length, dur=(performance.now()-goAt)/1000;
+  let score=1, kind='race';
+  if(slowDone){ score+=5; kind='photo' } else if(gap<=18) score+=3;
+  if(chaos){ score+=3; if(kind==='race') kind='chaos' }
+  if(w.hadTurbo){ score+=4; if(kind==='race') kind='turbo' }
+  if((comebackRank[w.code]||0)>=6){ score+=2; if(kind==='race') kind='comeback' }
+  score+=Math.min(late,3); if(w.players.length) score+=2; if(dur>34) score-=3;
+  fetch('/api/highlight',{method:'POST',body:JSON.stringify({score, kind, goAgoMs:Math.round(performance.now()-goAt), dur:+dur.toFixed(1),
+    winner:w.code, name:w.name, player:w.players[0]||'', chaos:chaos?chaos.id:'', race:raceNo})}).catch(()=>{});
+}
+
 function step(){
   phaseT++;
   for(const o of toasts) o.t++;
@@ -162,7 +212,7 @@ function step(){
   for(const s of spinners) Body.setAngle(s, s.angle+s.spin);
   if(phase==='countdown'){
     if(phaseT%60===0 && phaseT<START_WAIT) sfx.beep(phaseT>=START_WAIT-60?880:440);
-    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go(); say([raceNo%2?'off':'here-we-go'],2); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
+    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go(); goAt=performance.now(); leadTimes=[]; say([raceNo%2?'off':'here-we-go'],2); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
   }
   Engine.update(engine, 1000/60);
   if(phase!=='race' && phase!=='podium') return;
@@ -171,7 +221,9 @@ function step(){
     if(chaos.id==='quake' && t%(60*4)===0){ for(const b of run) Body.setVelocity(b,{x:b.velocity.x+(Math.random()-0.5)*14, y:b.velocity.y-Math.random()*4}); sfx.quake(); say(['quake']); toast('🌋 EARTHQUAKE!','#c084fc',90) }
     if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; sfx.boost() } }
   if(phase==='race'){ const tb=assist(balls, t, finished.length);
-    if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) } }
+    if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
+    for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]; if(z.type==='speed') sfx.boost();
+      if(b.players.length) toast(`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
   // Zeitlupe, wenn die ersten zwei dicht beieinander auf die Ziellinie zurollen (einmal pro Rennen)
   if(phase==='race' && !slowDone && !finished.length){ const [a,c]=ranking();
     if(a && c && a.position.y>FINISH_Y-280 && a.position.y-c.position.y<2.5*R){ slowDone=true; slowT=0; sfx.slow() } }
@@ -180,7 +232,7 @@ function step(){
   for(const b of balls){
     if(b.done) continue;
     if(b.position.y>FINISH_Y){
-      b.done=true; b.ft=t; finished.push(b); const k=finished.length; if(k===1) winAt=t;
+      b.done=true; b.ft=t; endFx(b); finished.push(b); const k=finished.length; if(k===1) winAt=t;
       if(k<=3){ sfx.finish(k); if(b.players.length && phase==='race') toast(`🏁 ${b.players[0]} finished #${k} with ${b.flag}!`, '#4ade80') }
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
@@ -188,14 +240,14 @@ function step(){
     if(b.position.x<-20 || b.position.x>TW+20 || b.position.y<-400){ Body.setPosition(b,{x:Math.min(Math.max(b.position.x,R+30),TW-R-30), y:Math.max(b.position.y,40)}); Body.setVelocity(b,{x:0,y:2}) }   // aus der Bahn gesprungen (selten, Flummi) → zurück
   }
   if(phase==='race' && t>60*3 && t%15===0){ const l=ranking()[0];
-    if(l && l!==leader){ if(leader){ toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead();
+    if(l && l!==leader){ if(leader){ leadTimes.push(t); if(l.players.length || t-(leadTimes[leadTimes.length-2]||-999)>60*4) toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead();   // Flummi: viele Wechsel → Meldung höchstens alle 4 s (außer Spieler-Kugeln)
         say([(comebackRank[l.code]||0)>=6 ? 'comeback' : Math.random()<0.5 ? 'new-leader' : 'change-top']) } leader=l } }
   // Sprecher: Ränge von vor ein paar Sekunden (für „What a comeback!“), Zielgerade, Sieger
   if(phase==='race' && t%240===0){ comebackRank={}; ranking().forEach((b,i)=>comebackRank[b.code]=i) }
   if(phase==='race' && !finished.length && leader && leader.position.y>FINISH_Y-1300 && !leader.saidFin){ leader.saidFin=true; balls.forEach(b=>b.saidFin=true); say(['finish-coming'],2) }
   if(phase==='race' && t===60*7 && balls.some(b=>b.players.length)) say(['chat-boost']);
   if(winAt>=0 && (t-winAt>=20 || finished.length>=2)){ const w=finished[0], s=finished[1], photo=s && s.ft-w.ft<=18;
-    say([...(photo?['photo']:[]), 'win-'+w.code, ...(chaos?['double']:[])], 3); winAt=-1 }
+    say([...(photo?['photo']:[]), 'win-'+w.code, ...(chaos?['double']:[])], 3); winAt=-1; reportHighlight(w, s) }
   if(phase==='podium' && phaseT===60*5 && Math.random()<0.3) say(['what-a-race']);
   if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
     phase='podium'; phaseT=0; sfx.fanfare(); toasts=[];
@@ -339,6 +391,13 @@ function ballSprite(b,r){
   ballImg.set(k,c); return c;
 }
 const flagSprite = (code,r)=>ballSprite({code,flag:flagOf(code)},r);
+const emojiImg = new Map();
+function emojiSprite(ch,size){   // Emoji einmal vorzeichnen (Feld-Symbol neben der Kugel)
+  const k=ch+size; if(emojiImg.has(k)) return emojiImg.get(k);
+  const c=document.createElement('canvas'), g=c.getContext('2d'); c.width=c.height=Math.ceil(size*1.4);
+  g.font=`${size}px "Noto Color Emoji"`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(ch,c.width/2,c.height/2+size*0.05);
+  emojiImg.set(k,c); return c;
+}
 function drawBody(g,b,flat){
   g.fillStyle=b.col; g.shadowColor=b.col; g.shadowBlur=flat?0:18;
   g.beginPath(); const v=b.vertices;
@@ -392,6 +451,7 @@ function draw(){
     const sp=ballSprite(b,R); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); if(r!==R) ctx.scale(r/R,r/R); ctx.drawImage(sp,-R-3,-R-3); ctx.restore();
     if(b.crown && !b.done && phase==='race') txt('👑',b.position.x,b.position.y-r+4,Math.round(r*1.5),'#fff','400','center');
     if(b.turboT>0) txt('TURBO',b.position.x,b.position.y+r+24,20,'#fb923c','700','center',0,true);
+    if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H+40)
     txt(who(b),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
@@ -540,6 +600,7 @@ const origNew = newRace;
 newRace = async()=>{ phase='loading'; await origNew() };
 document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
   await newRace(); setInterval(pollChat,500); setInterval(pollBoard,5000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
+  if(!OFFLINE) fetch('/api/clipgeom',{method:'POST',body:JSON.stringify({x:CX*SC, w:CW*SC, h:H*SC})}).catch(()=>{});   // wo die 9:16-Spalte für Clips liegt
   AC.resume(); DECK.calm.g.gain.value = MUSIC_VOL; playNext(DECK.calm); setInterval(()=>setMusic(musicWant()), 500); requestAnimationFrame(loop);
 });
 </script></body></html>

@@ -1,8 +1,9 @@
 // Länder-Kugelrennen: lokaler Server für die Rennseite (127.0.0.1:8080) + Statusseite nach außen (Port 80, nur mit Token).
 // Liest den YouTube-Chat (chat.js), ordnet Nachrichten Ländern zu und merkt sich Tagesranglisten.
 const http = require('http'), fs = require('fs'), path = require('path');
-const { COUNTRY_LIST } = require('./public/countries.js');
+const { COUNTRY_LIST, flagOf } = require('./public/countries.js');
 const chat = require('./chat.js');
+const clips = require('./clips.js');
 
 const DATA = process.env.DATA_DIR || '/var/lib/marble';
 const TOKEN = process.env.STATUS_TOKEN || '';
@@ -136,6 +137,9 @@ http.createServer(async (req, res) => {
     for (const p of r.players || []) st.playerWins[p] = (st.playerWins[p] || 0) + k;
     st.races++; st.totalRaces++; save(); return send(res, 200, board());
   }
+  // Highlight-Clips: Rennseite meldet Spalten-Lage und spannende Rennen (clips.js)
+  if (u.pathname === '/api/clipgeom' && req.method === 'POST') { clips.setGeom(await body(req)); return send(res, 200, { ok: true }); }
+  if (u.pathname === '/api/highlight' && req.method === 'POST') { clips.highlight(await body(req)); return send(res, 200, { ok: true }); }
   if (u.pathname.startsWith('/')) return file(res, path.join(PUB, path.normalize(u.pathname).replace(/^(\.\.[/\\])+/, '')));
 }).listen(8080, '127.0.0.1');
 
@@ -156,7 +160,7 @@ if (TOKEN) http.createServer((req, res) => {
     let run = {}; try { run = JSON.parse(fs.readFileSync(path.join(DATA, 'run.json'), 'utf8')); } catch {}
     const load = fs.readFileSync('/proc/loadavg', 'utf8').split(' ').slice(0, 3);
     return send(res, 200, { time: new Date().toISOString(), run, ffmpeg: Object.fromEntries(prog.trim().split('\n').map(l => l.split('=')).filter(x => x.length === 2)),
-      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, cheers: cheerCount, chatDelayMs: chatDelays.length ? chatDelays.slice().sort((a, b) => a - b)[chatDelays.length >> 1] : null, chatDelaysMs: chatDelays.slice(-10), board: board(), totalRaces: st.totalRaces });
+      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, cheers: cheerCount, chatDelayMs: chatDelays.length ? chatDelays.slice().sort((a, b) => a - b)[chatDelays.length >> 1] : null, chatDelaysMs: chatDelays.slice(-10), board: board(), totalRaces: st.totalRaces, clips: clips.status() });
   }
   if (['snap.jpg', 'log.txt'].includes(p) || /^test\d\.mp4$/.test(p)) return file(res, path.join(DATA, p));
   if (p === 'diag') return execFile('bash', ['-c', `echo "git: ${gitHead}"; uptime; nproc; free -m | head -2; ps -eo pcpu,pmem,comm --sort=-pcpu | head -8; echo; tail -20 ${DATA}/ffmpeg.err; echo; tail -5 ${DATA}/log.txt`], { timeout: 10000 }, (e, out) => send(res, 200, out || String(e), 'text/plain; charset=utf-8'));
@@ -195,5 +199,8 @@ function logLine(t) {
 // Musik aus music.json nachladen (fehlende Stücke laden, entfernte löschen) – bei jedem Start, im Hintergrund
 execFile('bash', [path.join(__dirname, 'sync-music.sh')], { timeout: 900000, env: { ...process.env, DATA_DIR: DATA } },
   (e, out, err) => logLine(`musik ${e ? 'Fehler ' + (err || e.message).slice(0, 200) : (out.trim() || 'ok')}`));
+const NAMES = Object.fromEntries(COUNTRY_LIST.map(c => [c[0], c[1]]));
+clips.init({ data: DATA, log: logLine, state: () => { rollDay(); const [l] = Object.entries(st.countryWins).sort((a, b) => b[1] - a[1]);
+  return { videoId: chatStatus.videoId, leader: l ? { code: l[0], flag: flagOf(l[0]), name: NAMES[l[0]] || l[0] } : null }; } });
 console.log('server läuft', { CHANNEL, DATA });
 module.exports = { countryOf };
