@@ -376,7 +376,8 @@ function drawColumn(rank){
     txt(nextUp.slice(-4).map(x=>`${flagOf(x.code)} ${x.user}`).join('  '),MID,F+88,28,'#fff','700','center',CW-40);
   } else {
     txt('🎯 GET YOUR OWN BALL!',MID,F+48,44,'#fde047','700','center',CW-40);
-    txt('type your COUNTRY in the chat',MID,F+92,32,'#fff','700','center',CW-40);
+    // YouTube zeigt das Bild ~20 s verzögert: sagen, dass der Name gleich kommt (sonst denken Leute, es ging nicht)
+    txt(Math.floor(Date.now()/2500)%2?'type your COUNTRY in the chat':'⏳ your name pops up in ~20 s',MID,F+92,32,'#fff','700','center',CW-40);
   }
   // Stunden-Wertung: Countdown bis zur Nation of the Hour
   const cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS RACE: ${chaos.name} · WIN = x2`
@@ -471,7 +472,7 @@ function drawRight(rank){
   txt('🎯 GET YOUR OWN BALL',x0+22,628,32,'#fde047','700','left',w-44);
   txt('type your country in the chat',x0+22,666,24,'#fff','700','left',w-44);
   txt('💬 then chat in the race = BOOST!',x0+22,696,20,'#22d3ee','700','left',w-44);
-  txt('JUST JOINED',x0,766,24,'#94a3b8','700');
+  txt('JUST JOINED',x0,766,24,'#94a3b8','700'); txt('stream delay ~20 s',x1,766,18,'#64748b','400','right');
   if(!chatLog.length) txt('be the first – type your country!',x0,806,22,'#64748b','400');
   chatLog.slice(0,6).forEach((c,i)=>{ const y=806+i*42;
     txt(`${c.flag} ${c.user}`,x0,y,24,'#fff','700','left',w-170);

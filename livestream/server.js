@@ -50,6 +50,7 @@ const events = [];                // {id, user, code}
 // Namen erscheinen groß im Stream: grobe Beleidigungen nicht anzeigen (zusätzlich YouTube-Studio „Blockierte Wörter“ nutzen)
 const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
 const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
+let chatDelays = [];   // ms vom Absenden im YouTube-Chat bis zur Ankunft hier (Teil der Gesamtverzögerung)
 let evId = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal gesetzt' }, msgCount = 0, joinCount = 0;
 function fanPoint(user, code) {
   // +1 Fanpunkt fürs Land, höchstens einmal pro Minute und Zuschauer – auch beim Länderwechsel (gegen Hin-und-her-Spam)
@@ -87,7 +88,7 @@ function onChat(user, text) {
   if (c && (!prev || prev.code !== c)) addPick(user, c); else if (prev) cheer(user);
 }
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = { ...s, since: new Date().toISOString() }; },
-  onMessage: m => { msgCount++; onChat(uniqueName(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.channelId), m.text); } });
+  onMessage: m => { msgCount++; if (m.ts) { chatDelays.push(Date.now() - m.ts); chatDelays = chatDelays.slice(-30); } onChat(uniqueName(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.channelId), m.text); } });
 
 // Demo-Zuschauer, solange niemand im Chat ist (DEMO=1): damit die Seitenleiste im Test nicht leer bleibt.
 if (process.env.DEMO === '1') {
@@ -155,7 +156,7 @@ if (TOKEN) http.createServer((req, res) => {
     let run = {}; try { run = JSON.parse(fs.readFileSync(path.join(DATA, 'run.json'), 'utf8')); } catch {}
     const load = fs.readFileSync('/proc/loadavg', 'utf8').split(' ').slice(0, 3);
     return send(res, 200, { time: new Date().toISOString(), run, ffmpeg: Object.fromEntries(prog.trim().split('\n').map(l => l.split('=')).filter(x => x.length === 2)),
-      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, cheers: cheerCount, board: board(), totalRaces: st.totalRaces });
+      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, cheers: cheerCount, chatDelayMs: chatDelays.length ? chatDelays.slice().sort((a, b) => a - b)[chatDelays.length >> 1] : null, chatDelaysMs: chatDelays.slice(-10), board: board(), totalRaces: st.totalRaces });
   }
   if (['snap.jpg', 'log.txt'].includes(p) || /^test\d\.mp4$/.test(p)) return file(res, path.join(DATA, p));
   if (p === 'diag') return execFile('bash', ['-c', `echo "git: ${gitHead}"; uptime; nproc; free -m | head -2; ps -eo pcpu,pmem,comm --sort=-pcpu | head -8; echo; tail -20 ${DATA}/ffmpeg.err; echo; tail -5 ${DATA}/log.txt`], { timeout: 10000 }, (e, out) => send(res, 200, out || String(e), 'text/plain; charset=utf-8'));

@@ -55,7 +55,7 @@ async function chatSession(videoId, onMessage, log, stop) {
         const it = a.addChatItemAction?.item;
         const m = it?.liveChatTextMessageRenderer || it?.liveChatPaidMessageRenderer;
         if (!m || first) continue;          // alte Nachrichten beim Verbinden ignorieren
-        onMessage({ id: m.id, user: m.authorName?.simpleText || 'viewer', channelId: m.authorExternalChannelId, text: textOf(m.message?.runs) });
+        onMessage({ id: m.id, user: m.authorName?.simpleText || 'viewer', channelId: m.authorExternalChannelId, text: textOf(m.message?.runs), ts: +m.timestampUsec / 1000 || 0 });
       }
       first = false; errors = 0;
       const c = lcc.continuations?.[0] || {};
