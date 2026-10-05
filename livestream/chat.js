@@ -61,7 +61,7 @@ async function chatSession(videoId, onMessage, log, stop) {
       const c = lcc.continuations?.[0] || {};
       const cd = c.invalidationContinuationData || c.timedContinuationData || c.reloadContinuationData || {};
       if (cd.continuation) cont = cd.continuation;
-      await sleep(Math.min(Math.max(cd.timeoutMs || 3000, 1500), 8000));
+      await sleep(1500);   // fest 1,5 s statt YouTubes Vorschlag (3–8 s): Beitritte erscheinen schneller im Bild
     } catch (e) {
       if (++errors > 5) throw e;
       await sleep(5000 * errors);

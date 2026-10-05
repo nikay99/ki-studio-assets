@@ -51,12 +51,21 @@ const events = [];                // {id, user, code}
 const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
 const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
 let evId = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal gesetzt' }, msgCount = 0, joinCount = 0;
-function fanPoint(user, code, prev) {
-  // +1 Fanpunkt fürs Land, höchstens einmal pro Minute und Zuschauer (gegen Spam)
-  if (!prev || prev.code !== code || Date.now() - (lastFan.get(user) || 0) > 60000) { rollDay(); st.fans = st.fans || {}; st.fans[code] = (st.fans[code] || 0) + 1; lastFan.set(user, Date.now()); save(); }
+function fanPoint(user, code) {
+  // +1 Fanpunkt fürs Land, höchstens einmal pro Minute und Zuschauer – auch beim Länderwechsel (gegen Hin-und-her-Spam)
+  if (Date.now() - (lastFan.get(user) || 0) > 60000) { rollDay(); st.fans = st.fans || {}; st.fans[code] = (st.fans[code] || 0) + 1; lastFan.set(user, Date.now()); save(); }
+}
+// Spieler am Kanal erkennen, nicht nur am Anzeigenamen: gleicher Name, anderer Kanal → „name#2“ (kein Mitnehmen fremder Siege)
+function uniqueName(name, cid) {
+  if (!cid) return name;
+  st.ids = st.ids || {};
+  let n = name, i = 2;
+  while (st.ids[n] && st.ids[n] !== cid) n = `${name.slice(0, 17)}#${i++}`;
+  if (!st.ids[n]) { st.ids[n] = cid; save(); }
+  return n;
 }
 function addPick(user, code) {
-  fanPoint(user, code, picks.get(user));
+  fanPoint(user, code);
   picks.set(user, { code, ts: Date.now() });
   events.push({ id: ++evId, user, code }); if (events.length > 500) events.shift();
   joinCount++;
@@ -67,7 +76,7 @@ const lastCheer = new Map();
 let cheerCount = 0;
 function cheer(user) {
   const p = picks.get(user); if (!p) return;
-  fanPoint(user, p.code, p); p.ts = Date.now();
+  fanPoint(user, p.code); p.ts = Date.now();
   if (Date.now() - (lastCheer.get(user) || 0) < 10000) return;
   lastCheer.set(user, Date.now());
   events.push({ id: ++evId, user, code: p.code, cheer: 1 }); if (events.length > 500) events.shift();
@@ -78,7 +87,7 @@ function onChat(user, text) {
   if (c && (!prev || prev.code !== c)) addPick(user, c); else if (prev) cheer(user);
 }
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = { ...s, since: new Date().toISOString() }; },
-  onMessage: m => { msgCount++; onChat(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.text); } });
+  onMessage: m => { msgCount++; onChat(uniqueName(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.channelId), m.text); } });
 
 // Demo-Zuschauer, solange niemand im Chat ist (DEMO=1): damit die Seitenleiste im Test nicht leer bleibt.
 if (process.env.DEMO === '1') {
@@ -99,7 +108,7 @@ function lineup(n = 30) {
   const pool = DEFAULT_POOL.filter(c => !codes.includes(c));
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   while (codes.length < n) codes.push(pool.shift());
-  return codes.map(c => ({ code: c, players: (recent.get(c) || []).slice(0, 5) }));
+  return codes.map(c => ({ code: c, players: (recent.get(c) || []).slice(0, 8) }));
 }
 
 // ---------- HTTP ----------
@@ -121,8 +130,9 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/api/result' && req.method === 'POST') {
     const r = await body(req); rollDay();
     rollHour();
-    if (r.winner) { st.countryWins[r.winner] = (st.countryWins[r.winner] || 0) + 1; st.hourWins[r.winner] = (st.hourWins[r.winner] || 0) + 1; }
-    for (const p of r.players || []) st.playerWins[p] = (st.playerWins[p] || 0) + 1;
+    const k = r.double ? 2 : 1;   // Chaos-Rennen zählt doppelt
+    if (r.winner) { st.countryWins[r.winner] = (st.countryWins[r.winner] || 0) + k; st.hourWins[r.winner] = (st.hourWins[r.winner] || 0) + k; }
+    for (const p of r.players || []) st.playerWins[p] = (st.playerWins[p] || 0) + k;
     st.races++; st.totalRaces++; save(); return send(res, 200, board());
   }
   if (u.pathname.startsWith('/')) return file(res, path.join(PUB, path.normalize(u.pathname).replace(/^(\.\.[/\\])+/, '')));
