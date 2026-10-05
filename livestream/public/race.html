@@ -1,0 +1,264 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Country Marble Race LIVE</title>
+<style>html,body{margin:0;background:#0b0f1e;overflow:hidden;cursor:none}canvas{display:block}</style>
+<script src="/matter.min.js"></script><script src="/countries.js"></script>
+</head><body><canvas id="c" width="1920" height="1080"></canvas>
+<script>
+// Länder-Kugelrennen LIVE. Physik: Matter.js (fester 60-Hz-Takt), Darstellung: eigenes Canvas, Ton: WebAudio.
+// Daten vom lokalen server.js: /api/lineup (Teilnehmer), /api/events (Chat-Beitritte), /api/result, /api/music.
+const {Engine, Bodies, Body, Composite, Events} = Matter;
+const W = 1920, H = 1080, TW = 1300, FINISH_Y = 6550, WORLD_H = 6900, START_WAIT = 60*5;
+const Q = new URLSearchParams(location.search), OFFLINE = Q.has('offline');
+const OUT_W = +(Q.get('w')||1280), SC = OUT_W/W;     // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+cv.width = OUT_W; cv.height = Math.round(H*SC);
+const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
+
+let engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, trackLayer, trackSeed = 0;
+let lastEv = -1, board = {races:0, countries:[], players:[]}, nextUp = [];
+
+function seedRand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
+
+// ---------- Bahn (3 Varianten, wechseln jedes Rennen) ----------
+const PALETTES = [
+  {peg:'#f472b6', ramp:'#22d3ee', paddle:'#facc15', bump:'#a78bfa', fun:'#34d399', bg:['#111733','#1a0f2e']},
+  {peg:'#fb923c', ramp:'#a3e635', paddle:'#38bdf8', bump:'#f43f5e', fun:'#facc15', bg:['#0f1f1a','#0b1426']},
+  {peg:'#60a5fa', ramp:'#f472b6', paddle:'#34d399', bump:'#fbbf24', fun:'#c084fc', bg:['#1f1020','#0d1530']},
+];
+let PAL = PALETTES[0];
+function buildTrack(rand, variant){
+  const S = [], sp = [];
+  const wall = (x,y,w,h,a=0,col='#1e293b')=>{const b=Bodies.rectangle(x,y,w,h,{isStatic:true,angle:a,friction:0.02,restitution:0.3});b.col=col;S.push(b);return b};
+  const peg  = (x,y,r,col)=>{const b=Bodies.circle(x,y,r,{isStatic:true,restitution:0.7});b.col=col;b.peg=true;S.push(b)};
+  wall(20,WORLD_H/2,40,WORLD_H); wall(TW-20,WORLD_H/2,40,WORLD_H);
+  // Startgitter (öffnet sich nach dem Countdown)
+  const gate = wall(TW/2,330,TW-80,16,0,'#e2e8f0'); gate.gate = true;
+  // 1) Stift-Feld
+  const off = variant===1 ? 30 : 0;
+  for(let r=0;r<9;r++) for(let c=0;c<11;c++){const x=110+off+c*110+(r%2?55:0); if(x<TW-80) peg(x,620+r*105,11,PAL.peg)}
+  // 2) Zickzack-Rampen
+  const n = variant===2 ? 5 : 6;
+  for(let i=0;i<n;i++){const left=i%2===0, y=1700+i*(1560/n); wall(left?520:TW-520,y,1000,26,left?0.16:-0.16,PAL.ramp)}
+  // 3) Drehende Paddel
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+    const b=Bodies.rectangle(260+j*390,3450+i*330,300,22,{isStatic:true,restitution:0.4});
+    b.col=PAL.paddle; b.spin=(j%2?1:-1)*(0.025+0.01*i+(variant*0.004)); S.push(b); sp.push(b)}
+  // 4) Bumper + feine Stifte
+  for(let r=0;r<5;r++) for(let c=0;c<5;c++){const x=170+c*240+(r%2?120:0); if(x<TW-110) peg(x,4600+r*170,34+rand()*8,PAL.bump)}
+  for(let r=0;r<4;r++) for(let c=0;c<14;c++){const x=90+c*85+(r%2?42:0); if(x<TW-60) peg(x,5560+r*90,9,PAL.peg)}
+  // 5) Trichter
+  wall(330,6150,620,28,0.62,PAL.fun); wall(TW-330,6150,620,28,-0.62,PAL.fun);
+  wall(TW/2-75,6450,24,220,0,PAL.fun); wall(TW/2+75,6450,24,220,0,PAL.fun);
+  wall(TW/2,WORLD_H-20,TW,40);
+  return [S,sp];
+}
+
+function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenzeit pro Bild)
+  trackLayer = document.createElement('canvas'); trackLayer.width = TW; trackLayer.height = WORLD_H;
+  const g = trackLayer.getContext('2d');
+  g.strokeStyle='rgba(255,255,255,0.04)'; g.lineWidth=2;
+  for(let y=0;y<WORLD_H;y+=120){g.beginPath();g.moveTo(0,y);g.lineTo(TW,y);g.stroke()}
+  for(let i=0;i<26;i++){g.fillStyle=i%2?'#fff':'#111'; g.fillRect(i*50,FINISH_Y,50,14)}
+  g.font='700 40px "DejaVu Sans"'; g.fillStyle='rgba(255,255,255,0.25)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-20);
+  for(const s of statics) if(!s.gate) drawBody(g,s);
+}
+
+async function newRace(){
+  raceNo++; trackSeed = (Date.now()/1000|0);
+  PAL = PALETTES[raceNo % PALETTES.length];
+  const rand = seedRand(1000+trackSeed%100000);
+  let lu;
+  try { lu = OFFLINE ? null : await (await fetch('/api/lineup')).json(); } catch { lu = null; }
+  if(!lu) lu = COUNTRY_LIST.slice(0,200).sort(()=>rand()-0.5).slice(0,30).map(c=>({code:c[0],players:[]}));
+  engine = Engine.create({gravity:{y:1}, positionIterations:8, velocityIterations:6});
+  [statics,spinners] = buildTrack(rand, raceNo % 3);
+  bakeTrack();
+  const order = lu.slice().sort(()=>rand()-0.5);
+  balls = order.map(({code,players},i)=>{
+    const b = Bodies.circle(120+(i%10)*108+rand()*20, 120+Math.floor(i/10)*62, 22,
+      {restitution:0.45, friction:0.005, frictionAir:0.004, density:0.002});
+    Object.assign(b,{code, flag:flagOf(code), name:NAME[code]||code, players:players.slice(), still:0, trail:[]}); return b});
+  Composite.add(engine.world,[...statics,...balls]);
+  Events.on(engine,'collisionStart',onHit);
+  t=0; finished=[]; phase='countdown'; phaseT=0; nextUp=[];
+}
+
+function step(){
+  phaseT++;
+  for(const s of spinners) Body.setAngle(s, s.angle+s.spin);
+  if(phase==='countdown'){
+    if(phaseT%60===0 && phaseT<START_WAIT) sfx.beep(phaseT>=START_WAIT-60?880:440);
+    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go(); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
+  }
+  Engine.update(engine, 1000/60);
+  if(phase!=='race' && phase!=='podium') return;
+  t++;
+  for(const b of balls){
+    if(b.done) continue;
+    if(b.position.y>FINISH_Y){b.done=true; finished.push(b); if(finished.length<=3) sfx.finish(finished.length)}
+    b.still = b.speed<0.25 ? b.still+1 : 0;
+    if(b.still>180){Body.setVelocity(b,{x:(Math.random()-0.5)*6,y:-4}); b.still=0}
+  }
+  if(phase==='race' && (finished.length===balls.length || t>60*150)){
+    phase='podium'; phaseT=0; sfx.fanfare();
+    const w=finished[0];
+    if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players})})
+      .then(r=>r.json()).then(b=>board=b).catch(()=>{});
+  }
+  if(phase==='podium' && phaseT>60*9 && !phase.loading){phase='loading'; newRace()}
+}
+
+// ---------- Chat ----------
+async function pollChat(){
+  if(OFFLINE) return;
+  try{
+    const r = await (await fetch('/api/events?since='+lastEv)).json();
+    if(lastEv<0){ lastEv=r.last; return }          // alte Beitritte beim Laden nicht nochmal zeigen
+    for(const e of r.events){
+      const b = balls && balls.find(x=>x.code===e.code);
+      if(b && phase!=='podium'){ if(!b.players.includes(e.user)) b.players.unshift(e.user); chatLog.unshift({user:e.user,flag:flagOf(e.code),txt:'joined'}) }
+      else { nextUp.push(e.code); chatLog.unshift({user:e.user,flag:flagOf(e.code),txt:'next race'}) }
+      sfx.join();
+    }
+    chatLog = chatLog.slice(0,4); lastEv = r.last;
+  }catch{}
+}
+async function pollBoard(){ if(!OFFLINE) try{ board = await (await fetch('/api/board')).json() }catch{} }
+
+// ---------- Ton ----------
+const AC = new (window.AudioContext||window.webkitAudioContext)();
+const master = AC.createGain(); master.gain.value = 0.9; master.connect(AC.destination);
+const sfxBus = AC.createGain(); sfxBus.gain.value = 0.5; sfxBus.connect(master);
+function tone(f, d=0.12, type='sine', v=0.3, when=0){
+  const o=AC.createOscillator(), g=AC.createGain(), t0=AC.currentTime+when;
+  o.type=type; o.frequency.value=f; g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(v,t0+0.005);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+d); o.connect(g); g.connect(sfxBus); o.start(t0); o.stop(t0+d+0.02);
+}
+const SCALE=[523.25,587.33,659.25,783.99,880,1046.5,1174.66,1318.5]; let hitBudget=0;
+const sfx = {
+  beep:f=>tone(f,0.25,'square',0.25), go:()=>{tone(1046,0.5,'square',0.3);tone(1318,0.5,'square',0.2,0.05)},
+  plink:(y)=>{ if(hitBudget<=0) return; hitBudget--; tone(SCALE[Math.floor(Math.random()*SCALE.length)]*(y>4500?0.5:1),0.18,'triangle',0.12)},
+  join:()=>{tone(1318,0.08,'sine',0.2);tone(1760,0.12,'sine',0.2,0.07)},
+  finish:k=>tone([0,1046,880,784][k],0.35,'triangle',0.35),
+  fanfare:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i===3?0.8:0.18,'square',0.22,i*0.14)),
+};
+setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
+function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(s&&s.peg) sfx.plink(s.position.y) } }
+// Musik-Playlist (Dateien in /var/lib/marble/music), leiser unter den Effekten
+const music = new Audio(); music.volume = 0.55; let playlist = [], pi = 0;
+const mnode = AC.createMediaElementSource(music); mnode.connect(master);
+music.onended = ()=>playNext(); music.onerror = ()=>setTimeout(playNext, 3000);
+async function playNext(){ try{ if(!playlist.length) playlist = await (await fetch('/api/music')).json() }catch{}
+  if(!playlist.length){ setTimeout(playNext, 30000); return }
+  if(pi % playlist.length === 0) playlist.sort(()=>Math.random()-0.5);
+  music.src = '/music/'+encodeURIComponent(playlist[pi++ % playlist.length]); music.play().catch(()=>setTimeout(playNext,3000)) }
+
+// ---------- Darstellung ----------
+function flagBall(x,y,r,b,g=ctx){
+  g.save(); g.beginPath(); g.arc(x,y,r,0,7); g.closePath(); g.clip();
+  g.fillStyle='#fff'; g.fillRect(x-r,y-r,2*r,2*r);
+  g.font=`${r*2.9}px "Noto Color Emoji"`; g.textAlign='center'; g.textBaseline='middle';
+  g.fillText(b.flag,x,y+r*0.12);
+  const gr=g.createRadialGradient(x-r*0.4,y-r*0.45,r*0.1,x,y,r);
+  gr.addColorStop(0,'rgba(255,255,255,0.75)'); gr.addColorStop(0.35,'rgba(255,255,255,0.05)'); gr.addColorStop(1,'rgba(0,0,0,0.35)');
+  g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r); g.restore();
+  g.lineWidth=2.5; g.strokeStyle='rgba(255,255,255,0.85)'; g.beginPath(); g.arc(x,y,r,0,7); g.stroke();
+}
+// Flaggen-Kugeln einmal pro Rennen als Bild vorbereiten (Emoji-Text ist teuer)
+const ballImg = new Map();
+function ballSprite(b,r){
+  const k=b.code+r; if(ballImg.has(k)) return ballImg.get(k);
+  const c=document.createElement('canvas'); c.width=c.height=2*r+6; flagBall(r+3,r+3,r,b,c.getContext('2d')); ballImg.set(k,c); return c;
+}
+function drawBody(g,b){
+  g.fillStyle=b.col; g.shadowColor=b.col; g.shadowBlur=18;
+  g.beginPath(); const v=b.vertices;
+  if(b.circleRadius){g.arc(b.position.x,b.position.y,b.circleRadius,0,7)}
+  else {g.moveTo(v[0].x,v[0].y); for(const p of v) g.lineTo(p.x,p.y); g.closePath()}
+  g.fill(); g.shadowBlur=0;
+}
+function ranking(){
+  const rest=balls.filter(b=>!b.done).sort((a,b)=>b.position.y-a.position.y);
+  return [...finished,...rest];
+}
+function txt(s,x,y,size,col='#fff',w='700',al='left'){
+  ctx.font=`${w} ${size}px "DejaVu Sans"`; ctx.fillStyle=col; ctx.textAlign=al; ctx.textBaseline='alphabetic'; ctx.fillText(s,x,y)}
+const who = b => b.players.length ? b.players[0] + (b.players.length>1?` +${b.players.length-1}`:'') : '';
+
+function draw(){
+  ctx.setTransform(SC,0,0,SC,0,0);
+  const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
+  const target=Math.min(Math.max(lead.position.y-H*0.55,0),WORLD_H-H);
+  camY += (target-camY)*0.08;
+  const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  ctx.drawImage(trackLayer,0,Math.round(camY),TW,H,0,0,TW,H);
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,TW,H); ctx.clip(); ctx.translate(0,-camY);
+  for(const s of spinners) drawBody(ctx,s);
+  for(const s of statics) if(s.gate) drawBody(ctx,s);
+  for(const b of balls){ b.trail.push({x:b.position.x,y:b.position.y}); if(b.trail.length>14) b.trail.shift() }
+  if(phase==='race') rank.slice(0,3).forEach((b,i)=>{ctx.strokeStyle=['#ffd700','#d1d5db','#cd7f32'][i]; ctx.lineWidth=8; ctx.globalAlpha=0.5;
+    ctx.beginPath(); b.trail.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); ctx.globalAlpha=1});
+  for(const b of balls){
+    if(b.position.y<camY-40||b.position.y>camY+H+40) continue;
+    const sp=ballSprite(b,22); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); ctx.drawImage(sp,-25,-25); ctx.restore();
+    if(b.players.length) txt(who(b),b.position.x,b.position.y-32,20,'#fde047','700','center');
+  }
+  ctx.restore();
+  if(phase==='countdown'){
+    const n=Math.ceil((START_WAIT-phaseT)/60);
+    ctx.fillStyle='rgba(5,6,18,0.45)'; ctx.fillRect(0,0,TW,H);
+    txt(`RACE #${raceNo}`,TW/2,300,54,'#94a3b8','700','center');
+    txt(n>0?String(n):'GO!',TW/2,560,220,'#fde047','700','center');
+    txt('Type your country in chat to get a ball!',TW/2,720,44,'#fff','700','center');
+  }
+  // Seitenleiste
+  ctx.fillStyle='rgba(8,10,24,0.94)'; ctx.fillRect(TW,0,W-TW,H);
+  ctx.fillStyle='#ef4444'; ctx.beginPath(); ctx.roundRect(TW+40,38,96,40,8); ctx.fill();
+  txt('LIVE',TW+88,68,24,'#fff','700','center');
+  txt(`RACE #${raceNo}`,TW+160,70,30,'#94a3b8');
+  txt('COUNTRY MARBLE RACE',TW+40,128,38,'#fff');
+  txt(phase==='race'?`⏱ ${(t/60).toFixed(1)} s`:phase==='countdown'?'⏳ starting…':'🏁 FINISHED',TW+40,178,28,'#22d3ee');
+  rank.slice(0,8).forEach((b,i)=>{
+    const y=236+i*56; ctx.fillStyle=i<3?['#ffd70033','#d1d5db22','#cd7f3222'][i]:'rgba(255,255,255,0.04)';
+    ctx.beginPath(); ctx.roundRect(TW+30,y-36,W-TW-60,48,10); ctx.fill();
+    txt(`${i+1}`,TW+70,y,28,'#fff','700','center'); ctx.drawImage(ballSprite(b,18),TW+104,y-33);
+    txt(b.name,TW+150,y,24,'#fff','700');
+    if(b.players.length) txt(who(b),W-48,y,19,'#fde047','400','right');
+  });
+  txt('Type your country in chat!',TW+40,712,30,'#fde047');
+  txt('e.g.  Germany · 🇧🇷 · USA · Japan',TW+40,748,22,'#94a3b8','400');
+  chatLog.forEach((c,i)=>txt(`${c.user} ${c.flag} ${c.txt}`,TW+40,792+i*34,22,'#cbd5e1','400'));
+  txt(`TODAY · ${board.races} races`,TW+40,948,22,'#64748b');
+  if(board.countries.length) txt(board.countries.slice(0,4).map(([c,n])=>`${flagOf(c)} ${n}`).join('   '),TW+40,988,28,'#e2e8f0','400');
+  if(board.players.length) txt('🏆 '+board.players.slice(0,2).map(([p,n])=>`${p} ${n}`).join(' · '),TW+40,1036,22,'#fde047','400');
+  // Siegerehrung
+  if(phase==='podium'||phase==='loading'){
+    const a=Math.min(phaseT/30,1); ctx.fillStyle=`rgba(5,6,18,${0.78*a})`; ctx.fillRect(0,0,TW,H);
+    ctx.globalAlpha=a; txt('WINNER',TW/2,230,64,'#ffd700','700','center');
+    const w=finished[0]; if(w){flagBall(TW/2,430,120,w); txt(w.name,TW/2,630,80,'#fff','700','center');
+      if(w.players.length) txt(`🏆 ${w.players.slice(0,3).join(', ')}`,TW/2,690,34,'#fde047','400','center')}
+    [1,2].forEach(k=>{const b=finished[k]; if(!b) return; const x=TW/2+(k===1?-360:360);
+      flagBall(x,500,60,b); txt(`${k+1}. ${b.name}`,x,610,36,'#e5e7eb','700','center')});
+    txt(`Next race in ${Math.max(0,Math.ceil((60*9-phaseT)/60))} s · type your country!`,TW/2,850,36,'#22d3ee','700','center');
+    ctx.globalAlpha=1;
+  }
+}
+
+// ---------- Takt ----------
+let acc=0, last=performance.now(), fpsN=0, fpsT=last; window.fps=0;
+function loop(now){
+  acc += Math.min(now-last, 250); last=now;
+  let n=0; while(acc>=1000/60 && n<6){ if(phase!=='loading') step(); acc-=1000/60; n++ }
+  if(acc>1000/60) acc=0;                   // zu langsam: lieber Zeit verlieren als ruckeln
+  if(phase!=='loading') draw();
+  fpsN++; if(now-fpsT>2000){ window.fps=fpsN*1000/(now-fpsT); fpsN=0; fpsT=now }
+  requestAnimationFrame(loop);
+}
+const origNew = newRace;
+newRace = async()=>{ phase='loading'; await origNew() };
+document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
+  await newRace(); setInterval(pollChat,1000); setInterval(pollBoard,15000); pollBoard();
+  AC.resume(); playNext(); requestAnimationFrame(loop);
+});
+</script></body></html>
