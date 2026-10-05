@@ -130,11 +130,29 @@ async function newRace(){
   Events.on(engine,'collisionStart',onHit);
   if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
   if(finalMin()) toast('🔥 FINAL RACES of the hour – type your country!','#f87171',300);
-  t=0; finished=[]; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
+  t=0; finished=[]; slowT=-1; slowDone=false; timeScale=1; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
   balls.forEach(b=>vload('win-'+b.code));
   if(chaos) say(['chaos',chaos.id,'double'],2);
   else if(finalMin() && saidFinal!==board.hourEnds){ saidFinal=board.hourEnds; say(['final-minutes'],2) }
   else say([['type-country','own-ball','get-ready'][raceNo%3]],2);
+}
+
+// Aufholjagd, sichtbar: der Führende trägt die Krone und wird größer, je weiter er allein vorne fährt (bleibt eher an Stiften hängen),
+// die ersten drei bekommen dabei wie bisher etwas Luftwiderstand. Alle 5 s bekommt die hinterste Kugel im Bild einen Turbo (pro Kugel einmal je Rennen).
+// Wird auch von der Simulation benutzt (gibt die Turbo-Kugel zurück, Töne/Toasts macht der Aufrufer).
+const CROWN_MAX = 1.35, TURBO_EVERY = 60*5, TURBO_LEN = 80;
+function assist(bs, tt, nFin){
+  const run=bs.filter(b=>!b.done).sort((a,b)=>b.position.y-a.position.y);
+  run.forEach((b,i)=>{ const gap=i<3&&run[4]?b.position.y-run[4].position.y:0; b.frictionAir=0.004+Math.min(Math.max(gap-200,0)/800,1)*0.022;
+    b.crown = i===0 && !nFin;
+    const want = b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1, cur=b.circleRadius/R;
+    if(Math.abs(want-cur)>0.005){ const f=Math.min(Math.max(want/cur,0.992),1.008); Body.scale(b,f,f) }
+    if(b.turboT>0){ b.turboT--; b.frictionAir=0.001; b.force.y += b.mass*0.0011;   // ~85 % mehr Schwerkraft
+      if(b.velocity.y>17) Body.setVelocity(b,{x:b.velocity.x,y:17}) } });   // gedeckelt, sonst tunnelt sie durch Stifte
+  if(tt<60*4 || tt%TURBO_EVERY || nFin || run.length<6) return null;
+  const lead=run[0], cand=run.slice(3).filter(b=>!b.hadTurbo && lead.position.y-b.position.y<620);   // 620 ≈ was hinter dem Ersten noch im Bild ist
+  const b=cand[cand.length-1]; if(!b) return null;
+  b.hadTurbo=true; b.turboT=TURBO_LEN; Body.setVelocity(b,{x:b.velocity.x*0.5, y:Math.min(Math.max(b.velocity.y,0)+5,17)}); return b;
 }
 
 function step(){
@@ -152,9 +170,13 @@ function step(){
   if(phase==='race' && chaos){ const run=balls.filter(b=>!b.done);
     if(chaos.id==='quake' && t%(60*4)===0){ for(const b of run) Body.setVelocity(b,{x:b.velocity.x+(Math.random()-0.5)*14, y:b.velocity.y-Math.random()*4}); sfx.quake(); say(['quake']); toast('🌋 EARTHQUAKE!','#c084fc',90) }
     if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; sfx.boost() } }
-  // Spannung: wer weit vorne allein fährt, bekommt etwas mehr Luftwiderstand (Feld bleibt zusammen)
-  if(phase==='race'){ const run=balls.filter(b=>!b.done).sort((a,b)=>b.position.y-a.position.y);
-    run.forEach((b,i)=>{ const gap=i<3&&run[4]?b.position.y-run[4].position.y:0; b.frictionAir=0.004+Math.min(Math.max(gap-200,0)/800,1)*0.022 }) }
+  if(phase==='race'){ const tb=assist(balls, t, finished.length);
+    if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) } }
+  // Zeitlupe, wenn die ersten zwei dicht beieinander auf die Ziellinie zurollen (einmal pro Rennen)
+  if(phase==='race' && !slowDone && !finished.length){ const [a,c]=ranking();
+    if(a && c && a.position.y>FINISH_Y-280 && a.position.y-c.position.y<2.5*R){ slowDone=true; slowT=0; sfx.slow() } }
+  if(slowT>=0){ slowT++; if(slowT>55 || (finished.length>=2 && t-finished[1].ft>8) || phase!=='race') slowT=-1 }
+  timeScale += ((slowT>=0 ? 0.4 : 1)-timeScale)*0.2;
   for(const b of balls){
     if(b.done) continue;
     if(b.position.y>FINISH_Y){
@@ -245,6 +267,8 @@ const sfx = {
   boost:()=>{tone(660,0.07,'square',0.15);tone(990,0.07,'square',0.15,0.05);tone(1480,0.12,'square',0.15,0.1)},
   chaos:()=>[392,523,392,659,784].forEach((f,i)=>tone(f,0.12,'sawtooth',0.15,i*0.09)),
   quake:()=>{tone(55,0.5,'sawtooth',0.3);tone(70,0.4,'square',0.2,0.05)},
+  turbo:()=>[220,330,440,660,880].forEach((f,i)=>tone(f,0.09,'sawtooth',0.12,i*0.04)),
+  slow:()=>{tone(880,0.6,'sine',0.2);tone(440,0.9,'sine',0.2,0.15)},
   fanfare:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i===3?0.8:0.18,'square',0.22,i*0.14)),
 };
 setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
@@ -292,7 +316,7 @@ async function say(names, rank=1){
 }
 const VOICE = ['off','here-we-go','new-leader','change-top','photo','comeback','finish-coming','chaos','moon','bounce','quake','rocket','double','type-country','own-ball','chat-boost','welcome','new-hour','final-minutes','get-ready','what-a-race'];
 VOICE.forEach(vload);
-let winAt = -1, saidFinal = 0, comebackRank = {}, lastWelcome = 0;
+let winAt = -1, slowT = -1, slowDone = false, timeScale = 1, saidFinal = 0, comebackRank = {}, lastWelcome = 0;
 
 // ---------- Darstellung ----------
 function flagBall(x,y,r,b,g=ctx){
@@ -353,16 +377,27 @@ function draw(){
     ctx.beginPath(); b.trail.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); ctx.globalAlpha=1});
   for(const b of balls){
     if(b.position.y<camY-40||b.position.y>camY+H+40) continue;
-    if(b.players.length){ ctx.strokeStyle='#fde047'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,R+4,0,7); ctx.stroke() }
+    const r=b.circleRadius;
+    if(b.turboT>0){ const k=Math.min(1,b.turboT/20);   // Flammenschweif nach oben (Kugel fällt nach unten)
+      for(let j=0;j<7;j++){ const fl=r*(2.4+Math.random()*1.6)*(1-j/9), ox=(Math.random()-0.5)*r*0.8;
+        ctx.globalAlpha=k*(0.75-j*0.08); ctx.fillStyle=j<2?'#fde047':j<4?'#fb923c':'#ef4444';
+        ctx.beginPath(); ctx.ellipse(b.position.x+ox,b.position.y-r*0.3-fl*0.5-j*r*0.5,r*(0.95-j*0.08),fl*0.55,0,0,7); ctx.fill() }
+      ctx.globalAlpha=1 }
+    if(b.players.length){ ctx.strokeStyle='#fde047'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke() }
     if(b.boostT>0){ b.boostT--; const k=b.boostT/45; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=5; ctx.globalAlpha=k;
-      ctx.beginPath(); ctx.arc(b.position.x,b.position.y,R+8+(1-k)*26,0,7); ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+8+(1-k)*26,0,7); ctx.stroke();
       for(let j=0;j<6;j++){ const a=j*1.047+b.boostT*0.3, rr=R+10+(1-k)*30; ctx.fillStyle=j%2?'#fde047':'#22d3ee'; ctx.fillRect(b.position.x+Math.cos(a)*rr-3,b.position.y-Math.sin(a)*rr*0.6-rr*0.5-3,6,6) }
       ctx.globalAlpha=1 }
-    const sp=ballSprite(b,R); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); ctx.drawImage(sp,-R-3,-R-3); ctx.restore();
+    const sp=ballSprite(b,R); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); if(r!==R) ctx.scale(r/R,r/R); ctx.drawImage(sp,-R-3,-R-3); ctx.restore();
+    if(b.crown && !b.done && phase==='race') txt('👑',b.position.x,b.position.y-r+4,Math.round(r*1.5),'#fff','400','center');
+    if(b.turboT>0) txt('TURBO',b.position.x,b.position.y+r+24,20,'#fb923c','700','center',0,true);
   }
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H+40)
-    txt(who(b),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-R-10,22,'#fde047','700','center',150,true);
+    txt(who(b),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
   ctx.restore();
+  if(timeScale<0.9){ const k=Math.min(1,(1-timeScale)/0.5);   // Zeitlupe: heller Schleier + Schriftzug
+    ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
+    txt('📸 PHOTO FINISH',MID,540,56,'#fde047','700','center',CW-40,true); txt('SLOW MOTION',MID,585,26,'#fff','700','center',0,true); ctx.globalAlpha=1 }
   drawColumn(rank); drawLeft(); drawRight(rank);
 }
 
@@ -493,7 +528,7 @@ function drawRight(rank){
 // ---------- Takt ----------
 let acc=0, last=performance.now(), lastDraw=0, fpsN=0, fpsT=last; window.fps=0;
 function loop(now){
-  acc += Math.min(now-last, 250); last=now;
+  acc += Math.min(now-last, 250)*timeScale; last=now;   // timeScale < 1 = Zeitlupe
   let n=0; while(acc>=1000/60 && n<6){ if(phase!=='loading') step(); acc-=1000/60; n++ }
   if(acc>1000/60) acc=0;                   // zu langsam: lieber Zeit verlieren als ruckeln
   if(phase!=='loading' && now-lastDraw>=31){ lastDraw = now-lastDraw>100 ? now : lastDraw+1000/30; draw(); fpsN++ }   // 30 Bilder/s reichen (ffmpeg greift 30 ab), spart ~1/3 Chrome-CPU
