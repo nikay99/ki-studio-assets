@@ -15,7 +15,7 @@ cv.width = OUT_W; cv.height = Math.round(H*SC);
 const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
 
 let engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, trackLayer, trackSeed = 0;
-let lastEv = -1, board = {races:0, countries:[], players:[]}, nextUp = [];
+let thirdT = 0, lastEv = -1, board = {races:0, countries:[], players:[]}, nextUp = [];
 
 function seedRand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
 
@@ -35,7 +35,7 @@ function buildTrack(rand, variant){
   const gate = wall(TW/2,330,TW-80,16,0,'#e2e8f0'); gate.gate = true;
   // 1) Stift-Feld
   const off = variant===1 ? 30 : 0;
-  for(let r=0;r<9;r++) for(let c=0;c<11;c++){const x=110+off+c*110+(r%2?55:0); if(x<TW-80) peg(x,620+r*105,11,PAL.peg)}
+  for(let r=0;r<9;r++) for(let c=0;c<11;c++){const x=110+off+c*110+(r%2?55:0); if(x>95&&x<TW-95) peg(x,620+r*105,11,PAL.peg)}
   // 2) Zickzack-Rampen
   const n = variant===2 ? 5 : 6;
   for(let i=0;i<n;i++){const left=i%2===0, y=1700+i*(1560/n); wall(left?520:TW-520,y,1000,26,left?0.16:-0.16,PAL.ramp)}
@@ -45,7 +45,7 @@ function buildTrack(rand, variant){
     b.col=PAL.paddle; b.spin=(j%2?1:-1)*(0.025+0.01*i+(variant*0.004)); S.push(b); sp.push(b)}
   // 4) Bumper + feine Stifte
   for(let r=0;r<5;r++) for(let c=0;c<5;c++){const x=170+c*240+(r%2?120:0); if(x<TW-110) peg(x,4600+r*170,34+rand()*8,PAL.bump)}
-  for(let r=0;r<4;r++) for(let c=0;c<14;c++){const x=90+c*85+(r%2?42:0); if(x<TW-60) peg(x,5560+r*90,9,PAL.peg)}
+  for(let r=0;r<4;r++) for(let c=0;c<14;c++){const x=90+c*85+(r%2?42:0); if(x>95&&x<TW-95) peg(x,5560+r*90,9,PAL.peg)}
   // 5) Trichter
   wall(330,6150,620,28,0.62,PAL.fun); wall(TW-330,6150,620,28,-0.62,PAL.fun);
   wall(TW/2-75,6450,24,220,0,PAL.fun); wall(TW/2+75,6450,24,220,0,PAL.fun);
@@ -95,11 +95,11 @@ function step(){
   t++;
   for(const b of balls){
     if(b.done) continue;
-    if(b.position.y>FINISH_Y){b.done=true; finished.push(b); if(finished.length<=3) sfx.finish(finished.length)}
+    if(b.position.y>FINISH_Y){b.done=true; finished.push(b); if(finished.length<=3) sfx.finish(finished.length); if(finished.length===3) thirdT=t}
     b.still = b.speed<0.25 ? b.still+1 : 0;
-    if(b.still>180){Body.setVelocity(b,{x:(Math.random()-0.5)*6,y:-4}); b.still=0}
+    if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(4+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
   }
-  if(phase==='race' && (finished.length===balls.length || t>60*150)){
+  if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*25))){   // Nachzügler nicht ewig abwarten
     phase='podium'; phaseT=0; sfx.fanfare();
     const w=finished[0];
     if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players})})
