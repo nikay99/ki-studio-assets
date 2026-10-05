@@ -1,0 +1,10 @@
+rocket 0.03 0.77
+double 0.99 1.73
+type-country 1.87 3.17
+own-ball 3.35 4.49
+chat-boost 4.71 6.19
+welcome 6.39 7.43
+new-hour 7.61 9.17
+final-minutes 9.29 11.27
+get-ready 11.45 12.15
+what-a-race 12.45 13.25

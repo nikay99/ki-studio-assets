@@ -130,7 +130,11 @@ async function newRace(){
   Events.on(engine,'collisionStart',onHit);
   if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
   if(finalMin()) toast('🔥 FINAL RACES of the hour – type your country!','#f87171',300);
-  t=0; finished=[]; phase='countdown'; phaseT=0; nextUp=[]; leader=null;
+  t=0; finished=[]; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
+  balls.forEach(b=>vload('win-'+b.code));
+  if(chaos) say(['chaos',chaos.id,'double'],2);
+  else if(finalMin() && saidFinal!==board.hourEnds){ saidFinal=board.hourEnds; say(['final-minutes'],2) }
+  else say([['type-country','own-ball','get-ready'][raceNo%3]],2);
 }
 
 function step(){
@@ -140,13 +144,13 @@ function step(){
   for(const s of spinners) Body.setAngle(s, s.angle+s.spin);
   if(phase==='countdown'){
     if(phaseT%60===0 && phaseT<START_WAIT) sfx.beep(phaseT>=START_WAIT-60?880:440);
-    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go(); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
+    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go(); say([raceNo%2?'off':'here-we-go'],2); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
   }
   Engine.update(engine, 1000/60);
   if(phase!=='race' && phase!=='podium') return;
   t++;
   if(phase==='race' && chaos){ const run=balls.filter(b=>!b.done);
-    if(chaos.id==='quake' && t%(60*4)===0){ for(const b of run) Body.setVelocity(b,{x:b.velocity.x+(Math.random()-0.5)*14, y:b.velocity.y-Math.random()*4}); sfx.quake(); toast('🌋 EARTHQUAKE!','#c084fc',90) }
+    if(chaos.id==='quake' && t%(60*4)===0){ for(const b of run) Body.setVelocity(b,{x:b.velocity.x+(Math.random()-0.5)*14, y:b.velocity.y-Math.random()*4}); sfx.quake(); say(['quake']); toast('🌋 EARTHQUAKE!','#c084fc',90) }
     if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; sfx.boost() } }
   // Spannung: wer weit vorne allein fährt, bekommt etwas mehr Luftwiderstand (Feld bleibt zusammen)
   if(phase==='race'){ const run=balls.filter(b=>!b.done).sort((a,b)=>b.position.y-a.position.y);
@@ -154,14 +158,22 @@ function step(){
   for(const b of balls){
     if(b.done) continue;
     if(b.position.y>FINISH_Y){
-      b.done=true; finished.push(b); const k=finished.length;
+      b.done=true; b.ft=t; finished.push(b); const k=finished.length; if(k===1) winAt=t;
       if(k<=3){ sfx.finish(k); if(b.players.length && phase==='race') toast(`🏁 ${b.players[0]} finished #${k} with ${b.flag}!`, '#4ade80') }
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
     if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(3+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
   }
   if(phase==='race' && t>60*3 && t%15===0){ const l=ranking()[0];
-    if(l && l!==leader){ if(leader){ toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead() } leader=l } }
+    if(l && l!==leader){ if(leader){ toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead();
+        say([(comebackRank[l.code]||0)>=6 ? 'comeback' : Math.random()<0.5 ? 'new-leader' : 'change-top']) } leader=l } }
+  // Sprecher: Ränge von vor ein paar Sekunden (für „What a comeback!“), Zielgerade, Sieger
+  if(phase==='race' && t%240===0){ comebackRank={}; ranking().forEach((b,i)=>comebackRank[b.code]=i) }
+  if(phase==='race' && !finished.length && leader && leader.position.y>FINISH_Y-1300 && !leader.saidFin){ leader.saidFin=true; balls.forEach(b=>b.saidFin=true); say(['finish-coming'],2) }
+  if(phase==='race' && t===60*7 && balls.some(b=>b.players.length)) say(['chat-boost']);
+  if(winAt>=0 && (t-winAt>=20 || finished.length>=2)){ const w=finished[0], s=finished[1], photo=s && s.ft-w.ft<=18;
+    say([...(photo?['photo']:[]), 'win-'+w.code, ...(chaos?['double']:[])], 3); winAt=-1 }
+  if(phase==='podium' && phaseT===60*5 && Math.random()<0.3) say(['what-a-race']);
   if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
     phase='podium'; phaseT=0; sfx.fanfare(); toasts=[];
     const w=finished[0];
@@ -201,7 +213,7 @@ async function pollChat(){
         nextUp = nextUp.filter(x=>x.user!==e.user); nextUp.push({user:e.user, code:e.code});
         toast(`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog.unshift({user:e.user,flag,txt:'next race'});
       }
-      sfx.join();
+      sfx.join(); if(Date.now()-lastWelcome>30000){ lastWelcome=Date.now(); say(['welcome']) }
     }
     chatLog = chatLog.slice(0,6); lastEv = r.last;
   }catch{}
@@ -210,7 +222,7 @@ let myVersion=null, reloadPending=false;
 async function pollVersion(){ if(OFFLINE) return; try{ const v=(await (await fetch('/api/version')).json()).v; if(myVersion===null) myVersion=v; else if(v!==myVersion) reloadPending=true }catch{} }
 let seenChamp, champShow=null;
 async function pollBoard(){ if(OFFLINE) return; try{ board = await (await fetch('/api/board')).json();
-  const ch=board.champ&&board.champ.hour; if(seenChamp===undefined) seenChamp=ch; else if(ch&&ch!==seenChamp){ seenChamp=ch; champShow={...board.champ, at:Date.now()}; sfx.fanfare() } }catch{} }
+  const ch=board.champ&&board.champ.hour; if(seenChamp===undefined) seenChamp=ch; else if(ch&&ch!==seenChamp){ seenChamp=ch; champShow={...board.champ, at:Date.now()}; sfx.fanfare(); say(['new-hour','win-'+board.champ.code],2) } }catch{} }
 const finalMin = ()=>board.hourEnds && board.hourEnds-Date.now()<5*60000;
 const hourLeft = ()=>{ const ms=Math.max(0,(board.hourEnds||0)-Date.now()); return board.hourEnds?`${Math.floor(ms/60000)}:${String(Math.floor(ms/1000)%60).padStart(2,'0')}`:'' };
 
@@ -239,12 +251,37 @@ setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
 function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(s&&s.peg) sfx.plink(s.position.y) } }
 // Musik-Playlist (Dateien in /var/lib/marble/music), leiser unter den Effekten
 const music = new Audio(); music.volume = 0.55; let playlist = [], pi = 0;
-const mnode = AC.createMediaElementSource(music); mnode.connect(master);
+const musicBus = AC.createGain(); musicBus.connect(master);
+const mnode = AC.createMediaElementSource(music); mnode.connect(musicBus);
 music.onended = ()=>playNext(); music.onerror = ()=>setTimeout(playNext, 3000);
 async function playNext(){ try{ if(!playlist.length || pi % playlist.length === 0){ playlist = await (await fetch('/api/music')).json(); pi = 0 } }catch{}   // Liste nach jeder Runde neu holen (neue Stücke)
   if(!playlist.length){ setTimeout(playNext, 30000); return }
   if(pi % playlist.length === 0) shuffle(playlist);
   music.src = '/music/'+encodeURIComponent(playlist[pi++ % playlist.length]); music.play().catch(()=>setTimeout(playNext,3000)) }
+
+// ---------- Sprecher ----------
+// Vorab erzeugte Ansagen (public/voice/*.mp3), immer nur eine auf einmal, Musik wird dabei leiser.
+// Rang: 3 = Sieger, 2 = Start/Chaos/Stunde, 1 = Füllsätze (nur mit Pause davor, damit er nicht dauernd redet)
+const voiceBus = AC.createGain(); voiceBus.gain.value = 1.1; voiceBus.connect(master);
+const vbuf = {}; let vSrc = null, vRank = 0, vEnd = 0;
+function vload(n){ if(!(n in vbuf)) vbuf[n] = fetch('/voice/'+n+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(a=>AC.decodeAudioData(a)).catch(()=>null); return vbuf[n] }
+async function say(names, rank=1){
+  const now = AC.currentTime, busy = now < vEnd;
+  if(busy && rank <= vRank) return;                 // Wichtigeres läuft gerade
+  if(rank===1 && now < vEnd+5) return;               // Füllsätze nicht im Dauerfeuer
+  vRank = rank; vEnd = now + 3;                        // reservieren, bis die Dateien da sind
+  const bufs = (await Promise.all(names.map(vload))).filter(Boolean);
+  if(!bufs.length || vRank !== rank){ if(vRank===rank) vEnd = 0; return }
+  if(vSrc) for(const s of vSrc) try{ s.stop() }catch{}
+  let t0 = AC.currentTime + 0.03; vSrc = [];
+  for(const b of bufs){ const s = AC.createBufferSource(); s.buffer = b; s.connect(voiceBus); s.start(t0); vSrc.push(s); t0 += b.duration + 0.12 }
+  vEnd = t0;
+  musicBus.gain.cancelScheduledValues(AC.currentTime);
+  musicBus.gain.setTargetAtTime(0.35, AC.currentTime, 0.05); musicBus.gain.setTargetAtTime(1, t0, 0.3);
+}
+const VOICE = ['off','here-we-go','new-leader','change-top','photo','comeback','finish-coming','chaos','moon','bounce','quake','rocket','double','type-country','own-ball','chat-boost','welcome','new-hour','final-minutes','get-ready','what-a-race'];
+VOICE.forEach(vload);
+let winAt = -1, saidFinal = 0, comebackRank = {}, lastWelcome = 0;
 
 // ---------- Darstellung ----------
 function flagBall(x,y,r,b,g=ctx){
