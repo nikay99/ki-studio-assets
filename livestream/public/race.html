@@ -103,7 +103,7 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
 
 function addBall(code, players, i){
   const pos = i===undefined ? {x:60+rand()*488, y:40} : {x:60+(i%12)*44+rand()*4, y:100+Math.floor(i/12)*44};
-  const b = Bodies.circle(pos.x, pos.y, R, {restitution:0.45, friction:0.005, frictionAir:0.004, density:0.002});
+  const b = Bodies.circle(pos.x, pos.y, R, {restitution:0.75, friction:0.005, frictionAir:0.004, density:0.002});   // 0.75 = Flummi (Niklas), vorher 0.45
   Object.assign(b,{code, flag:flagOf(code), name:NAME[code]||code, players:players.slice(), still:0, trail:[]});
   balls.push(b); Composite.add(engine.world,b); return b;
 }
@@ -185,6 +185,7 @@ function step(){
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
     if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(3+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
+    if(b.position.x<-20 || b.position.x>TW+20 || b.position.y<-400){ Body.setPosition(b,{x:Math.min(Math.max(b.position.x,R+30),TW-R-30), y:Math.max(b.position.y,40)}); Body.setVelocity(b,{x:0,y:2}) }   // aus der Bahn gesprungen (selten, Flummi) → zurück
   }
   if(phase==='race' && t>60*3 && t%15===0){ const l=ranking()[0];
     if(l && l!==leader){ if(leader){ toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead();
