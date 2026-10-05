@@ -151,13 +151,19 @@ if (fs.existsSync(path.join(REPO, '.git')) && process.env.SELF_UPDATE !== '0') {
     await git('reset', '-q', '--hard', 'origin/main');
     if (pkgOld !== await git('rev-parse', 'HEAD:livestream/package.json'))
       await new Promise(r => execFile('npm', ['install', '--omit=dev', '-q'], { cwd: __dirname, timeout: 300000 }, r));
-    fs.appendFileSync(path.join(DATA, 'update.log'), `${new Date().toISOString()} update ${remote}\n`);
+    logLine(`update ${remote}`);
     process.exit(0);
   }, 120000);
 }
 
+// update.log kann root gehören (Cron) – Schreibfehler dürfen den Server nie stoppen
+function logLine(t) {
+  const line = `${new Date().toISOString()} ${t}`;
+  try { fs.appendFileSync(path.join(DATA, 'update.log'), line + '\n'); } catch { console.log(line); }
+}
+
 // Musik aus music.json nachladen (fehlende Stücke laden, entfernte löschen) – bei jedem Start, im Hintergrund
 execFile('bash', [path.join(__dirname, 'sync-music.sh')], { timeout: 900000, env: { ...process.env, DATA_DIR: DATA } },
-  (e, out, err) => fs.appendFileSync(path.join(DATA, 'update.log'), `${new Date().toISOString()} musik ${e ? 'Fehler ' + (err || e.message).slice(0, 200) : (out.trim() || 'ok')}\n`));
+  (e, out, err) => logLine(`musik ${e ? 'Fehler ' + (err || e.message).slice(0, 200) : (out.trim() || 'ok')}`));
 console.log('server läuft', { CHANNEL, DATA });
 module.exports = { countryOf };
