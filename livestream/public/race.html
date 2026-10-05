@@ -1,8 +1,8 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Country Marble Race LIVE</title>
-<style>html,body{margin:0;background:#0b0f1e;overflow:hidden;cursor:none}canvas{display:block}</style>
+<style>html,body{margin:0;background:#0b0f1e;overflow:hidden;cursor:none}canvas{display:block;position:absolute;top:0;left:0}</style>
 <script src="/matter.min.js"></script><script src="/countries.js"></script>
-</head><body><canvas id="c" width="1920" height="1080"></canvas>
+</head><body><canvas id="c" width="1920" height="1080"></canvas><canvas id="v" width="720" height="1280" style="display:none"></canvas>
 <script>
 // Länder-Kugelrennen LIVE. Physik: Matter.js (fester 60-Hz-Takt), Darstellung: eigenes Canvas, Ton: WebAudio.
 // Daten vom lokalen server.js: /api/lineup (Teilnehmer), /api/events (Chat-Beitritte), /api/result, /api/music.
@@ -10,8 +10,12 @@ const {Engine, Bodies, Body, Composite, Events} = Matter;
 const W = 1920, H = 1080, TW = 1300, FINISH_Y = 6550, WORLD_H = 6900, START_WAIT = 60*8;
 const Q = new URLSearchParams(location.search), OFFLINE = Q.has('offline');
 const OUT_W = +(Q.get('w')||1280), SC = OUT_W/W;     // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
-const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const cv = document.getElementById('c'), ctxH = cv.getContext('2d'); let ctx = ctxH;
 cv.width = OUT_W; cv.height = Math.round(H*SC);
+// ?v=1: zusätzlich 9:16-Ansicht (720x1280) rechts daneben, ffmpeg schneidet beide Bereiche aus
+const VERT = Q.has('v'), vc = document.getElementById('v'), ctxV = vc.getContext('2d'), VW = 1080, VH = 1920, VSC = 720/VW;
+if(VERT){ vc.style.display='block'; vc.style.left=OUT_W+'px' }
+let vCamX = 0, vCamY = 0;
 const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
 
 let engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, trackLayer, trackSeed = 0;
@@ -193,9 +197,8 @@ const who = b => b.players.length ? b.players[0] + (b.players.length>1?` +${b.pl
 function draw(){
   ctx.setTransform(SC,0,0,SC,0,0);
   const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
-  const pack=rank.filter(b=>!b.done).slice(0,5), fy=pack.length?pack.reduce((s,b)=>s+b.position.y,0)/pack.length:lead.position.y;   // Kamera auf die Spitzengruppe, nicht nur den Ersten
-  const target=Math.min(Math.max(Math.max(fy,lead.position.y-H*0.7)-H*0.5,0),WORLD_H-H);
-  camY += (target-camY)*0.08;
+  const target=Math.min(Math.max(lead.position.y-H*0.45,0),WORLD_H-H);   // Kamera immer auf dem Ersten (Niklas)
+  camY += (target-camY)*0.12;
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
   ctx.drawImage(trackLayer,0,Math.round(camY),TW,H,0,0,TW,H);
@@ -214,7 +217,7 @@ function draw(){
   if(phase==='countdown'){
     const n=Math.ceil((START_WAIT-phaseT)/60);
     ctx.fillStyle='rgba(5,6,18,0.45)'; ctx.fillRect(0,0,TW,H);
-    txt(`RACE #${raceNo}`,TW/2,300,54,'#94a3b8','700','center');
+    txt(`RACE #${raceNo}`,TW/2,120,54,'#94a3b8','700','center');
     txt(n>0?String(n):'GO!',TW/2,560,220,'#fde047','700','center');
     txt('✍️ Type your COUNTRY in the chat',TW/2,700,48,'#fff','700','center');
     txt('→ your flag races with YOUR NAME on it  +1 point for your nation',TW/2,760,32,'#fde047','700','center');
@@ -261,13 +264,74 @@ function draw(){
   }
 }
 
+// ---------- 9:16-Ansicht (Shorts-Feed): Bahn groß um den Ersten, unten Top 5 + Mitmachen ----------
+function drawV(){
+  ctx = ctxV; ctx.setTransform(VSC,0,0,VSC,0,0);
+  const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
+  const K=1.25, VIEW_W=VW/K, TOP=190, TH=1250, VIEW_H=TH/K;
+  vCamX += (Math.min(Math.max(lead.position.x-VIEW_W/2,0),TW-VIEW_W)-vCamX)*0.12;
+  vCamY += (Math.min(Math.max(lead.position.y-VIEW_H*0.45,0),WORLD_H-VIEW_H)-vCamY)*0.12;
+  const bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
+  ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  ctx.save(); ctx.beginPath(); ctx.rect(0,TOP,VW,TH); ctx.clip();
+  ctx.translate(0,TOP); ctx.scale(K,K); ctx.translate(-vCamX,-vCamY);
+  { const sx=Math.max(0,Math.round(vCamX)), sy=Math.max(0,Math.round(vCamY)), sw=Math.min(Math.ceil(VIEW_W)+2,TW-sx), sh=Math.min(Math.ceil(VIEW_H)+2,WORLD_H-sy); ctx.drawImage(trackLayer,sx,sy,sw,sh,sx,sy,sw,sh) }
+  for(const s of spinners) drawBody(ctx,s,true);
+  for(const s of statics) if(s.gate) drawBody(ctx,s);
+  if(phase==='race') rank.slice(0,3).forEach((b,i)=>{ctx.strokeStyle=['#ffd700','#d1d5db','#cd7f32'][i]; ctx.lineWidth=8; ctx.globalAlpha=0.5;
+    ctx.beginPath(); b.trail.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); ctx.globalAlpha=1});
+  for(const b of balls){
+    if(b.position.y<vCamY-40||b.position.y>vCamY+VIEW_H+40) continue;
+    const sp=ballSprite(b,22); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); ctx.drawImage(sp,-25,-25); ctx.restore();
+    if(b.players.length) txt(who(b),b.position.x,b.position.y-32,20,'#fde047','700','center');
+  }
+  ctx.restore();
+  const cy=TOP+TH/2;
+  if(phase==='countdown'){
+    const n=Math.ceil((START_WAIT-phaseT)/60);
+    ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(0,TOP,VW,TH);
+    txt(n>0?String(n):'GO!',VW/2,cy-60,240,'#fde047','700','center');
+    txt('✍️ Type your COUNTRY',VW/2,cy+90,62,'#fff','700','center');
+    txt('in the chat to race!',VW/2,cy+165,62,'#fff','700','center');
+  }
+  if(callout && callout.t<150 && phase==='race'){ const a=Math.min(1,(150-callout.t)/20);
+    ctx.globalAlpha=a; ctx.fillStyle='rgba(5,6,18,0.82)'; ctx.beginPath(); ctx.roundRect(40,TOP+30,VW-80,96,18); ctx.fill();
+    txt(callout.txt,VW/2,TOP+95,44,'#fde047','700','center'); ctx.globalAlpha=1 }
+  if(phase==='podium'||phase==='loading'){
+    const a=Math.min(phaseT/30,1); ctx.fillStyle=`rgba(5,6,18,${0.8*a})`; ctx.fillRect(0,TOP,VW,TH);
+    ctx.globalAlpha=a; txt('WINNER',VW/2,TOP+200,90,'#ffd700','700','center');
+    const w=finished[0]; if(w){flagBall(VW/2,TOP+460,170,w); txt(w.name,VW/2,TOP+740,96,'#fff','700','center');
+      if(w.players.length) txt(`🏆 ${w.players.slice(0,2).join(', ')}`,VW/2,TOP+820,46,'#fde047','400','center')}
+    txt(`Next race in ${Math.max(0,Math.ceil((60*8-phaseT)/60))} s`,VW/2,TOP+1000,52,'#22d3ee','700','center');
+    ctx.globalAlpha=1;
+  }
+  // Kopf
+  ctx.fillStyle='rgba(8,10,24,0.95)'; ctx.fillRect(0,0,VW,TOP);
+  ctx.fillStyle='#ef4444'; ctx.beginPath(); ctx.roundRect(40,40,120,52,10); ctx.fill();
+  txt('LIVE',100,79,32,'#fff','700','center');
+  txt('COUNTRY MARBLE RACE',190,82,46,'#fff');
+  txt(`RACE #${raceNo}`,40,160,40,'#94a3b8');
+  txt(phase==='race'?`⏱ ${(t/60).toFixed(1)} s`:phase==='countdown'?'⏳ starting':'🏁 finished',VW-40,160,40,'#22d3ee','700','right');
+  // Fuß: Top 5 + Mitmachen
+  const F=TOP+TH; ctx.fillStyle='rgba(8,10,24,0.95)'; ctx.fillRect(0,F,VW,VH-F);
+  rank.slice(0,5).forEach((b,i)=>{ const y=F+62+i*62;
+    ctx.fillStyle=i<3?['#ffd70033','#d1d5db22','#cd7f3222'][i]:'rgba(255,255,255,0.04)'; ctx.beginPath(); ctx.roundRect(30,y-44,VW-60,56,12); ctx.fill();
+    txt(`${i+1}`,75,y,34,'#fff','700','center'); ctx.drawImage(ballSprite(b,18),108,y-36);
+    txt(b.name,160,y,34,'#fff','700'); if(b.players.length) txt(who(b),VW-50,y,28,'#fde047','400','right') });
+  ctx.fillStyle='rgba(253,224,71,0.14)'; ctx.beginPath(); ctx.roundRect(30,F+352,VW-60,96,14); ctx.fill();
+  txt('✍️ TYPE YOUR COUNTRY IN CHAT',VW/2,F+402,40,'#fde047','700','center');
+  const fans=(board.fans||[]).slice(0,5);
+  txt(fans.length?'🔥 '+fans.map(([c,n])=>`${flagOf(c)} ${n}`).join('   '):'your own ball + 1 point for your nation',VW/2,F+438,28,'#e2e8f0','400','center');
+  ctx = ctxH;
+}
+
 // ---------- Takt ----------
 let acc=0, last=performance.now(), fpsN=0, fpsT=last; window.fps=0;
 function loop(now){
   acc += Math.min(now-last, 250); last=now;
   let n=0; while(acc>=1000/60 && n<6){ if(phase!=='loading') step(); acc-=1000/60; n++ }
   if(acc>1000/60) acc=0;                   // zu langsam: lieber Zeit verlieren als ruckeln
-  if(phase!=='loading') draw();
+  if(phase!=='loading'){ draw(); if(VERT) drawV() }
   fpsN++; if(now-fpsT>2000){ window.fps=fpsN*1000/(now-fpsT); fpsN=0; fpsT=now }
   requestAnimationFrame(loop);
 }
