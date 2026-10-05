@@ -226,12 +226,12 @@ const MID = CX+CW/2, secs = n=>Math.max(0,Math.ceil(n/60));
 function draw(){
   ctx.setTransform(SC,0,0,SC,0,0);
   const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
-  const target=Math.min(Math.max(lead.position.y-H*0.62,0),WORLD_H-H);   // Kamera immer auf dem Ersten (Niklas)
+  const target=Math.min(Math.max(lead.position.y-H*0.62,-250),WORLD_H-H);   // -250: Startgitter sichtbar unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*0.12;
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
   // Bahn in der Mittelspalte
-  ctx.drawImage(trackLayer,0,Math.round(camY),TW,H,CX,0,TW,H);
+  { const sy=Math.max(0,Math.round(camY)), dy=sy-Math.round(camY); ctx.drawImage(trackLayer,0,sy,TW,H-dy,CX,dy,TW,H-dy) }
   ctx.save(); ctx.beginPath(); ctx.rect(CX,0,CW,H); ctx.clip(); ctx.translate(CX,-camY);
   for(const s of spinners) drawBody(ctx,s,true);
   for(const s of statics) if(s.gate) drawBody(ctx,s);
@@ -258,43 +258,41 @@ function drawColumn(rank){
   txt(`RACE #${raceNo}`,L,104,26,'#94a3b8');
   txt(phase==='race'?`⏱ ${(t/60).toFixed(0)}s`:phase==='countdown'?`⏳ ${secs(START_WAIT-phaseT)}s`:'🏁',Rt,104,26,'#22d3ee','700','right');
   rank.slice(0,3).forEach((b,i)=>{ const x=MID-105+i*80; txt(['1','2','3'][i],x,104,22,['#ffd700','#d1d5db','#cd7f32'][i],'700','center'); ctx.drawImage(ballSprite(b,16),x+12,78) });
+  // Mitmach-Aufruf oben (unten und rechts verdeckt am Handy die YouTube-Oberfläche/der Chat), im Wechsel mit „Next race: …“
+  const F=128, showNext = nextUp.length && phase==='race' && Math.floor(Date.now()/5000)%2===1;
+  const fg=ctx.createLinearGradient(0,F,0,F+110); fg.addColorStop(0,'rgba(146,64,14,0.95)'); fg.addColorStop(1,'rgba(69,26,3,0.95)');
+  ctx.fillStyle=fg; ctx.fillRect(CX,F,CW,110); ctx.fillStyle='#fde047'; ctx.fillRect(CX,F+106,CW,4);
+  if(showNext){
+    txt('⏭ NEXT RACE',MID,F+44,34,'#fde047','700','center');
+    txt(nextUp.slice(-4).map(x=>`${flagOf(x.code)} ${x.user}`).join('  '),MID,F+88,28,'#fff','700','center',CW-40);
+  } else {
+    txt('🎯 GET YOUR OWN BALL!',MID,F+48,44,'#fde047','700','center',CW-40);
+    txt('type your COUNTRY in the chat',MID,F+92,32,'#fff','700','center',CW-40);
+  }
   // Ansagen mit Benutzernamen
-  toasts.forEach((o,i)=>{ const y=142+i*62; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
+  toasts.forEach((o,i)=>{ const y=252+i*62; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
     box(CX+14,y,CW-28,52,'rgba(5,6,18,0.88)',14,o.col); txt(o.s,MID,y+36,26,o.col,'700','center',CW-64); ctx.globalAlpha=1 });
   if(phase==='countdown'){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
-    ctx.fillStyle='rgba(5,6,18,0.55)'; ctx.fillRect(CX,128,CW,H-128-150);
-    txt(n>0?String(n):'GO!',MID,500,190,'#fde047','700','center');
-    txt('GET YOUR OWN BALL!',MID,600,52,'#fff','700','center',CW-40,true);
-    txt('Type your COUNTRY in the chat 👇',MID,656,32,'#fde047','700','center',CW-40,true);
-    txt('e.g.  Brazil · USA · Germany · 🇯🇵',MID,700,24,'#cbd5e1','400','center',CW-40);
-    if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,770,24,'#4ade80','700','center',CW-40,true);
+    const oy=Math.max(238,Math.round(320-camY)); ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
+    txt(n>0?String(n):'GO!',MID,745,170,'#fde047','700','center');
+    txt('Type your COUNTRY in the chat 👇',MID,815,34,'#fff','700','center',CW-40,true);
+    txt('→ your flag races with YOUR name on it',MID,858,26,'#fde047','700','center',CW-40,true);
+    txt('e.g.  Brazil · USA · Germany · 🇯🇵',MID,898,24,'#cbd5e1','400','center',CW-40);
+    if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,960,24,'#4ade80','700','center',CW-40,true);
   }
   if(phase==='podium'||phase==='loading'){
-    const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,128,CW,H-128);
-    ctx.globalAlpha=a; txt('🏆 WINNER',MID,220,56,'#ffd700','700','center');
-    if(w){ flagBall(MID,370,105,w); txt(w.name,MID,530,58,'#fff','700','center',CW-40);
-      if(w.players.length) txt(`🎉 ${w.players[0]} WINS!`,MID,590,42,'#fde047','700','center',CW-40);
-      else txt('Type your country – next win is yours!',MID,590,28,'#cbd5e1','400','center',CW-40) }
+    const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,238,CW,H-238);
+    ctx.globalAlpha=a; txt('🏆 WINNER',MID,300,54,'#ffd700','700','center');
+    if(w){ flagBall(MID,430,95,w); txt(w.name,MID,580,56,'#fff','700','center',CW-40);
+      if(w.players.length) txt(`🎉 ${w.players[0]} WINS!`,MID,636,42,'#fde047','700','center',CW-40);
+      else txt(`Type ${w.name.toUpperCase()} in chat to claim it!`,MID,636,28,'#cbd5e1','700','center',CW-40) }
     [1,2].forEach(k=>{const b=finished[k]; if(!b) return; const x=MID+(k===1?-150:150);
-      flagBall(x,700,44,b); txt(`${k+1}. ${b.name}`,x,778,24,'#e5e7eb','700','center',260);
-      if(b.players.length) txt(b.players[0],x,808,20,'#fde047','400','center',260)});
+      flagBall(x,740,42,b); txt(`${k+1}. ${b.name}`,x,816,24,'#e5e7eb','700','center',260);
+      if(b.players.length) txt(b.players[0],x,846,20,'#fde047','400','center',260)});
     const top=(board.countries||[])[0];
-    if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,880,26,'#94a3b8','700','center',CW-40);
+    if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,920,26,'#94a3b8','700','center',CW-40);
     ctx.globalAlpha=1;
-  }
-  // Fuß: Mitmach-Aufruf, im Wechsel mit „Next race: …“
-  const F=H-150, showNext = nextUp.length && phase==='race' && Math.floor(Date.now()/5000)%2===1;
-  const fg=ctx.createLinearGradient(0,F,0,H); fg.addColorStop(0,'rgba(120,53,15,0.92)'); fg.addColorStop(1,'rgba(30,12,4,0.96)');
-  ctx.fillStyle=fg; ctx.fillRect(CX,F,CW,150);
-  ctx.fillStyle='#fde047'; ctx.fillRect(CX,F,CW,4);
-  if(showNext){
-    txt('⏭ NEXT RACE',MID,F+52,34,'#fde047','700','center');
-    txt(nextUp.slice(-4).map(x=>`${flagOf(x.code)} ${x.user}`).join('  '),MID,F+102,28,'#fff','700','center',CW-40);
-  } else {
-    txt('🎯 GET YOUR OWN BALL!',MID,F+56,44,'#fde047','700','center',CW-40);
-    txt('type your country in the chat',MID,F+100,30,'#fff','700','center',CW-40);
-    txt('your flag races with YOUR name on it',MID,F+134,22,'#fcd34d','400','center',CW-40);
   }
 }
 
@@ -317,7 +315,10 @@ function drawLeft(){
   if(fans.length) fans.forEach(([c,n],i)=>{ const x=x0+i*112; ctx.drawImage(flagSprite(c,20),x,fy+22); txt(String(n),x+50,fy+56,28,i===0?'#fde047':'#e2e8f0','700') });
   else txt('no fans yet – be the first!',x0,fy+50,24,'#64748b','400');
   txt('every chat message = +1 for your nation',x0,fy+108,22,'#cbd5e1','400','left',w);
-  txt(`🏁 ${board.races||0} races today`,x0,H-40,24,'#94a3b8','400');
+  const pl=(board.players||[]).slice(0,3);
+  txt('👑 TOP PLAYERS today',x0,fy+170,26,'#94a3b8','700','left',w);
+  txt(pl.length?pl.map(([u,n])=>`${u} ${n}🏆`).join('   '):'win a race to get on this list!',x0,fy+212,24,pl.length?'#fde047':'#64748b',pl.length?'700':'400','left',w);
+  txt(`🏁 ${board.races||0} races today`,x0,H-30,22,'#94a3b8','400');
 }
 
 // rechts: Live-Rangliste + Mitmachen + letzte Beitritte (nur im 16:9-Bild)
