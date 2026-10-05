@@ -97,7 +97,7 @@ http.createServer(async (req, res) => {
 
 function board() {
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
-  return { races: st.races, countries: top(st.countryWins, 5), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5) };
+  return { races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5) };
 }
 
 // Statusseite nach außen: nur /s/<TOKEN>/…
