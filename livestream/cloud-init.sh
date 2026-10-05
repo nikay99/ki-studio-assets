@@ -1,16 +1,23 @@
 #!/bin/bash
 # Startskript für den DigitalOcean-Server (Ubuntu 24.04). Platzhalter __STATUS_TOKEN__ setzt der Anleger.
-set -eux
+set -ux
+exec > >(tee -a /var/log/marble-setup.log) 2>&1
 export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y --no-install-recommends xvfb pulseaudio pulseaudio-utils ffmpeg git curl ca-certificates \
+# Einrichtungs-Log während der Installation auf Port 8090 sichtbar machen (nur unter dem Token-Pfad)
+mkdir -p /run/marble-pub/s/__STATUS_TOKEN__ && ln -sf /var/log/marble-setup.log /run/marble-pub/s/__STATUS_TOKEN__/setup.txt
+touch /run/marble-pub/index.html /run/marble-pub/s/index.html
+echo 'DPkg::Lock::Timeout "900";' > /etc/apt/apt.conf.d/99marble-lock
+(cd /run/marble-pub && python3 -m http.server 8090 >/dev/null 2>&1 &)
+APT="apt-get -o DPkg::Lock::Timeout=900 -y -q"
+$APT update
+$APT install --no-install-recommends xvfb pulseaudio pulseaudio-utils ffmpeg git curl ca-certificates \
   fonts-noto-color-emoji fonts-dejavu-core unattended-upgrades
 # Chrome (offizielles .deb, kein Snap)
 curl -fsSL -o /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-apt-get install -y /tmp/chrome.deb
+$APT install /tmp/chrome.deb
 # Node 22
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-apt-get install -y nodejs
+$APT install nodejs
 
 useradd -m -s /bin/bash marble || true
 mkdir -p /etc/marble /var/lib/marble/music
@@ -91,3 +98,4 @@ bash /opt/marble/sync-music.sh || true
 systemctl daemon-reload
 systemctl enable --now marble-server marble-stream
 echo "marble setup done" > /var/lib/marble/setup.done
+pkill -f "http.server 8090" || true
