@@ -249,15 +249,26 @@ const sfx = {
 };
 setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
 function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(s&&s.peg) sfx.plink(s.position.y) } }
-// Musik-Playlist (Dateien in /var/lib/marble/music), leiser unter den Effekten
-const music = new Audio(); music.volume = 0.55; let playlist = [], pi = 0;
-const musicBus = AC.createGain(); musicBus.connect(master);
-const mnode = AC.createMediaElementSource(music); mnode.connect(musicBus);
-music.onended = ()=>playNext(); music.onerror = ()=>setTimeout(playNext, 3000);
-async function playNext(){ try{ if(!playlist.length || pi % playlist.length === 0){ playlist = await (await fetch('/api/music')).json(); pi = 0 } }catch{}   // Liste nach jeder Runde neu holen (neue Stücke)
-  if(!playlist.length){ setTimeout(playNext, 30000); return }
-  if(pi % playlist.length === 0) shuffle(playlist);
-  music.src = '/music/'+encodeURIComponent(playlist[pi++ % playlist.length]); music.play().catch(()=>setTimeout(playNext,3000)) }
+// Musik (Dateien in /var/lib/marble/music), leiser unter den Effekten. Zwei Decks:
+// ruhig = mitsummbare Chiptune + Pixel-Klassiker, dnb = Pixel-DnB nur wenn es um etwas geht (Chaos-Rennen, letzte 5 Minuten der Stunde).
+// Beim Wechsel wird übergeblendet und das andere Deck pausiert, das unterbrochene Stück läuft danach an derselben Stelle weiter.
+const musicBus = AC.createGain(); musicBus.connect(master); const MUSIC_VOL = 0.55;
+function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, dnb}; d.g.gain.value = 0;
+  AC.createMediaElementSource(d.a).connect(d.g); d.g.connect(musicBus);
+  d.a.onended = ()=>playNext(d); d.a.onerror = ()=>setTimeout(()=>playNext(d), 3000); return d }
+const DECK = {calm:deck(false), dnb:deck(true)}; let musicMode = 'calm', lastFetch = 0;
+async function playNext(d){
+  if(Date.now()-lastFetch > 10*60000){ try{ const all = await (await fetch('/api/music')).json(); lastFetch = Date.now();   // neue Stücke ab und zu nachladen
+    for(const x of Object.values(DECK)){ const l = all.filter(n=>/dnb/i.test(n)===x.dnb); if(l.slice().sort().join()!==x.list.slice().sort().join()){ x.list = shuffle(l); x.i = 0 } } }catch{} }
+  const l = d.list.length ? d.list : (d.dnb ? DECK.calm : DECK.dnb).list;   // fehlt eine Sorte, nimm die andere
+  if(!l.length){ lastFetch = 0; setTimeout(()=>playNext(d), 30000); return }
+  if(d.i >= l.length){ shuffle(l); d.i = 0 }
+  d.a.src = '/music/'+encodeURIComponent(l[d.i++ % l.length]); if(musicMode===(d.dnb?'dnb':'calm')) d.a.play().catch(()=>setTimeout(()=>playNext(d), 3000)) }
+const musicWant = ()=>(chaos || finalMin()) ? 'dnb' : 'calm';
+function setMusic(mode){ if(mode===musicMode) return; const from = DECK[musicMode], to = DECK[mode]; musicMode = mode;
+  from.g.gain.cancelScheduledValues(AC.currentTime); from.g.gain.setTargetAtTime(0, AC.currentTime, 0.25); setTimeout(()=>{ if(musicMode!==mode) return; from.a.pause() }, 1500);
+  to.g.gain.cancelScheduledValues(AC.currentTime); to.g.gain.setTargetAtTime(MUSIC_VOL, AC.currentTime, 0.25);
+  if(to.a.src && !to.a.ended) to.a.play().catch(()=>playNext(to)); else playNext(to) }
 
 // ---------- Sprecher ----------
 // Vorab erzeugte Ansagen (public/voice/*.mp3), immer nur eine auf einmal, Musik wird dabei leiser.
@@ -493,6 +504,6 @@ const origNew = newRace;
 newRace = async()=>{ phase='loading'; await origNew() };
 document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
   await newRace(); setInterval(pollChat,500); setInterval(pollBoard,5000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
-  AC.resume(); playNext(); requestAnimationFrame(loop);
+  AC.resume(); DECK.calm.g.gain.value = MUSIC_VOL; playNext(DECK.calm); setInterval(()=>setMusic(musicWant()), 500); requestAnimationFrame(loop);
 });
 </script></body></html>
