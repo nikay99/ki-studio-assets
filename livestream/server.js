@@ -47,9 +47,11 @@ function rollHour() {
 rollHour(); setInterval(rollHour, 5000);
 
 const picks = new Map();          // user → {code, ts}
+// Aktiv = letzte Nachricht < 20 Min.; die Nation merken wir uns 24 h: wer danach wieder schreibt (z. B. „boost“), fährt sofort wieder mit (Niklas 06.10.)
+const ACTIVE_MS = 20 * 60 * 1000, KEEP_MS = 24 * 3600 * 1000;
 // Mitspieler überleben Server-Neustarts (Selbst-Update nach jedem main-Push), sonst verschwinden alle Namen (Niklas 06.10.)
 const PICKS_FILE = path.join(DATA, 'picks.json');
-try { for (const [u, p] of JSON.parse(fs.readFileSync(PICKS_FILE, 'utf8'))) if (Date.now() - p.ts < 20 * 60 * 1000) picks.set(u, p); } catch {}
+try { for (const [u, p] of JSON.parse(fs.readFileSync(PICKS_FILE, 'utf8'))) if (Date.now() - p.ts < KEEP_MS) picks.set(u, p); } catch {}
 let picksTimer = null;
 // „Just joined“-Liste bleibt stehen (Niklas 06.10.): letzte Beitritte gespeichert, die Seite lädt sie beim Start
 const JOINED_FILE = path.join(DATA, 'joined.json');
@@ -74,11 +76,11 @@ function uniqueName(name, cid) {
   if (!st.ids[n]) { st.ids[n] = cid; save(); }
   return n;
 }
-function addPick(user, code) {
+function addPick(user, code, back = false) {
   fanPoint(user, code);
   picks.set(user, { code, ts: Date.now() });
   joined = [{ user, code, ts: Date.now() }, ...joined.filter(j => j.user !== user)].slice(0, 6); savePicks();
-  events.push({ id: ++evId, user, code }); if (events.length > 500) events.shift();
+  events.push({ id: ++evId, user, code, ...(back ? { back: 1 } : {}) }); if (events.length > 500) events.shift();
   joinCount++; hourStat.joins++;
 }
 // CHEER: jede weitere Nachricht eines Mitspielers gibt seiner Kugel einen Schub – höchstens alle 10 s pro Person,
@@ -138,8 +140,10 @@ async function sampleViewers() {
 if (CHANNEL) { setInterval(sampleViewers, 120000); setTimeout(sampleViewers, 20000); }
 function onChat(user, text) {
   hourStat.msgs++; hourStat.users.add(user);
-  const c = countryOf(text), prev = picks.get(user);
-  if (c && (!prev || prev.code !== c)) addPick(user, c); else if (prev) cheer(user);
+  const c = countryOf(text), prev = picks.get(user), active = prev && Date.now() - prev.ts < ACTIVE_MS;
+  if (c && (!active || prev.code !== c)) addPick(user, c);
+  else if (prev && !active) addPick(user, prev.code, true);   // Rückkehrer ohne Ländernamen: mit der gemerkten Nation wieder rein
+  else if (prev) cheer(user);
 }
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = { ...s, since: new Date().toISOString() }; },
   onMessage: m => { msgCount++; if (m.ts) { chatDelays.push(Date.now() - m.ts); chatDelays = chatDelays.slice(-30); } onChat(uniqueName(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.channelId), m.text); } });
@@ -156,9 +160,10 @@ const DEFAULT_POOL = ['US','GB','DE','AT','FR','IT','ES','NL','PL','UA','TR','BR
 // der Rest wird mit Haus-Kugeln (je ein Land, ohne Spieler) auf n aufgefüllt – das Feld ist nie leer.
 const PER_NATION = 6, MAX_BALLS = 48;
 function lineup(n = 30) {
-  const cutoff = Date.now() - 20 * 60 * 1000, perCode = new Map(), out = [];
+  const cutoff = Date.now() - ACTIVE_MS, perCode = new Map(), out = [];
   for (const [user, p] of [...picks.entries()].sort((a, b) => b[1].ts - a[1].ts)) {
-    if (p.ts < cutoff) { picks.delete(user); continue; }
+    if (Date.now() - p.ts > KEEP_MS) { picks.delete(user); continue; }
+    if (p.ts < cutoff) continue;
     const k = perCode.get(p.code) || 0;
     if (k >= PER_NATION || out.length >= MAX_BALLS) continue;   // passt nicht mehr → nächstes Rennen (wer zuletzt aktiv war, zuerst)
     perCode.set(p.code, k + 1); out.push({ code: p.code, players: [user] });

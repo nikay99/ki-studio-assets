@@ -308,10 +308,10 @@ async function pollChat(){
       if(b){
         if(mine) mine.players = [];                        // Länderwechsel: alte Kugel fährt als Haus-Kugel weiter
         b.players = [e.user];
-        toast(`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'racing now'});
+        toast(e.back?`👋 welcome back ${e.user}! ${flag} racing again`:`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'racing now'});
       } else {
         nextUp = nextUp.filter(x=>x.user!==e.user); nextUp.push({user:e.user, code:e.code});
-        toast(`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
+        toast(e.back?`👋 welcome back ${e.user}! ${flag} in the next race`:`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
       }
       sfx.join(); if(Date.now()-lastWelcome>30000){ lastWelcome=Date.now(); say(['welcome']) }
     }
