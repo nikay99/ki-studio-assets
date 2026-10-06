@@ -8,7 +8,8 @@ python3 -c "import json,sys;[print(t['name'],t['url']) for t in json.load(open('
   rm -f "/tmp/$NAME.raw.mp3" "$OUT/.$NAME.part"
 done
 # Stücke, die nicht mehr in music.json stehen, entfernen
-for F in "$OUT"/*.mp3; do [ -e "$F" ] || continue; N=$(basename "$F" .mp3); grep -q "\"name\":\"$N\"" "$DIR/music.json" || { rm -f "$F"; echo "Musik entfernt: $N"; }; done
+NAMES=$(python3 -c "import json;print('\n'.join(t['name'] for t in json.load(open('$DIR/music.json'))))" 2>/dev/null)
+[ -n "$NAMES" ] && for F in "$OUT"/*.mp3; do [ -e "$F" ] || continue; N=$(basename "$F" .mp3); grep -qxF "$N" <<<"$NAMES" || { rm -f "$F"; echo "Musik entfernt: $N"; }; done   # leere/kaputte Liste → nichts löschen
 chown -R marble:marble "$OUT" 2>/dev/null || true
 
 # neues Update-Skript aus dem Repo übernehmen (sync-music läuft beim Update als root)
