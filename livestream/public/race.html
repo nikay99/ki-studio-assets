@@ -165,7 +165,7 @@ async function newRace(){
   Events.on(engine,'collisionStart',onHit);
   if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
   if(finalMin()) toast('🔥 FINAL RACES of the hour – type your country!','#f87171',300);
-  t=0; finished=[]; slowT=-1; slowDone=false; timeScale=1; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
+  t=0; finished=[]; results=[]; slowT=-1; slowDone=false; timeScale=1; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
   balls.forEach(b=>vload('win-'+b.code));
   if(chaos) say(['chaos',chaos.id,'double'],2);
   else if(finalMin() && saidFinal!==board.hourEnds){ saidFinal=board.hourEnds; say(['final-minutes'],2) }
@@ -234,7 +234,8 @@ function step(){
     if(b.done) continue;
     if(b.position.y>FINISH_Y){
       b.done=true; b.ft=t; endFx(b); finished.push(b); const k=finished.length; if(k===1) winAt=t;
-      if(k<=3){ sfx.finish(k); if(b.players.length && phase==='race') toast(`🏁 ${b.players[0]} finished #${k} with ${b.flag}!`, '#4ade80') }
+      if(k<=3) sfx.finish(k);
+      if(b.players.length && phase==='race') toast(`🏁 ${b.players[0]} finished #${k} of ${balls.length} with ${b.flag}!`, k<=3?'#4ade80':'#e2e8f0')   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
     if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(3+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
@@ -252,9 +253,11 @@ function step(){
   if(phase==='podium' && phaseT===60*5 && Math.random()<0.3) say(['what-a-race']);
   if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
     phase='podium'; phaseT=0; sfx.fanfare(); toasts=[];
-    const w=finished[0];
-    if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players,double:!!chaos})})
-      .then(r=>r.json()).then(b=>board=b).catch(()=>{});
+    const w=finished[0], fin=ranking();
+    // Ergebnis für jeden Spieler: Platz (auch wer noch nicht im Ziel war, nach Lage auf der Bahn) + bester Platz heute vom Server
+    results = fin.map((b,i)=>({b, place:i+1})).filter(x=>x.b.players.length).map(x=>({user:x.b.players[0], flag:x.b.flag, place:x.place, done:x.b.done}));
+    if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players,double:!!chaos, places:results.map(x=>({user:x.user,place:x.place}))})})
+      .then(r=>r.json()).then(b=>{ board=b; for(const x of results){ const k=(b.best||{})[x.user]; if(k){ x.best=k.best; x.record=k.record && k.best!==null } } }).catch(()=>{});
   }
   if(phase==='podium' && phaseT>60*8){ if(reloadPending){ location.reload(); phase='loading'; return } phase='loading'; newRace()}
 }
@@ -289,6 +292,7 @@ async function pollChat(){
         b = balls.find(x=>x.code===e.code && !x.players.length);
         if(!b && balls.filter(x=>x.code===e.code).length<6 && balls.length<MAX_BALLS) b = addBall(e.code, []);
       }
+      joinedAt[e.user] = joinedAt[e.user] || Date.now();
       if(b){
         if(mine) mine.players = [];                        // Länderwechsel: alte Kugel fährt als Haus-Kugel weiter
         b.players = [e.user];
@@ -386,6 +390,7 @@ async function say(names, rank=1){
 }
 const VOICE = ['off','here-we-go','new-leader','change-top','photo','comeback','finish-coming','chaos','moon','bounce','quake','rocket','double','type-country','own-ball','chat-boost','welcome','new-hour','final-minutes','get-ready','what-a-race'];
 VOICE.forEach(vload);
+let results = [], joinedAt = {};
 let winAt = -1, slowT = -1, slowDone = false, timeScale = 1, saidFinal = 0, comebackRank = {}, lastWelcome = 0;
 
 // ---------- Darstellung ----------
@@ -460,7 +465,8 @@ function draw(){
         ctx.globalAlpha=k*(0.75-j*0.08); ctx.fillStyle=j<2?'#fde047':j<4?'#fb923c':'#ef4444';
         ctx.beginPath(); ctx.ellipse(b.position.x+ox,b.position.y-r*0.3-fl*0.5-j*r*0.5,r*(0.95-j*0.08),fl*0.55,0,0,7); ctx.fill() }
       ctx.globalAlpha=1 }
-    if(b.players.length){ ctx.strokeStyle='#fde047'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke() }
+    if(b.players.length){ ctx.strokeStyle='#fde047'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke();
+      if(phase==='countdown'){ const k=(Date.now()%1000)/1000; ctx.globalAlpha=1-k; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+6+k*22,0,7); ctx.stroke(); ctx.globalAlpha=1 } }   // Spieler am Start sofort finden
     if(b.boostT>0){ b.boostT--; const k=b.boostT/45; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=5; ctx.globalAlpha=k;
       ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+8+(1-k)*26,0,7); ctx.stroke();
       for(let j=0;j<6;j++){ const a=j*1.047+b.boostT*0.3, rr=R+10+(1-k)*30; ctx.fillStyle=j%2?'#fde047':'#22d3ee'; ctx.fillRect(b.position.x+Math.cos(a)*rr-3,b.position.y-Math.sin(a)*rr*0.6-rr*0.5-3,6,6) }
@@ -471,12 +477,29 @@ function draw(){
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H+40)
-    txt(who(b),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
+    txt((phase==='countdown' && Date.now()-(joinedAt[b.players[0]]||0)<180000 ? 'NEW ' : '')+who(b),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
   ctx.restore();
   if(timeScale<0.9){ const k=Math.min(1,(1-timeScale)/0.5);   // Zeitlupe: heller Schleier + Schriftzug
     ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
     txt('📸 PHOTO FINISH',MID,540,56,'#fde047','700','center',CW-40,true); txt('SLOW MOTION',MID,585,26,'#fff','700','center',0,true); ctx.globalAlpha=1 }
+  if(phase==='race') drawProgress(rank);
   drawColumn(rank); drawLeft(); drawRight(rank);
+}
+// Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
+// Liegt über der linken Bahnwand, also auch im Hochformat sichtbar, und verdeckt keine Kugel.
+const PB_X = CX+20, PB_TOP = 300, PB_BOT = 780;
+function drawProgress(rank){
+  const yOf = b => PB_TOP + Math.min(1, Math.max(0, (b.position.y-100)/(FINISH_Y-100))) * (PB_BOT-PB_TOP);
+  ctx.fillStyle='rgba(5,6,18,0.75)'; ctx.beginPath(); ctx.roundRect(PB_X-9,PB_TOP-14,18,PB_BOT-PB_TOP+28,9); ctx.fill();
+  ctx.fillStyle='#fff'; for(let i=0;i<4;i++) ctx.fillRect(PB_X-9+(i%2)*9,PB_BOT+4+Math.floor(i/2)*5,9,5);   // Ziel-Flagge unten
+  const lo = camY+100, hi = camY+H;    // Bildausschnitt der Kamera als Klammer
+  ctx.strokeStyle='rgba(34,211,238,0.6)'; ctx.lineWidth=2; ctx.strokeRect(PB_X-11, yOf({position:{y:lo}}), 22, Math.max(6, yOf({position:{y:hi}})-yOf({position:{y:lo}})));
+  for(const b of balls) if(!b.players.length){ ctx.fillStyle=b.done?'#64748b':'#cbd5e1'; ctx.beginPath(); ctx.arc(PB_X, yOf(b), 3, 0, 7); ctx.fill() }
+  const pl = rank.map((b,i)=>({b,i})).filter(x=>x.b.players.length).slice(0,6);
+  let lastY = -99;
+  for(const {b,i} of pl.sort((a,c)=>yOf(a.b)-yOf(c.b))){ const y=yOf(b), ly=Math.max(y, lastY+24); lastY=ly;
+    ctx.drawImage(ballSprite(b,10), PB_X-13, y-13);
+    txt(`${i+1}. ${b.players[0]}`, PB_X+16, ly+7, 18, '#fde047', '700', 'left', 170, true) }
 }
 
 // Mittelspalte = 9:16-Bild: Kopf, Ansagen, Countdown/Sieger, Fuß mit Mitmach-Aufruf
@@ -507,9 +530,15 @@ function drawColumn(rank){
   const cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS RACE: ${chaos.name} · WIN = x2`
     : (!OFFLINE && cl>0 && cl<=3 && Math.floor(Date.now()/4000)%2) ? `🌀 CHAOS RACE ${cl===1?'NEXT!':'in '+cl+' races'} · WIN = x2` : null;
   if(chaosLine){ ctx.fillStyle=Date.now()%1200<600?'rgba(126,34,206,0.95)':'rgba(88,28,135,0.95)'; ctx.fillRect(CX,F+110,CW,46); txt(chaosLine,MID,F+143,24,'#fff','700','center',CW-30) } else {
+  const teams=board.teams||[], np=teams.reduce((a,x)=>a+x[1],0);
+  if(np && !finalMin() && Math.floor(Date.now()/4000)%2){   // Lebenszeichen auch im Hochformat: wer spielt gerade (im Wechsel mit der Stunden-Wertung)
+    ctx.fillStyle='rgba(6,78,59,0.95)'; ctx.fillRect(CX,F+110,CW,46);
+    txt(`👥 ${np} ${np===1?'PLAYER':'PLAYERS'} NOW`,L,F+143,24,'#4ade80','700','left',230);
+    teams.slice(0,4).forEach(([c,n],i)=>{ const x=L+250+i*80; ctx.drawImage(flagSprite(c,15),x,F+118); txt(String(n),x+40,F+143,24,'#fff','700') });
+  } else {
   const fin=finalMin(); ctx.fillStyle=fin?(Date.now()%1000<500?'rgba(185,28,28,0.95)':'rgba(127,29,29,0.95)'):'rgba(8,10,24,0.88)'; ctx.fillRect(CX,F+110,CW,46);
   txt(fin?`🔥 FINAL MINUTES! Hour champ in ${hourLeft()}`:`👑 NATION OF THE HOUR in ${hourLeft()}`,L,F+143,24,'#fff','700','left',CW-190);
-  (board.hour||[]).slice(0,2).forEach(([c,n],i)=>{ const x=Rt-150+i*78; ctx.drawImage(flagSprite(c,15),x,F+118); txt(String(n),x+40,F+143,24,i?'#e2e8f0':'#fde047','700') }); }
+  (board.hour||[]).slice(0,2).forEach(([c,n],i)=>{ const x=Rt-150+i*78; ctx.drawImage(flagSprite(c,15),x,F+118); txt(String(n),x+40,F+143,24,i?'#e2e8f0':'#fde047','700') }); } }
   // Ansagen mit Benutzernamen
   toasts.forEach((o,i)=>{ const y=298+i*62; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
     box(CX+14,y,CW-28,52,'rgba(5,6,18,0.88)',14,o.col); txt(o.s,MID,y+36,26,o.col,'700','center',CW-64); ctx.globalAlpha=1 });
@@ -534,7 +563,10 @@ function drawColumn(rank){
       ctx.drawImage(ballSprite(b,40),x-43,765-43); txt(`${k+1}. ${b.name}`,x,838,24,'#e5e7eb','700','center',260);
       if(b.players.length) txt(b.players[0],x,866,20,'#fde047','400','center',260)});
     const top=(board.countries||[])[0];
-    if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,935,26,'#94a3b8','700','center',CW-40);
+    // Ergebnis jedes Spielers (Platz, bester Platz heute) statt „Most wins today“, sobald Spieler mitgefahren sind
+    if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user}: #${x.place} of ${balls.length}`+(x.record?'  ⭐ best today!':x.best?`  · best today #${x.best}`:''),MID,912+j*36,24,x.place<=3?'#4ade80':'#e2e8f0','700','center',CW-40));
+      if(results.length>3) txt(`+${results.length-3} more players`,MID,912+3*36,20,'#94a3b8','700','center') }
+    else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,935,26,'#94a3b8','700','center',CW-40);
     ctx.globalAlpha=1;
   }
   // Stundensieger-Ehrung (12 s nach dem Stundenwechsel)
@@ -588,9 +620,13 @@ function drawRight(rank){
   ctx.fillStyle='rgba(8,10,24,0.9)'; ctx.fillRect(CX+CW,0,W-CX-CW,H);
   txt('LIVE RANKING',x0,74,34,'#fff','700');
   txt(phase==='race'?`⏱ ${(t/60).toFixed(1)} s`:phase==='countdown'?'starting…':'🏁 finished',x1,74,26,'#22d3ee','700','right');
-  rank.slice(0,8).forEach((b,i)=>{ const y=100+i*58;
+  // Spieler immer in der Liste: wer hinter Platz 8 liegt, ersetzt die letzten Zeilen (mit echtem Platz)
+  const extra=rank.map((b,i)=>({b,i})).filter(x=>x.i>=8 && x.b.players.length).slice(0,3);
+  const rows=[...rank.slice(0,8-extra.length).map((b,i)=>({b,i})), ...extra];
+  rows.forEach(({b,i},row)=>{ const y=100+row*58;
     box(x0,y,w,50,i<3?['#ffd70033','#d1d5db22','#cd7f3222'][i]:'rgba(255,255,255,0.04)',10);
-    txt(`${i+1}`,x0+28,y+35,26,'#fff','700','center'); ctx.drawImage(ballSprite(b,17),x0+52,y+5);
+    if(row>=8-extra.length && extra.length) box(x0,y,w,50,'rgba(253,224,71,0.10)',10);
+    txt(`${i+1}`,x0+28,y+35,i>=99?20:26,'#fff','700','center'); ctx.drawImage(ballSprite(b,17),x0+52,y+5);
     txt(b.name,x0+100,y+34,24,'#fff','700','left',b.players.length?w-280:w-120);
     if(b.players.length) txt(who(b),x1-14,y+34,20,'#fde047','700','right',170) });
   box(x0,580,w,128,'rgba(253,224,71,0.12)',14,'#fde047');

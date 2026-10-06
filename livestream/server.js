@@ -33,7 +33,7 @@ const lastFan = new Map();        // user → Zeit des letzten Fanpunkts
 let st = { day: '', countryWins: {}, playerWins: {}, fans: {}, races: 0, totalRaces: 0 };
 try { st = { ...st, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }; } catch {}
 const today = () => new Date().toISOString().slice(0, 10);
-function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.races = 0; lastFan.clear(); } }
+function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.best = {}; st.races = 0; lastFan.clear(); } }
 const save = () => fs.writeFile(STATE_FILE, JSON.stringify(st), () => {});
 rollDay();
 // Nation of the Hour: Siege pro volle Stunde (UTC); beim Stundenwechsel wird der Stundensieger festgehalten
@@ -109,6 +109,29 @@ function flushHour() {
   hourStat = { hour: h, msgs: 0, joins: 0, cheers: 0, users: new Set() }; races0 = st.totalRaces;
 }
 setInterval(flushHour, 60000);
+// Zuschauer gleichzeitig (Niklas 06.10.): alle 2 Min. bei YouTube nachsehen (wie der Player, ohne Schlüssel),
+// stündlich Schnitt und Höchstwert in viewers.csv – damit sich jede Änderung am Spiel messen lässt
+const VIEWERS = path.join(DATA, 'viewers.csv');
+let viewersNow = null, viewSamples = [], viewHour = new Date().toISOString().slice(0, 13);
+async function sampleViewers() {
+  const h = new Date().toISOString().slice(0, 13);
+  if (h !== viewHour) {
+    if (viewSamples.length) try {
+      if (!fs.existsSync(VIEWERS)) fs.writeFileSync(VIEWERS, 'stunde_utc,messungen,schnitt,max\n');
+      fs.appendFileSync(VIEWERS, `${viewHour}:00,${viewSamples.length},${(viewSamples.reduce((a, b) => a + b, 0) / viewSamples.length).toFixed(1)},${Math.max(...viewSamples)}\n`);
+    } catch (e) { console.log('viewers', e.message); }
+    viewHour = h; viewSamples = [];
+  }
+  const vid = chatStatus.videoId; if (!vid || !/verbunden/.test(chatStatus.chat || '')) return;
+  try {
+    const r = await fetch('https://www.youtube.com/youtubei/v1/updated_metadata?prettyPrint=false', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36' },
+      body: JSON.stringify({ context: { client: { clientName: 'WEB', clientVersion: '2.20241001.00.00', hl: 'en' } }, videoId: vid }) });
+    const m = (await r.text()).match(/"originalViewCount":"(\d+)"/);
+    if (m) { viewersNow = +m[1]; viewSamples.push(viewersNow); }
+  } catch {}
+}
+if (CHANNEL) { setInterval(sampleViewers, 120000); setTimeout(sampleViewers, 20000); }
 function onChat(user, text) {
   hourStat.msgs++; hourStat.users.add(user);
   const c = countryOf(text), prev = picks.get(user);
@@ -177,7 +200,13 @@ http.createServer(async (req, res) => {
     const k = r.double ? 2 : 1;   // Chaos-Rennen zählt doppelt
     if (r.winner) { st.countryWins[r.winner] = (st.countryWins[r.winner] || 0) + k; st.hourWins[r.winner] = (st.hourWins[r.winner] || 0) + k; }
     for (const p of r.players || []) st.playerWins[p] = (st.playerWins[p] || 0) + k;
-    st.races++; st.totalRaces++; save(); return send(res, 200, board());
+    // Ergebnis pro Spieler (Niklas 06.10. „Sichtbarkeit“): bester Platz heute, Antwort nennt ihn für die Siegerehrung
+    st.best = st.best || {}; const best = {};
+    for (const x of (r.places || []).slice(0, MAX_BALLS)) if (x && typeof x.user === 'string' && x.place > 0) {
+      const old = st.best[x.user]; best[x.user] = { place: x.place, best: old || null, record: !old || x.place < old };
+      if (!old || x.place < old) st.best[x.user] = x.place;
+    }
+    st.races++; st.totalRaces++; save(); return send(res, 200, { ...board(), best });
   }
   // Highlight-Clips: Rennseite meldet Spalten-Lage und spannende Rennen (clips.js)
   if (u.pathname === '/api/clipgeom' && req.method === 'POST') { clips.setGeom(await body(req)); return send(res, 200, { ok: true }); }
@@ -204,12 +233,13 @@ if (TOKEN) http.createServer((req, res) => {
     let run = {}; try { run = JSON.parse(fs.readFileSync(path.join(DATA, 'run.json'), 'utf8')); } catch {}
     const load = fs.readFileSync('/proc/loadavg', 'utf8').split(' ').slice(0, 3);
     return send(res, 200, { time: new Date().toISOString(), run, ffmpeg: Object.fromEntries(prog.trim().split('\n').map(l => l.split('=')).filter(x => x.length === 2)),
-      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, cheers: cheerCount, chatDelayMs: chatDelays.length ? chatDelays.slice().sort((a, b) => a - b)[chatDelays.length >> 1] : null, chatDelaysMs: chatDelays.slice(-10), board: board(), totalRaces: st.totalRaces, clips: clips.status() });
+      load, chat: chatStatus, chatMessages: msgCount, joins: joinCount, cheers: cheerCount, chatDelayMs: chatDelays.length ? chatDelays.slice().sort((a, b) => a - b)[chatDelays.length >> 1] : null, chatDelaysMs: chatDelays.slice(-10), viewersNow, board: board(), totalRaces: st.totalRaces, clips: clips.status() });
   }
   if (['snap.jpg', 'log.txt'].includes(p) || /^test\d\.mp4$/.test(p)) return file(res, path.join(DATA, p));
   if (p === 'diag') return execFile('bash', ['-c', `echo "git: ${gitHead}"; uptime; nproc; free -m | head -2; ps -eo pcpu,pmem,comm --sort=-pcpu | head -8; echo; tail -20 ${DATA}/ffmpeg.err; echo; tail -5 ${DATA}/log.txt`], { timeout: 10000 }, (e, out) => send(res, 200, out || String(e), 'text/plain; charset=utf-8'));
   if (p === 'update.txt') return file(res, path.join(DATA, 'update.log'));
   if (p === 'stats.csv') return file(res, STATS);
+  if (p === 'viewers.csv') return file(res, VIEWERS);
   if (p === 'setup.txt') return file(res, '/var/log/marble-setup.log');
   send(res, 404, 'not found', 'text/plain');
 }).listen(+process.env.STATUS_PORT || 80, '0.0.0.0');
