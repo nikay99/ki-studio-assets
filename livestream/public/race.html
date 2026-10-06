@@ -24,10 +24,10 @@ function seedRand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}
 
 // ---------- Bahn: jedes Rennen neu aus Bausteinen gewürfelt (Zufall aus rand(), pro Rennen neu geseedet) ----------
 const PALETTES = [
-  // Ruhe-Durchgang (Niklas 06.10. „zu viel Farbe“): je Bahn eine Farbfamilie, nur bewegte Paddel im warmen Akzent
-  {peg:'#7d93c4', ramp:'#5f86c9', paddle:'#e3b65a', bump:'#8a9fd0', fun:'#6fa3c0', bg:['#10162b','#0c1122']},
-  {peg:'#6fae9c', ramp:'#4f9c88', paddle:'#e3b65a', bump:'#7dbaa8', fun:'#5fa7a0', bg:['#0e1a1a','#0b1420']},
-  {peg:'#a08cc4', ramp:'#8a74b8', paddle:'#e3b65a', bump:'#b09dd0', fun:'#9787c0', bg:['#17122a','#0e1124']},
+  // Jahrmarkt, aber harmonisch (Niklas 06.10.): je Bahn drei abgestimmte Farben statt fünf Neonfarben
+  {peg:'#ffd166', ramp:'#ef476f', paddle:'#fff1d0', bump:'#ffd166', fun:'#ef476f', bg:['#1c0f22','#120a1a']},   // Karussell: Gold, Kirschrot, Creme
+  {peg:'#ffc8dd', ramp:'#7fd1e8', paddle:'#ffd166', bump:'#ffc8dd', fun:'#7fd1e8', bg:['#151634','#1c1032']},   // Zuckerwatte: Rosa, Himmelblau, Gold
+  {peg:'#ffd166', ramp:'#2ec4b6', paddle:'#ff8c61', bump:'#ffd166', fun:'#2ec4b6', bg:['#0d1b2a','#0f1630']},   // Riesenrad: Gold, Türkis, Koralle
 ];
 let PAL = PALETTES[0];
 // Bausteine: jeder bekommt die Start-Höhe y und baut nach unten; Rückgabe = verbrauchte Höhe.
@@ -258,7 +258,7 @@ function step(){
     say([...(photo?['photo']:[]), 'win-'+w.code, ...(chaos?['double']:[])], 3); winAt=-1; reportHighlight(w, s) }
   if(phase==='podium' && phaseT===60*5 && Math.random()<0.3) say(['what-a-race']);
   if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
-    phase='podium'; phaseT=0; sfx.fanfare(); toasts=[];
+    phase='podium'; phaseT=0; sfx.fanfare(); toasts=[]; confetti(finished[0]&&finished[0].players.length?160:90);
     for(const b of balls) if(b.players.length && b.charge>0){ carry[b.players[0]]=Math.min(3,(carry[b.players[0]]||0)+b.charge); b.charge=0 }
     const w=finished[0], fin=ranking();
     // Ergebnis für jeden Spieler: Platz (auch wer noch nicht im Ziel war, nach Lage auf der Bahn) + bester Platz heute vom Server
@@ -434,7 +434,7 @@ function emojiSprite(ch,size){   // Emoji einmal vorzeichnen (Feld-Symbol neben 
   emojiImg.set(k,c); return c;
 }
 function drawBody(g,b,flat){
-  g.fillStyle=b.col; g.shadowColor=b.col; g.shadowBlur=flat?0:6;
+  g.fillStyle=b.col; g.shadowColor=b.col; g.shadowBlur=flat?0:12;
   g.beginPath(); const v=b.vertices;
   if(b.circleRadius){g.arc(b.position.x,b.position.y,b.circleRadius,0,7)}
   else {g.moveTo(v[0].x,v[0].y); for(const p of v) g.lineTo(p.x,p.y); g.closePath()}
@@ -526,7 +526,7 @@ function drawColumn(rank){
   rank.slice(0,3).forEach((b,i)=>{ const x=MID-105+i*80; txt(['1','2','3'][i],x,104,22,['#ffd700','#d1d5db','#cd7f32'][i],'700','center'); ctx.drawImage(ballSprite(b,16),x+12,78) });
   // Mitmach-Aufruf oben (unten und rechts verdeckt am Handy die YouTube-Oberfläche/der Chat), im Wechsel mit „Next race: …“
   const F=128;   // fester Text, kein Wechsel/Blinken (Niklas 06.10. Ruhe-Durchgang)
-  ctx.fillStyle='rgba(16,14,10,0.94)'; ctx.fillRect(CX,F,CW,110); ctx.fillStyle='rgba(253,224,71,0.7)'; ctx.fillRect(CX,F+108,CW,2);
+  ctx.fillStyle='rgba(40,12,30,0.95)'; ctx.fillRect(CX,F,CW,110); bulbRow(CX+12,F+7,CW-24); bulbRow(CX+12,F+103,CW-24,1);   // Lauflichter wie am Jahrmarkt
   txt('🎯 GET YOUR OWN BALL!',MID,F+48,42,'#fde047','700','center',CW-40);
   txt('type your COUNTRY in the chat',MID,F+92,30,'#fff','700','center',CW-40);
   // Stunden-Wertung: Countdown bis zur Nation of the Hour
@@ -558,7 +558,7 @@ function drawColumn(rank){
   if(phase==='podium'||phase==='loading'){
     const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,284,CW,H-284);
     ctx.globalAlpha=a; txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,345,54,chaos?'#c084fc':'#ffd700','700','center');
-    if(w){ ctx.drawImage(ballSprite(w,90),MID-93,470-93); txt(w.name,MID,615,56,'#fff','700','center',CW-40);
+    if(w){ bulbRing(MID,470,122,18); ctx.drawImage(ballSprite(w,90),MID-93,470-93); txt(w.name,MID,615,56,'#fff','700','center',CW-40);
       if(w.players.length) txt(`🎉 ${w.players[0]} WINS!`,MID,668,42,'#fde047','700','center',CW-40);
       else txt(`Type ${w.name.toUpperCase()} in chat to claim it!`,MID,668,28,'#cbd5e1','700','center',CW-40) }
     [1,2].forEach(k=>{const b=finished[k]; if(!b) return; const x=MID+(k===1?-150:150);
@@ -571,6 +571,7 @@ function drawColumn(rank){
     else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,935,26,'#94a3b8','700','center',CW-40);
     ctx.globalAlpha=1;
   }
+  drawConfetti();
   // Stundensieger-Ehrung (12 s nach dem Stundenwechsel)
   if(champShow && Date.now()-champShow.at<12000){ const c=champShow, a=Math.min(1,(Date.now()-c.at)/400,(12000-(Date.now()-c.at))/600);
     ctx.globalAlpha=a; box(CX+14,330,CW-28,400,'rgba(30,20,4,0.95)',20,'#ffd700');
@@ -638,6 +639,20 @@ function drawRight(rank){
     if(c.ts){ const m=Math.floor((Date.now()-c.ts)/60000); txt(m<1?'just now':m<60?`${m} min ago`:`${Math.floor(m/60)} h ago`,x1,y,20,'#94a3b8','700','right'); return }
     txt(c.txt==='next race'?'→ next race':'→ racing now',x1,y,20,c.txt==='next race'?'#fde047':'#4ade80','700','right') });
 }
+
+
+// ---------- Jahrmarkt-Glanz (Niklas 06.10.: „bisschen bling bling wie am Jahrmarkt“) ----------
+// Glühbirnen laufen ruhig im Kreis (kein hartes Blinken): jede dritte Birne gedimmt, Muster wandert langsam weiter.
+function bulb(x,y,on){ ctx.fillStyle=on?'rgba(255,209,102,0.28)':'rgba(255,209,102,0.06)'; ctx.beginPath(); ctx.arc(x,y,on?8:5,0,7); ctx.fill();
+  ctx.fillStyle=on?'#ffe9a8':'#7a5a2a'; ctx.beginPath(); ctx.arc(x,y,3.5,0,7); ctx.fill() }
+function bulbRow(x,y,w,dir=0){ const n=Math.floor(w/22), k=Math.floor(Date.now()/220); for(let i=0;i<=n;i++) bulb(x+i*w/n,y,(i+(dir?-k:k)%3+300)%3!==0) }
+function bulbRing(cx,cy,r,n){ const k=Math.floor(Date.now()/220); for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; if(Math.sin(a)>0.8) continue; bulb(cx+Math.cos(a)*r,cy+Math.sin(a)*r,(i+k)%3!==0) } }   // unten frei für den Ländernamen
+let conf=[];
+function confetti(n){ const cols=PAL===PALETTES[1]?['#ffc8dd','#7fd1e8','#ffd166','#fff']:['#ffd166','#ef476f','#2ec4b6','#fff1d0','#ff8c61'];
+  for(let i=0;i<n;i++) conf.push({x:CX+Math.random()*CW, y:280-Math.random()*300, vx:(Math.random()-0.5)*2, vy:1.5+Math.random()*2.5, a:Math.random()*6, va:(Math.random()-0.5)*0.3, s:6+Math.random()*6, c:cols[i%cols.length]}) }
+function drawConfetti(){ if(!conf.length) return; ctx.save(); ctx.beginPath(); ctx.rect(CX,284,CW,H-284); ctx.clip();
+  for(const p of conf){ p.x+=p.vx+Math.sin(p.a)*0.6; p.y+=p.vy; p.a+=p.va; ctx.fillStyle=p.c; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); ctx.restore() }
+  ctx.restore(); conf=conf.filter(p=>p.y<H+20) }
 
 // ---------- Takt ----------
 let acc=0, last=performance.now(), lastDraw=0, fpsN=0, fpsT=last; window.fps=0;
