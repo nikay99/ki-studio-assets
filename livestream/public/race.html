@@ -459,7 +459,7 @@ const MID = CX+CW/2, secs = n=>Math.max(0,Math.ceil(n/60));
 function draw(){
   ctx.setTransform(SC,0,0,SC,0,0);
   const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
-  const target=Math.min(Math.max(lead.position.y-H*0.52,-230),WORLD_H-H+340);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
+  const target=Math.min(Math.max(lead.position.y-H*0.54,-330),WORLD_H-H+330);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*0.12;
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
@@ -495,13 +495,13 @@ function draw(){
   ctx.restore();
   if(timeScale<0.9){ const k=Math.min(1,(1-timeScale)/0.5);   // Zeitlupe: heller Schleier + Schriftzug
     ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
-    txt('📸 PHOTO FINISH',MID,420,52,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,458,26,'#fff','700','center',0,true); ctx.globalAlpha=1 }
+    txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true); ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
   drawColumn(rank); drawLeft(); drawRight(rank);
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
 // Liegt über der linken Bahnwand, also auch im Hochformat sichtbar, und verdeckt keine Kugel.
-const PB_X = CX+64, PB_TOP = 360, PB_BOT = 596;   // Handy zeigt nur die mittleren ~490 px der Spalte, Chat verdeckt unten
+const PB_X = CX+64, PB_TOP = 396, PB_BOT = 600;   // Handy zeigt nur die mittleren ~490 px der Spalte, Chat verdeckt unten
 function drawProgress(rank){
   const yOf = b => PB_TOP + Math.min(1, Math.max(0, (b.position.y-100)/(FINISH_Y-100))) * (PB_BOT-PB_TOP);
   ctx.fillStyle='rgba(5,6,18,0.75)'; ctx.beginPath(); ctx.roundRect(PB_X-9,PB_TOP-14,18,PB_BOT-PB_TOP+28,9); ctx.fill();
@@ -519,14 +519,14 @@ function drawProgress(rank){
 // Mittelspalte = 9:16-Bild: Kopf, Ansagen, Countdown/Sieger, Fuß mit Mitmach-Aufruf
 function drawColumn(rank){
   const L=CX+20, Rt=CX+CW-20;
-  ctx.fillStyle='rgba(8,10,24,0.86)'; ctx.fillRect(CX,0,CW,188);   // Handy (Niklas 06.10.): y 0–125 liegt unter Uhr/Kanalzeile → nur Titel dort
-  box(L,18,92,40,'#ef4444',8); txt('LIVE',L+46,47,24,'#fff','700','center');
-  txt('COUNTRY MARBLE RACE',L+108,50,38,'#fff','700','left',CW-150);
-  txt(`#${raceNo}`,SL,172,36,'#cbd5e1');
-  txt(phase==='race'?`⏱ ${(t/60).toFixed(0)}s`:phase==='countdown'?`⏳ ${secs(START_WAIT-phaseT)}s`:'🏁',SR,172,38,'#22d3ee','700','right');
-  rank.slice(0,3).forEach((b,i)=>{ const x=MID-50+i*72; txt(['1','2','3'][i],x,172,30,['#ffd700','#d1d5db','#cd7f32'][i],'700','center'); ctx.drawImage(ballSprite(b,20),x+14,138) });
+  ctx.fillStyle='rgba(8,10,24,0.86)'; ctx.fillRect(CX,0,CW,226);   // Handy (Niklas 06.10.): y 0–125 liegt unter Uhr/Kanalzeile → nur Titel dort
+  box(SL,134,84,38,'#ef4444',8); txt('LIVE',SL+42,162,24,'#fff','700','center');   // y 0–125 liegt am Handy unter Uhr/Kanalzeile → bleibt leer
+  txt('COUNTRY MARBLE RACE',SL+98,164,32,'#fff','700','left',SW-98);
+  txt(`#${raceNo}`,SL,214,34,'#cbd5e1');
+  txt(phase==='race'?`⏱ ${(t/60).toFixed(0)}s`:phase==='countdown'?`⏳ ${secs(START_WAIT-phaseT)}s`:'🏁',SR,214,36,'#22d3ee','700','right');
+  rank.slice(0,3).forEach((b,i)=>{ const x=MID-96+i*72; txt(['1','2','3'][i],x,214,28,['#ffd700','#d1d5db','#cd7f32'][i],'700','center'); ctx.drawImage(ballSprite(b,18),x+14,184) });
   // Mitmach-Aufruf oben (unten und rechts verdeckt am Handy die YouTube-Oberfläche/der Chat), im Wechsel mit „Next race: …“
-  const F=188;   // fester Text, kein Wechsel/Blinken (Niklas 06.10. Ruhe-Durchgang)
+  const F=226;   // fester Text, kein Wechsel/Blinken (Niklas 06.10. Ruhe-Durchgang)
   ctx.fillStyle='rgba(40,12,30,0.95)'; ctx.fillRect(CX,F,CW,104); ctx.fillStyle='rgba(253,224,71,0.6)'; ctx.fillRect(CX,F+102,CW,2);   // Lauflichter am Aufruf entfernt (Niklas 06.10. „augenschmerzend“)
   txt('🎯 GET YOUR OWN BALL!',MID,F+46,46,'#fde047','700','center',SW);
   txt('type your COUNTRY in the chat',MID,F+90,40,'#fff','700','center',SW);
@@ -544,41 +544,41 @@ function drawColumn(rank){
   txt(fin?`🔥 LAST MINUTES! ${hourLeft()}`:`👑 HOUR CHAMP in ${hourLeft()}`,SL,F+140,32,'#fff','700','left',SW-170);
   (board.hour||[]).slice(0,2).forEach(([c,n],i)=>{ const x=SR-150+i*78; ctx.drawImage(flagSprite(c,16),x,F+112); txt(String(n),x+42,F+140,30,i?'#e2e8f0':'#fde047','700') }); } }
   // Ansagen mit Benutzernamen
-  toasts.forEach((o,i)=>{ const y=348+i*72; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
+  toasts.forEach((o,i)=>{ const y=386+i*70; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
     box(SL-16,y,SW+32,64,'rgba(5,6,18,0.85)',14); txt(o.s,MID,y+44,34,o.col,'700','center',SW+10); ctx.globalAlpha=1 });
   if(phase==='countdown'){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
-    const oy=Math.max(340,Math.round(320-camY)); ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
-    txt(n>0?String(n):'GO!',MID,566,84,'#fde047','700','center',0,true);
-    if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,604,26,'#c084fc','700','center',SW,true);
-    else txt('💬 chat = ⚡ charge your ball',MID,604,26,'#22d3ee','700','center',SW,true);
-    if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,640,20,'#4ade80','700','center',SW,true);
+    const oy=Math.max(378,Math.round(320-camY)); ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
+    txt(n>0?String(n):'GO!',MID,500,72,'#fde047','700','center',0,true);
+    if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,640,24,'#c084fc','700','center',SW,true);
+    else txt('💬 chat = ⚡ charge your ball',MID,640,24,'#22d3ee','700','center',SW,true);
+    if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,672,20,'#4ade80','700','center',SW,true);
   }
   if(phase==='podium'||phase==='loading'){
-    const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,340,CW,H-340);
-    ctx.globalAlpha=a; txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,386,40,chaos?'#c084fc':'#ffd700','700','center');
+    const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378);
+    ctx.globalAlpha=a; txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,420,36,chaos?'#c084fc':'#ffd700','700','center');
     // Handy-Layout (Niklas 06.10.): alles Wichtige zwischen Stundenleiste und Chat (y 290–615), innerhalb der mittleren ~490 px
-    if(w){ bulbRing(MID,450,66,14); ctx.drawImage(ballSprite(w,46),MID-49,450-49); txt(w.name,MID,540,42,'#fff','700','center',SW);
-      if(w.players.length && !results.length) txt(`🎉 ${w.players[0]} WINS!`,MID,578,30,'#fde047','700','center',SW);
-      else if(!results.length) txt(`Type ${w.name.toUpperCase()} in chat to claim it!`,MID,578,24,'#cbd5e1','700','center',SW) }
+    if(w){ bulbRing(MID,478,56,14); ctx.drawImage(ballSprite(w,40),MID-43,478-43); txt(w.name,MID,560,38,'#fff','700','center',SW);
+      if(w.players.length && !results.length) txt(`🎉 ${w.players[0]} WINS!`,MID,596,28,'#fde047','700','center',SW);
+      else if(!results.length) txt(`Type ${w.name.toUpperCase()} in chat to claim it!`,MID,596,22,'#cbd5e1','700','center',SW) }
     [1,2].forEach(k=>{const b=finished[k]; if(!b) return; const x=MID+(k===1?-170:170);
-      ctx.drawImage(ballSprite(b,26),x-29,446-29); txt(`${k+1}. ${b.name}`,x,496,20,'#e5e7eb','700','center',140);
-      if(b.players.length) txt(b.players[0],x,518,18,'#fde047','400','center',130)});
-    const top=(board.countries||[])[0], ry=578;
+      ctx.drawImage(ballSprite(b,24),x-27,474-27); txt(`${k+1}. ${b.name}`,x,520,20,'#e5e7eb','700','center',140);
+      if(b.players.length) txt(b.players[0],x,540,18,'#fde047','400','center',130)});
+    const top=(board.countries||[])[0], ry=596;
     // Ergebnis jedes Spielers (Platz, Punkte) statt „Most wins today“, sobald Spieler mitgefahren sind
-    if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user} #${x.place}/${balls.length}  +${x.pts} pts`,MID,ry+j*34,26,x.place<=3?'#4ade80':'#e2e8f0','700','center',SW));
+    if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user} #${x.place}/${balls.length}  +${x.pts} pts`,MID,ry+j*30,24,x.place<=3?'#4ade80':'#e2e8f0','700','center',SW));
       if(results.length>3) txt(`+${results.length-3} more players`,MID,ry+3*34,22,'#94a3b8','700','center') }
-    else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,582,24,'#94a3b8','700','center',SW);
+    else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,600,22,'#94a3b8','700','center',SW);
     ctx.globalAlpha=1;
   }
   drawConfetti();
   // Stundensieger-Ehrung (12 s nach dem Stundenwechsel)
   if(champShow && Date.now()-champShow.at<12000){ const c=champShow, a=Math.min(1,(Date.now()-c.at)/400,(12000-(Date.now()-c.at))/600);
-    ctx.globalAlpha=a; box(SL-10,346,SW+20,270,'rgba(30,20,4,0.95)',20,'#ffd700');
-    txt('👑 NATION OF THE HOUR 👑',MID,386,30,'#ffd700','700','center',SW-20);
-    ctx.drawImage(flagSprite(c.code,40),MID-43,402); txt(NAME[c.code]||c.code,MID,532,40,'#fff','700','center',SW-20);
-    txt(`${c.wins} ${c.wins===1?'win':'wins'} this hour`,MID,568,26,'#fde047','700','center');
-    txt('New hour – new chance! Type your country',MID,600,20,'#cbd5e1','400','center',SW-20); ctx.globalAlpha=1 }
+    ctx.globalAlpha=a; box(SL-10,384,SW+20,236,'rgba(30,20,4,0.95)',20,'#ffd700');
+    txt('👑 NATION OF THE HOUR 👑',MID,418,28,'#ffd700','700','center',SW-20);
+    ctx.drawImage(flagSprite(c.code,34),MID-37,430); txt(NAME[c.code]||c.code,MID,544,36,'#fff','700','center',SW-20);
+    txt(`${c.wins} ${c.wins===1?'win':'wins'} this hour`,MID,578,24,'#fde047','700','center');
+    txt('New hour – new chance! Type your country',MID,606,18,'#cbd5e1','400','center',SW-20); ctx.globalAlpha=1 }
 }
 
 // links: Siege pro Land heute + Länder-Battle (nur im 16:9-Bild)
@@ -639,7 +639,7 @@ const glow=(a,b)=>{ const k=(1+Math.sin(Date.now()/450))/2; return `rgba(${a.map
 let conf=[];
 function confetti(n){ const cols=PAL===PALETTES[1]?['#ffc8dd','#7fd1e8','#ffd166','#fff']:['#ffd166','#ef476f','#2ec4b6','#fff1d0','#ff8c61'];
   for(let i=0;i<n;i++) conf.push({x:CX+Math.random()*CW, y:280-Math.random()*300, vx:(Math.random()-0.5)*2, vy:1.5+Math.random()*2.5, a:Math.random()*6, va:(Math.random()-0.5)*0.3, s:6+Math.random()*6, c:cols[i%cols.length]}) }
-function drawConfetti(){ if(!conf.length) return; ctx.save(); ctx.beginPath(); ctx.rect(CX,340,CW,H-340); ctx.clip();
+function drawConfetti(){ if(!conf.length) return; ctx.save(); ctx.beginPath(); ctx.rect(CX,378,CW,H-378); ctx.clip();
   for(const p of conf){ p.x+=p.vx+Math.sin(p.a)*0.6; p.y+=p.vy; p.a+=p.va; ctx.fillStyle=p.c; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); ctx.restore() }
   ctx.restore(); conf=conf.filter(p=>p.y<H+20) }
 
