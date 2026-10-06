@@ -70,7 +70,7 @@ function addPick(user, code) {
   fanPoint(user, code);
   picks.set(user, { code, ts: Date.now() });
   events.push({ id: ++evId, user, code }); if (events.length > 500) events.shift();
-  joinCount++;
+  joinCount++; hourStat.joins++;
 }
 // CHEER: jede weitere Nachricht eines Mitspielers gibt seiner Kugel einen Schub – höchstens alle 10 s pro Person,
 // damit mehr verschiedene Fans zählen, nicht schnelles Tippen
@@ -82,9 +82,26 @@ function cheer(user) {
   if (Date.now() - (lastCheer.get(user) || 0) < 10000) return;
   lastCheer.set(user, Date.now());
   events.push({ id: ++evId, user, code: p.code, cheer: 1 }); if (events.length > 500) events.shift();
-  cheerCount++;
+  cheerCount++; hourStat.cheers++;
 }
+// Stundenprotokoll (stats.csv): Nachrichten, Beitritte, Boosts, verschiedene Chatter, davon Rückkehrer aus früheren Stunden.
+// Bleibt über Neustarts und Tageswechsel erhalten (Zähler im Speicher fangen sonst bei jedem Neustart neu an).
+const STATS = path.join(DATA, 'stats.csv'), SEEN = path.join(DATA, 'seen.json');
+let hourStat = { hour: new Date().toISOString().slice(0, 13), msgs: 0, joins: 0, cheers: 0, users: new Set() }, races0 = st.totalRaces, seen = new Set();
+try { seen = new Set(JSON.parse(fs.readFileSync(SEEN, 'utf8'))); } catch {}
+function flushHour() {
+  const h = new Date().toISOString().slice(0, 13); if (h === hourStat.hour) return;
+  const u = [...hourStat.users], back = u.filter(x => seen.has(x)).length;
+  try {
+    if (!fs.existsSync(STATS)) fs.writeFileSync(STATS, 'stunde_utc,nachrichten,beitritte,boosts,chatter,rueckkehrer,rennen\n');
+    fs.appendFileSync(STATS, `${hourStat.hour}:00,${hourStat.msgs},${hourStat.joins},${hourStat.cheers},${u.length},${back},${st.totalRaces - races0}\n`);
+    for (const x of u) seen.add(x); fs.writeFileSync(SEEN, JSON.stringify([...seen]));
+  } catch (e) { console.log('stats', e.message); }
+  hourStat = { hour: h, msgs: 0, joins: 0, cheers: 0, users: new Set() }; races0 = st.totalRaces;
+}
+setInterval(flushHour, 60000);
 function onChat(user, text) {
+  hourStat.msgs++; hourStat.users.add(user);
   const c = countryOf(text), prev = picks.get(user);
   if (c && (!prev || prev.code !== c)) addPick(user, c); else if (prev) cheer(user);
 }
@@ -165,6 +182,7 @@ if (TOKEN) http.createServer((req, res) => {
   if (['snap.jpg', 'log.txt'].includes(p) || /^test\d\.mp4$/.test(p)) return file(res, path.join(DATA, p));
   if (p === 'diag') return execFile('bash', ['-c', `echo "git: ${gitHead}"; uptime; nproc; free -m | head -2; ps -eo pcpu,pmem,comm --sort=-pcpu | head -8; echo; tail -20 ${DATA}/ffmpeg.err; echo; tail -5 ${DATA}/log.txt`], { timeout: 10000 }, (e, out) => send(res, 200, out || String(e), 'text/plain; charset=utf-8'));
   if (p === 'update.txt') return file(res, path.join(DATA, 'update.log'));
+  if (p === 'stats.csv') return file(res, STATS);
   if (p === 'setup.txt') return file(res, '/var/log/marble-setup.log');
   send(res, 404, 'not found', 'text/plain');
 }).listen(+process.env.STATUS_PORT || 80, '0.0.0.0');
