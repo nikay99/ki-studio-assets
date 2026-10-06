@@ -273,7 +273,9 @@ async function pollChat(){
   if(OFFLINE) return;
   try{
     const r = await (await fetch('/api/events?since='+lastEv)).json();
-    if(lastEv<0){ lastEv=r.last; return }          // alte Beitritte beim Laden nicht nochmal zeigen
+    if(lastEv<0){ lastEv=r.last;                   // alte Beitritte beim Laden nicht nochmal zeigen, aber die Liste wieder füllen
+      try{ if(!chatLog.length) chatLog=(await (await fetch('/api/joined')).json()).map(j=>({user:j.user,flag:flagOf(j.code),ts:j.ts})) }catch{}
+      return }
     for(const e of r.events){
       const flag=flagOf(e.code), nm=NAME[e.code]||e.code;
       const mine = balls && balls.find(x=>x.players.includes(e.user));
@@ -290,10 +292,10 @@ async function pollChat(){
       if(b){
         if(mine) mine.players = [];                        // Länderwechsel: alte Kugel fährt als Haus-Kugel weiter
         b.players = [e.user];
-        toast(`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog.unshift({user:e.user,flag,txt:'racing now'});
+        toast(`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'racing now'});
       } else {
         nextUp = nextUp.filter(x=>x.user!==e.user); nextUp.push({user:e.user, code:e.code});
-        toast(`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog.unshift({user:e.user,flag,txt:'next race'});
+        toast(`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
       }
       sfx.join(); if(Date.now()-lastWelcome>30000){ lastWelcome=Date.now(); say(['welcome']) }
     }
@@ -568,11 +570,12 @@ function drawLeft(){
     txt(NAME[c]||c,x0+100,y+33,24,'#fff','700','left',w-200);
     txt(`${n} ${n===1?'win':'wins'}`,x1-16,y+33,22,'#fde047','700','right') });
   const fy=760;
-  txt('🔥 COUNTRY BATTLE · fans today',x0,fy,26,'#94a3b8','700','left',w);
-  const fans=(board.fans||[]).slice(0,5);
-  if(fans.length) fans.forEach(([c,n],i)=>{ const x=x0+i*112; ctx.drawImage(flagSprite(c,20),x,fy+22); txt(String(n),x+50,fy+56,28,i===0?'#fde047':'#e2e8f0','700') });
-  else txt('no fans yet – be the first!',x0,fy+50,24,'#64748b','400');
-  txt('every chat message = +1 for your nation',x0,fy+108,22,'#cbd5e1','400','left',w);
+  // Spieler gerade aktiv je Nation (Niklas 06.10.): ersetzt den Fan-Zähler
+  txt('👥 PLAYERS NOW · per nation',x0,fy,26,'#94a3b8','700','left',w);
+  const teams=(board.teams||[]).slice(0,5);
+  if(teams.length) teams.forEach(([c,n],i)=>{ const x=x0+i*112; ctx.drawImage(flagSprite(c,20),x,fy+22); txt(String(n),x+50,fy+56,28,i===0?'#fde047':'#e2e8f0','700') });
+  else txt('no players yet – be the first!',x0,fy+50,24,'#64748b','400');
+  txt('more players = more balls for your nation',x0,fy+108,22,'#cbd5e1','400','left',w);
   const pl=(board.players||[]).slice(0,3);
   txt('👑 TOP PLAYERS today',x0,fy+170,26,'#94a3b8','700','left',w);
   txt(pl.length?pl.map(([u,n])=>`${u} ${n}🏆`).join('   '):'win a race to get on this list!',x0,fy+212,24,pl.length?'#fde047':'#64748b',pl.length?'700':'400','left',w);
@@ -598,6 +601,7 @@ function drawRight(rank){
   if(!chatLog.length) txt('be the first – type your country!',x0,806,22,'#64748b','400');
   chatLog.slice(0,6).forEach((c,i)=>{ const y=806+i*42;
     txt(`${c.flag} ${c.user}`,x0,y,24,'#fff','700','left',w-170);
+    if(c.ts){ const m=Math.floor((Date.now()-c.ts)/60000); txt(m<1?'just now':m<60?`${m} min ago`:`${Math.floor(m/60)} h ago`,x1,y,20,'#94a3b8','700','right'); return }
     txt(c.txt==='next race'?'→ next race':'→ racing now',x1,y,20,c.txt==='next race'?'#fde047':'#4ade80','700','right') });
 }
 

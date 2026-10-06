@@ -51,13 +51,16 @@ const picks = new Map();          // user → {code, ts}
 const PICKS_FILE = path.join(DATA, 'picks.json');
 try { for (const [u, p] of JSON.parse(fs.readFileSync(PICKS_FILE, 'utf8'))) if (Date.now() - p.ts < 20 * 60 * 1000) picks.set(u, p); } catch {}
 let picksTimer = null;
-const savePicks = () => { if (!picksTimer) picksTimer = setTimeout(() => { picksTimer = null; fs.writeFile(PICKS_FILE, JSON.stringify([...picks]), () => {}); }, 2000); };
+// „Just joined“-Liste bleibt stehen (Niklas 06.10.): letzte Beitritte gespeichert, die Seite lädt sie beim Start
+const JOINED_FILE = path.join(DATA, 'joined.json');
+let joined = []; try { joined = JSON.parse(fs.readFileSync(JOINED_FILE, 'utf8')); } catch {}
+const savePicks = () => { if (!picksTimer) picksTimer = setTimeout(() => { picksTimer = null; fs.writeFile(PICKS_FILE, JSON.stringify([...picks]), () => {}); fs.writeFile(JOINED_FILE, JSON.stringify(joined), () => {}); }, 2000); };
 const events = [];                // {id, user, code}
 // Namen erscheinen groß im Stream: grobe Beleidigungen nicht anzeigen (zusätzlich YouTube-Studio „Blockierte Wörter“ nutzen)
 const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
 const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
 let chatDelays = [];   // ms vom Absenden im YouTube-Chat bis zur Ankunft hier (Teil der Gesamtverzögerung)
-let evId = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal gesetzt' }, msgCount = 0, joinCount = 0;
+let evId = Date.now(), chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal gesetzt' }, msgCount = 0, joinCount = 0;
 function fanPoint(user, code) {
   // +1 Fanpunkt fürs Land, höchstens einmal pro Minute und Zuschauer – auch beim Länderwechsel (gegen Hin-und-her-Spam)
   if (Date.now() - (lastFan.get(user) || 0) > 60000) { rollDay(); st.fans = st.fans || {}; st.fans[code] = (st.fans[code] || 0) + 1; lastFan.set(user, Date.now()); save(); }
@@ -73,7 +76,8 @@ function uniqueName(name, cid) {
 }
 function addPick(user, code) {
   fanPoint(user, code);
-  picks.set(user, { code, ts: Date.now() }); savePicks();
+  picks.set(user, { code, ts: Date.now() });
+  joined = [{ user, code, ts: Date.now() }, ...joined.filter(j => j.user !== user)].slice(0, 6); savePicks();
   events.push({ id: ++evId, user, code }); if (events.length > 500) events.shift();
   joinCount++; hourStat.joins++;
 }
@@ -162,6 +166,7 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/matter.min.js') return file(res, require.resolve('matter-js/build/matter.min.js'));
   if (u.pathname === '/api/version') return send(res, 200, { v: VERSION });
   if (u.pathname === '/api/lineup') return send(res, 200, lineup());
+  if (u.pathname === '/api/joined') return send(res, 200, joined);
   if (u.pathname === '/api/events') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: evId, events: events.filter(e => e.id > since) }); }
   if (u.pathname === '/api/board') { rollDay(); return send(res, 200, board()); }
   if (u.pathname === '/api/music') return fs.readdir(path.join(DATA, 'music'), (e, f) => send(res, 200, (f || []).filter(x => /\.(mp3|ogg)$/.test(x))));
@@ -183,7 +188,9 @@ http.createServer(async (req, res) => {
 function board() {
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
   const hourEnds = new Date(st.hour + ':00:00Z').getTime() + 3600000;
-  return { races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5),
+  const teams = {}, cut = Date.now() - 20 * 60 * 1000;   // aktive Spieler je Nation (gleiche 20-Min.-Regel wie die Aufstellung)
+  for (const p of picks.values()) if (p.ts >= cut) teams[p.code] = (teams[p.code] || 0) + 1;
+  return { teams: top(teams, 5), races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5),
     hour: top(st.hourWins || {}, 3), hourEnds, champ: st.champ || null };
 }
 
