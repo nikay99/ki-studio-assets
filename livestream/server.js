@@ -133,6 +133,18 @@ function lineup(n = 30) {
 // ---------- HTTP ----------
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.txt': 'text/plain; charset=utf-8' };
 const send = (res, code, body, type = 'application/json') => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); };
+// Musik mit Teilabruf (Range): nur so kann die Rennseite mitten in ein Stück springen (Mix)
+function media(req, res, p) {
+  fs.stat(p, (e, stt) => {
+    if (e) return send(res, 404, 'not found', 'text/plain');
+    const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || ''), h = { 'Content-Type': TYPES[path.extname(p)] || 'application/octet-stream', 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' };
+    if (!m || (!m[1] && !m[2])) { res.writeHead(200, { ...h, 'Content-Length': stt.size }); return fs.createReadStream(p).pipe(res); }
+    const start = m[1] ? +m[1] : Math.max(0, stt.size - +m[2]), end = m[1] && m[2] ? Math.min(+m[2], stt.size - 1) : stt.size - 1;
+    if (start > end || start >= stt.size) { res.writeHead(416, { 'Content-Range': `bytes */${stt.size}` }); return res.end(); }
+    res.writeHead(206, { ...h, 'Content-Range': `bytes ${start}-${end}/${stt.size}`, 'Content-Length': end - start + 1 });
+    fs.createReadStream(p, { start, end }).pipe(res);
+  });
+}
 function file(res, p) { fs.readFile(p, (e, b) => e ? send(res, 404, 'not found', 'text/plain') : send(res, 200, b, TYPES[path.extname(p)] || 'application/octet-stream')); }
 function body(req) { return new Promise(r => { let d = ''; req.on('data', c => d += c); req.on('end', () => { try { r(JSON.parse(d)); } catch { r({}); } }); }); }
 
@@ -145,7 +157,7 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/api/events') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: evId, events: events.filter(e => e.id > since) }); }
   if (u.pathname === '/api/board') { rollDay(); return send(res, 200, board()); }
   if (u.pathname === '/api/music') return fs.readdir(path.join(DATA, 'music'), (e, f) => send(res, 200, (f || []).filter(x => /\.(mp3|ogg)$/.test(x))));
-  if (u.pathname.startsWith('/music/')) return file(res, path.join(DATA, 'music', path.basename(u.pathname)));
+  if (u.pathname.startsWith('/music/')) return media(req, res, path.join(DATA, 'music', path.basename(u.pathname)));
   if (u.pathname === '/api/result' && req.method === 'POST') {
     const r = await body(req); rollDay();
     rollHour();
