@@ -47,6 +47,11 @@ function rollHour() {
 rollHour(); setInterval(rollHour, 5000);
 
 const picks = new Map();          // user → {code, ts}
+// Mitspieler überleben Server-Neustarts (Selbst-Update nach jedem main-Push), sonst verschwinden alle Namen (Niklas 06.10.)
+const PICKS_FILE = path.join(DATA, 'picks.json');
+try { for (const [u, p] of JSON.parse(fs.readFileSync(PICKS_FILE, 'utf8'))) if (Date.now() - p.ts < 20 * 60 * 1000) picks.set(u, p); } catch {}
+let picksTimer = null;
+const savePicks = () => { if (!picksTimer) picksTimer = setTimeout(() => { picksTimer = null; fs.writeFile(PICKS_FILE, JSON.stringify([...picks]), () => {}); }, 2000); };
 const events = [];                // {id, user, code}
 // Namen erscheinen groß im Stream: grobe Beleidigungen nicht anzeigen (zusätzlich YouTube-Studio „Blockierte Wörter“ nutzen)
 const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
@@ -68,7 +73,7 @@ function uniqueName(name, cid) {
 }
 function addPick(user, code) {
   fanPoint(user, code);
-  picks.set(user, { code, ts: Date.now() });
+  picks.set(user, { code, ts: Date.now() }); savePicks();
   events.push({ id: ++evId, user, code }); if (events.length > 500) events.shift();
   joinCount++; hourStat.joins++;
 }
@@ -78,7 +83,7 @@ const lastCheer = new Map();
 let cheerCount = 0;
 function cheer(user) {
   const p = picks.get(user); if (!p) return;
-  fanPoint(user, p.code); p.ts = Date.now();
+  fanPoint(user, p.code); p.ts = Date.now(); savePicks();
   if (Date.now() - (lastCheer.get(user) || 0) < 10000) return;
   lastCheer.set(user, Date.now());
   events.push({ id: ++evId, user, code: p.code, cheer: 1 }); if (events.length > 500) events.shift();
