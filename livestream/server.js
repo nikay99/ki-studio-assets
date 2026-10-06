@@ -116,18 +116,21 @@ if (process.env.DEMO === '1') {
 }
 
 const DEFAULT_POOL = ['US','GB','DE','AT','FR','IT','ES','NL','PL','UA','TR','BR','MX','CA','AR','JP','KR','IN','ID','UZ','AU','SE','NO','CH','PT','EG','NG','PH','VN','SA','CO','CL','ZA','MA','GR','IE','RO','HU','CZ','PK','BD','TH','MY','NZ','DK','FI','BE','IL','KE','PE'];
+// Aufstellung (Niklas 06.10.): jeder Spieler fährt eine EIGENE Kugel seiner Nation (höchstens 6 pro Nation, 48 insgesamt),
+// der Rest wird mit Haus-Kugeln (je ein Land, ohne Spieler) auf n aufgefüllt – das Feld ist nie leer.
+const PER_NATION = 6, MAX_BALLS = 48;
 function lineup(n = 30) {
-  const cutoff = Date.now() - 20 * 60 * 1000, recent = new Map();
+  const cutoff = Date.now() - 20 * 60 * 1000, perCode = new Map(), out = [];
   for (const [user, p] of [...picks.entries()].sort((a, b) => b[1].ts - a[1].ts)) {
     if (p.ts < cutoff) { picks.delete(user); continue; }
-    if (!recent.has(p.code)) recent.set(p.code, []);
-    recent.get(p.code).push(user);
+    const k = perCode.get(p.code) || 0;
+    if (k >= PER_NATION || out.length >= MAX_BALLS) continue;   // passt nicht mehr → nächstes Rennen (wer zuletzt aktiv war, zuerst)
+    perCode.set(p.code, k + 1); out.push({ code: p.code, players: [user] });
   }
-  const codes = [...recent.keys()].slice(0, n);
-  const pool = DEFAULT_POOL.filter(c => !codes.includes(c));
+  const pool = DEFAULT_POOL.filter(c => !perCode.has(c));
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  while (codes.length < n) codes.push(pool.shift());
-  return codes.map(c => ({ code: c, players: (recent.get(c) || []).slice(0, 8) }));
+  while (out.length < n && pool.length) out.push({ code: pool.shift(), players: [] });
+  return out;
 }
 
 // ---------- HTTP ----------

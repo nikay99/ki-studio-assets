@@ -200,7 +200,7 @@ function reportHighlight(w, s){
   if(slowDone){ score+=5; kind='photo' } else if(gap<=18) score+=3;
   if(chaos){ score+=3; if(kind==='race') kind='chaos' }
   if(w.hadTurbo){ score+=4; if(kind==='race') kind='turbo' }
-  if((comebackRank[w.code]||0)>=6){ score+=2; if(kind==='race') kind='comeback' }
+  if((comebackRank[w.id]||0)>=6){ score+=2; if(kind==='race') kind='comeback' }
   score+=Math.min(late,3); if(w.players.length) score+=2; if(dur>34) score-=3;
   fetch('/api/highlight',{method:'POST',body:JSON.stringify({score, kind, goAgoMs:Math.round(performance.now()-goAt), dur:+dur.toFixed(1),
     winner:w.code, name:w.name, player:w.players[0]||'', chaos:chaos?chaos.id:'', race:raceNo})}).catch(()=>{});
@@ -242,9 +242,9 @@ function step(){
   }
   if(phase==='race' && t>60*3 && t%15===0){ const l=ranking()[0];
     if(l && l!==leader){ if(leader){ leadTimes.push(t); if(l.players.length || t-(leadTimes[leadTimes.length-2]||-999)>60*4) toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead();   // Flummi: viele Wechsel → Meldung höchstens alle 4 s (außer Spieler-Kugeln)
-        say([(comebackRank[l.code]||0)>=6 ? 'comeback' : Math.random()<0.5 ? 'new-leader' : 'change-top']) } leader=l } }
+        say([(comebackRank[l.id]||0)>=6 ? 'comeback' : Math.random()<0.5 ? 'new-leader' : 'change-top']) } leader=l } }
   // Sprecher: Ränge von vor ein paar Sekunden (für „What a comeback!“), Zielgerade, Sieger
-  if(phase==='race' && t%240===0){ comebackRank={}; ranking().forEach((b,i)=>comebackRank[b.code]=i) }
+  if(phase==='race' && t%240===0){ comebackRank={}; ranking().forEach((b,i)=>comebackRank[b.id]=i) }
   if(phase==='race' && !finished.length && leader && leader.position.y>FINISH_Y-1300 && !leader.saidFin){ leader.saidFin=true; balls.forEach(b=>b.saidFin=true); say(['finish-coming'],2) }
   if(phase==='race' && t===60*7 && balls.some(b=>b.players.length)) say(['chat-boost']);
   if(winAt>=0 && (t-winAt>=20 || finished.length>=2)){ const w=finished[0], s=finished[1], photo=s && s.ft-w.ft<=18;
@@ -276,14 +276,20 @@ async function pollChat(){
     if(lastEv<0){ lastEv=r.last; return }          // alte Beitritte beim Laden nicht nochmal zeigen
     for(const e of r.events){
       const flag=flagOf(e.code), nm=NAME[e.code]||e.code;
-      let b = balls && balls.find(x=>x.code===e.code);
-      // Schub nur für Spieler, die seit dem Start auf dieser Kugel sitzen
-      if(e.cheer){ if(b && phase==='race' && !b.done && b.players.includes(e.user)) boost(b, e.user); continue }
-      // Beitritt/Wechsel zählt nur im Countdown sofort; im Rennen erst ab dem nächsten (kein Aufspringen auf den Führenden)
-      if(!b && phase==='countdown' && balls.length<MAX_BALLS) b = addBall(e.code, []);
-      if(b && phase==='countdown'){
-        for(const x of balls) if(x!==b) x.players = x.players.filter(p=>p!==e.user);   // eine Nation pro Spieler
-        if(!b.players.includes(e.user)) b.players.unshift(e.user);
+      const mine = balls && balls.find(x=>x.players.includes(e.user));
+      // Schub nur für die eigene Kugel, auf der der Spieler seit dem Start sitzt
+      if(e.cheer){ if(mine && phase==='race' && !mine.done) boost(mine, e.user); continue }
+      // Eigene Kugel pro Spieler (Niklas 06.10.): im Countdown sofort – freie Haus-Kugel des Landes übernehmen oder neue Kugel
+      // (höchstens 6 pro Nation, 48 insgesamt); im Rennen erst ab dem nächsten (kein Aufspringen auf den Führenden)
+      let b = null;
+      if(phase==='countdown'){
+        if(mine && mine.code===e.code) continue;
+        b = balls.find(x=>x.code===e.code && !x.players.length);
+        if(!b && balls.filter(x=>x.code===e.code).length<6 && balls.length<MAX_BALLS) b = addBall(e.code, []);
+      }
+      if(b){
+        if(mine) mine.players = [];                        // Länderwechsel: alte Kugel fährt als Haus-Kugel weiter
+        b.players = [e.user];
         toast(`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog.unshift({user:e.user,flag,txt:'racing now'});
       } else {
         nextUp = nextUp.filter(x=>x.user!==e.user); nextUp.push({user:e.user, code:e.code});
