@@ -53,11 +53,12 @@ while true; do
   HWDEV=(); [ "$HW" = vaapi ] && HWDEV=(-vaapi_device /dev/dri/renderD128)
   IN=("${HWDEV[@]}" -thread_queue_size 1024 -f x11grab -draw_mouse 0 -video_size "${SW}x${SH}" -framerate "$FPS" -i :99.0
       -thread_queue_size 1024 -f pulse -i race.monitor)
+  # Gleichmäßig senden (Niklas 06.10.): feste Rate, 1-s-Puffer, Keyframe jede Sekunde, keine B-Frames → weniger Ruckler bei kurzer YouTube-Latenz
   if [ "$HW" = vaapi ]; then   # Intel Quick Sync (z. B. N95): Kodierung auf der Grafik, CPU bleibt fürs Rennen frei
-    ENC=(-vf format=nv12,hwupload -c:v h264_vaapi -b:v "$VBIT" -maxrate "$VBIT" -bufsize 6000k -g $((FPS*2)) -keyint_min $((FPS*2))
+    ENC=(-vf format=nv12,hwupload -c:v h264_vaapi -rc_mode CBR -b:v "$VBIT" -maxrate "$VBIT" -bufsize "$VBIT" -bf 0 -g "$FPS" -keyint_min "$FPS"
          -c:a aac -b:a 128k -ar 44100 -ac 2)
   else
-    ENC=(-c:v libx264 -preset "$PRESET" -b:v "$VBIT" -maxrate "$VBIT" -bufsize 6000k -pix_fmt yuv420p -g $((FPS*2)) -keyint_min $((FPS*2)) -sc_threshold 0
+    ENC=(-c:v libx264 -preset "$PRESET" -b:v "$VBIT" -maxrate "$VBIT" -bufsize "$VBIT" -bf 0 -pix_fmt yuv420p -g "$FPS" -keyint_min "$FPS" -sc_threshold 0
          -c:a aac -b:a 128k -ar 44100 -ac 2)
   fi
   snap(){ SNAP=(-map 0:v -t "$1" -vf fps=1/10,scale=640:-2 -update 1 -q:v 4 "$DATA_DIR/snap.jpg"); }
