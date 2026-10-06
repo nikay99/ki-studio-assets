@@ -532,14 +532,14 @@ function drawColumn(rank){
   // Stunden-Wertung: Countdown bis zur Nation of the Hour
   const cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS RACE: ${chaos.name} · WIN = x2`
     : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT!':'in '+cl+' races'} · WIN = x2` : null;
-  if(chaosLine){ ctx.fillStyle='rgba(88,28,135,0.95)'; ctx.fillRect(CX,F+110,CW,46); txt(chaosLine,MID,F+143,24,'#fff','700','center',CW-30) } else {
+  if(chaosLine){ ctx.fillStyle=glow([88,28,135],[126,34,206]); ctx.fillRect(CX,F+110,CW,46); txt(chaosLine,MID,F+143,24,'#fff','700','center',CW-30) } else {
   const teams=board.teams||[], np=teams.reduce((a,x)=>a+x[1],0);
   if(false){   // Lebenszeichen auch im Hochformat: wer spielt gerade (im Wechsel mit der Stunden-Wertung)
     ctx.fillStyle='rgba(6,78,59,0.95)'; ctx.fillRect(CX,F+110,CW,46);
     txt(`👥 ${np} ${np===1?'PLAYER':'PLAYERS'} NOW`,L,F+143,24,'#4ade80','700','left',230);
     teams.slice(0,4).forEach(([c,n],i)=>{ const x=L+250+i*80; ctx.drawImage(flagSprite(c,15),x,F+118); txt(String(n),x+40,F+143,24,'#fff','700') });
   } else {
-  const fin=finalMin(); ctx.fillStyle=fin?'rgba(127,29,29,0.95)':'rgba(8,10,24,0.88)'; ctx.fillRect(CX,F+110,CW,46);
+  const fin=finalMin(); ctx.fillStyle=fin?glow([127,29,29],[185,28,28]):'rgba(8,10,24,0.88)'; ctx.fillRect(CX,F+110,CW,46);
   txt(fin?`🔥 FINAL MINUTES! Hour champ in ${hourLeft()}`:`👑 NATION OF THE HOUR in ${hourLeft()}`,L,F+143,24,'#fff','700','left',CW-190);
   (board.hour||[]).slice(0,2).forEach(([c,n],i)=>{ const x=Rt-150+i*78; ctx.drawImage(flagSprite(c,15),x,F+118); txt(String(n),x+40,F+143,24,i?'#e2e8f0':'#fde047','700') }); } }
   // Ansagen mit Benutzernamen
@@ -590,7 +590,7 @@ function drawLeft(){
   const hl=(board.hour||[]).slice(0,3);
   if(!hl.length) txt('next win takes the lead!',x0,130,26,'#64748b','400');
   hl.forEach(([c,n],i)=>{ const y=92+i*58;
-    box(x0,y,w,50,['#ffd70030','#d1d5db22','#cd7f3222'][i],10);
+    box(x0,y,w,50,i?'rgba(255,255,255,0.04)':'#ffd70030',10);
     txt(`${i+1}`,x0+30,y+36,26,'#fff','700','center'); ctx.drawImage(flagSprite(c,17),x0+56,y+5);
     txt(NAME[c]||c,x0+104,y+35,26,'#fff','700','left',w-210);
     txt(`${n} ${n===1?'win':'wins'}`,x1-16,y+35,24,'#fde047','700','right') });
@@ -600,7 +600,6 @@ function drawLeft(){
   if(!list.length) txt('No winner yet – race on!',x0,404,24,'#64748b','400');
   list.forEach(([c,n],i)=>{ const y=368+i*56;
     box(x0,y,w,48,'rgba(255,255,255,0.04)',10);
-    ctx.fillStyle='rgba(253,224,71,0.18)'; ctx.fillRect(x0,y+43,w*n/max,5);
     txt(`${i+1}`,x0+30,y+34,24,'#fff','700','center'); ctx.drawImage(flagSprite(c,16),x0+56,y+6);
     txt(NAME[c]||c,x0+100,y+33,24,'#fff','700','left',w-200);
     txt(`${n} ${n===1?'win':'wins'}`,x1-16,y+33,22,'#fde047','700','right') });
@@ -627,7 +626,7 @@ function drawRight(rank){
   const extra=rank.map((b,i)=>({b,i})).filter(x=>x.i>=8 && x.b.players.length).slice(0,3);
   const rows=[...rank.slice(0,8-extra.length).map((b,i)=>({b,i})), ...extra];
   rows.forEach(({b,i},row)=>{ const y=100+row*58;
-    box(x0,y,w,50,i<3?['#ffd70033','#d1d5db22','#cd7f3222'][i]:'rgba(255,255,255,0.04)',10);
+    box(x0,y,w,50,i?'rgba(255,255,255,0.04)':'#ffd70033',10);   // nur Platz 1 hervorgehoben
     if(row>=8-extra.length && extra.length) box(x0,y,w,50,'rgba(253,224,71,0.10)',10);
     txt(`${i+1}`,x0+28,y+35,i>=99?20:26,'#fff','700','center'); ctx.drawImage(ballSprite(b,17),x0+52,y+5);
     txt(b.name,x0+100,y+34,24,'#fff','700','left',b.players.length?w-280:w-120);
@@ -647,6 +646,8 @@ function bulb(x,y,on){ ctx.fillStyle=on?'rgba(255,209,102,0.28)':'rgba(255,209,1
   ctx.fillStyle=on?'#ffe9a8':'#7a5a2a'; ctx.beginPath(); ctx.arc(x,y,3.5,0,7); ctx.fill() }
 function bulbRow(x,y,w,dir=0){ const n=Math.floor(w/22), k=Math.floor(Date.now()/220); for(let i=0;i<=n;i++) bulb(x+i*w/n,y,(i+(dir?-k:k)%3+300)%3!==0) }
 function bulbRing(cx,cy,r,n){ const k=Math.floor(Date.now()/220); for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; if(Math.sin(a)>0.8) continue; bulb(cx+Math.cos(a)*r,cy+Math.sin(a)*r,(i+k)%3!==0) } }   // unten frei für den Ländernamen
+// sanftes Glimmen statt hartem Blinken (Schlussminuten, Chaos)
+const glow=(a,b)=>{ const k=(1+Math.sin(Date.now()/450))/2; return `rgba(${a.map((v,i)=>Math.round(v+(b[i]-v)*k)).join(',')},0.95)` };
 let conf=[];
 function confetti(n){ const cols=PAL===PALETTES[1]?['#ffc8dd','#7fd1e8','#ffd166','#fff']:['#ffd166','#ef476f','#2ec4b6','#fff1d0','#ff8c61'];
   for(let i=0;i<n;i++) conf.push({x:CX+Math.random()*CW, y:280-Math.random()*300, vx:(Math.random()-0.5)*2, vy:1.5+Math.random()*2.5, a:Math.random()*6, va:(Math.random()-0.5)*0.3, s:6+Math.random()*6, c:cols[i%cols.length]}) }
