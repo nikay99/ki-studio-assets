@@ -213,7 +213,8 @@ function step(){
   for(const s of spinners) Body.setAngle(s, s.angle+s.spin);
   if(phase==='countdown'){
     if(phaseT%60===0 && phaseT<START_WAIT) sfx.beep(phaseT>=START_WAIT-60?880:440);
-    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go(); goAt=performance.now(); leadTimes=[]; say([raceNo%2?'off':'here-we-go'],2); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
+    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go();
+      for(const b of balls) if(b.players.length && carry[b.players[0]]){ b.charge=Math.min(3,(b.charge||0)+carry[b.players[0]]); delete carry[b.players[0]]; b.startPush=true } goAt=performance.now(); leadTimes=[]; say([raceNo%2?'off':'here-we-go'],2); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
   }
   Engine.update(engine, 1000/60);
   if(phase!=='race' && phase!=='podium') return;
@@ -225,6 +226,10 @@ function step(){
     if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
     for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]; if(z.type==='speed') sfx.boost();
       if(b.players.length) toast(`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
+  if(phase==='race') for(const b of balls){ if(b.done || !(b.charge>0) || !b.players.length) continue;
+    b.chargeCd=(b.chargeCd||0)-1; if(b.chargeCd>0) continue;
+    const why = b.startPush && t>45 ? 'start' : b.still>30 ? 'stuck' : b.position.y>FINISH_Y-1400 ? 'final' : null;
+    if(why){ b.startPush=false; b.charge--; b.chargeCd=75; boost(b, b.players[0], why) } }
   // Zeitlupe, wenn die ersten zwei dicht beieinander auf die Ziellinie zurollen (einmal pro Rennen)
   if(phase==='race' && !slowDone && !finished.length){ const [a,c]=ranking();
     if(a && c && a.position.y>FINISH_Y-280 && a.position.y-c.position.y<2.5*R){ slowDone=true; slowT=0; sfx.slow() } }
@@ -253,6 +258,7 @@ function step(){
   if(phase==='podium' && phaseT===60*5 && Math.random()<0.3) say(['what-a-race']);
   if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
     phase='podium'; phaseT=0; sfx.fanfare(); toasts=[];
+    for(const b of balls) if(b.players.length && b.charge>0){ carry[b.players[0]]=Math.min(3,(carry[b.players[0]]||0)+b.charge); b.charge=0 }
     const w=finished[0], fin=ranking();
     // Ergebnis für jeden Spieler: Platz (auch wer noch nicht im Ziel war, nach Lage auf der Bahn) + bester Platz heute vom Server
     results = fin.map((b,i)=>({b, place:i+1})).filter(x=>x.b.players.length).map(x=>({user:x.b.players[0], flag:x.b.flag, place:x.place, done:x.b.done}));
@@ -264,12 +270,12 @@ function step(){
 
 // ---------- Chat ----------
 // CHEER-Schub: Kugel nach unten beschleunigen (gedeckelt, damit sie nicht durch Stifte tunnelt) + Funken
-function boost(b, user){
+function boost(b, user, why){
   // jeder weitere Schub derselben Kugel im Rennen wirkt schwächer (große Fan-Gruppen gewinnen nicht automatisch)
   b.boosts=(b.boosts||0)+1; const dv=Math.max(1.5, 7*Math.pow(0.8, b.boosts-1))*(chaos&&chaos.id==='rocket'?1.5:1);
   Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+dv,17)});
   b.boostT=45;
-  toast(`💬 ${user} boosted ${b.flag} ${b.name}!`, '#22d3ee', 120); sfx.boost();
+  toast(why==='start'?`🚀 ${user}'s saved boost: START PUSH!`:why==='stuck'?`⚡ ${user}'s boost frees ${b.flag} ${b.name}!`:`⚡ ${user}'s boost fires on the final stretch!`, '#22d3ee', 120); sfx.boost();
 }
 function toast(s, col='#fde047', life=240){ toasts.push({s,col,t:0,life}); if(toasts.length>3) toasts.shift() }
 async function pollChat(){
@@ -283,7 +289,12 @@ async function pollChat(){
       const flag=flagOf(e.code), nm=NAME[e.code]||e.code;
       const mine = balls && balls.find(x=>x.players.includes(e.user));
       // Schub nur für die eigene Kugel, auf der der Spieler seit dem Start sitzt
-      if(e.cheer){ if(mine && phase==='race' && !mine.done) boost(mine, e.user); continue }
+      // Boost-Ladung (Niklas 06.10.): Chat kommt ~25 s verzögert an, deshalb lädt jede Nachricht die eigene Kugel auf (max 3).
+      // Die Ladung zündet von selbst, wenn die Kugel hängt oder auf der Zielgeraden ist; was übrig bleibt, wird Startschub im nächsten Rennen.
+      if(e.cheer){ const tgt = mine && !(mine.done && phase==='race') && phase!=='podium' ? mine : null;
+        if(tgt){ tgt.charge=Math.min(3,(tgt.charge||0)+1); toast(`⚡ ${e.user} charged ${tgt.flag} ${tgt.name} (${tgt.charge}/3)`, '#22d3ee', 120) }
+        else { carry[e.user]=Math.min(3,(carry[e.user]||0)+1); toast(`⚡ ${e.user}: boost saved for the next race (${carry[e.user]}/3)`, '#22d3ee', 120) }
+        sfx.join(); continue }
       // Eigene Kugel pro Spieler (Niklas 06.10.): im Countdown sofort – freie Haus-Kugel des Landes übernehmen oder neue Kugel
       // (höchstens 6 pro Nation, 48 insgesamt); im Rennen erst ab dem nächsten (kein Aufspringen auf den Führenden)
       let b = null;
@@ -390,7 +401,7 @@ async function say(names, rank=1){
 }
 const VOICE = ['off','here-we-go','new-leader','change-top','photo','comeback','finish-coming','chaos','moon','bounce','quake','rocket','double','type-country','own-ball','chat-boost','welcome','new-hour','final-minutes','get-ready','what-a-race'];
 VOICE.forEach(vload);
-let results = [], joinedAt = {};
+let results = [], joinedAt = {}, carry = {};
 let winAt = -1, slowT = -1, slowDone = false, timeScale = 1, saidFinal = 0, comebackRank = {}, lastWelcome = 0;
 
 // ---------- Darstellung ----------
@@ -477,7 +488,7 @@ function draw(){
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H+40)
-    txt((phase==='countdown' && Date.now()-(joinedAt[b.players[0]]||0)<180000 ? 'NEW ' : '')+who(b),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
+    txt((phase==='countdown' && Date.now()-(joinedAt[b.players[0]]||0)<180000 ? 'NEW ' : '')+who(b)+(b.charge>0?' '+'⚡'.repeat(b.charge):''),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
   ctx.restore();
   if(timeScale<0.9){ const k=Math.min(1,(1-timeScale)/0.5);   // Zeitlupe: heller Schleier + Schriftzug
     ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
@@ -517,7 +528,7 @@ function drawColumn(rank){
   ctx.fillStyle=fg; ctx.fillRect(CX,F,CW,110); ctx.fillStyle='#fde047'; ctx.fillRect(CX,F+106,CW,4);
   if(showBoost){
     txt('💬 CHAT = BOOST!',MID,F+48,44,'#22d3ee','700','center',CW-40);
-    txt('racing? type anything to push your ball',MID,F+92,28,'#fff','700','center',CW-40);
+    txt('every message charges your ball ⚡',MID,F+92,28,'#fff','700','center',CW-40);
   } else if(showNext){
     txt('⏭ NEXT RACE',MID,F+44,34,'#fde047','700','center');
     txt(nextUp.slice(-4).map(x=>`${flagOf(x.code)} ${x.user}`).join('  '),MID,F+88,28,'#fff','700','center',CW-40);
@@ -550,7 +561,7 @@ function drawColumn(rank){
       txt('the winner counts DOUBLE! 🏆x2',MID,858,26,'#fde047','700','center',CW-40,true) }
     else { txt('Type your COUNTRY in the chat 👇',MID,815,34,'#fff','700','center',CW-40,true);
       txt('→ your flag races with YOUR name on it',MID,858,26,'#fde047','700','center',CW-40,true) }
-    txt('💬 chat during the race = BOOST your ball!',MID,898,24,'#22d3ee','700','center',CW-40,true);
+    txt('💬 chat = ⚡ charge, fires when your ball needs it!',MID,898,24,'#22d3ee','700','center',CW-40,true);
     if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,960,24,'#4ade80','700','center',CW-40,true);
   }
   if(phase==='podium'||phase==='loading'){
@@ -632,7 +643,7 @@ function drawRight(rank){
   box(x0,580,w,128,'rgba(253,224,71,0.12)',14,'#fde047');
   txt('🎯 GET YOUR OWN BALL',x0+22,628,32,'#fde047','700','left',w-44);
   txt('type your country in the chat',x0+22,666,24,'#fff','700','left',w-44);
-  txt('💬 then chat in the race = BOOST!',x0+22,696,20,'#22d3ee','700','left',w-44);
+  txt('💬 then chat = ⚡ charge your ball (never lost)',x0+22,696,20,'#22d3ee','700','left',w-44);
   txt('JUST JOINED',x0,766,24,'#94a3b8','700'); txt('stream delay ~20 s',x1,766,18,'#64748b','400','right');
   if(!chatLog.length) txt('be the first – type your country!',x0,806,22,'#64748b','400');
   chatLog.slice(0,6).forEach((c,i)=>{ const y=806+i*42;
