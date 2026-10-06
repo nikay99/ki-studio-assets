@@ -217,6 +217,21 @@ function logLine(t) {
 // Musik aus music.json nachladen (fehlende Stücke laden, entfernte löschen) – bei jedem Start, im Hintergrund
 execFile('bash', [path.join(__dirname, 'sync-music.sh')], { timeout: 900000, env: { ...process.env, DATA_DIR: DATA } },
   (e, out, err) => logLine(`musik ${e ? 'Fehler ' + (err || e.message).slice(0, 200) : (out.trim() || 'ok')}`));
+// Selbstheiler (Niklas-Ja 06.10.): YouTube schaltet eine neue Sendung manchmal nicht live, obwohl das Signal ankommt
+// (06.10. 04:05–07:13 MESZ). Zeigt die Kanalseite 4 Minuten lang eindeutig keine Sendung, während run.sh sendet,
+// wird das Sende-ffmpeg beendet; run.sh verbindet nach 60 s neu (frische Verbindung → YouTube startet die Sendung).
+let healNone = 0, healLast = 0;
+if (CHANNEL && process.env.SELF_HEAL !== '0') setInterval(async () => {
+  let run = {}; try { run = JSON.parse(fs.readFileSync(path.join(DATA, 'run.json'), 'utf8')); } catch {}
+  if (run.mode !== 'live' || Date.now() - Date.parse(run.block_start) < 5 * 60e3) { healNone = 0; return; }
+  const state = await chat.channelLiveState(CHANNEL);
+  healNone = state === 'none' && chatStatus.chat !== 'verbunden' ? healNone + 1 : 0;   // Chat an einer laufenden Sendung → alles gut
+  if (healNone >= 4 && Date.now() - healLast > 15 * 60e3) {
+    healNone = 0; healLast = Date.now();
+    logLine('selbstheiler: seit 4 Min. keine Sendung auf dem Kanal, Verbindung zu YouTube wird neu aufgebaut');
+    execFile('pkill', ['-TERM', '-f', 'a.rtmp.youtube.com/live2'], () => {});
+  }
+}, 60e3);
 const NAMES = Object.fromEntries(COUNTRY_LIST.map(c => [c[0], c[1]]));
 clips.init({ data: DATA, log: logLine, state: () => { rollDay(); const [l] = Object.entries(st.countryWins).sort((a, b) => b[1] - a[1]);
   return { videoId: chatStatus.videoId, leader: l ? { code: l[0], flag: flagOf(l[0]), name: NAMES[l[0]] || l[0] } : null }; } });

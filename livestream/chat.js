@@ -28,6 +28,19 @@ async function findLiveVideo(channel) {
   return null;
 }
 
+// Für den Selbstheiler: 'none' nur, wenn die Kanalseite eindeutig keine Sendung zeigt (canonical = Kanal, nicht watch?v=).
+// Login-/Bot-Seiten und Fehler → 'unknown' (dann wird nie eingegriffen).
+async function channelLiveState(channel) {
+  try {
+    const base = channel.startsWith('UC') ? `https://www.youtube.com/channel/${channel}` : `https://www.youtube.com/${channel}`;
+    const r = await fetch(base + '/live', { headers: hdr }); if (!r.ok) return 'unknown';
+    const html = await r.text(), c = html.match(/<link rel="canonical" href="([^"]+)"/);
+    if (!c) return 'unknown';
+    if (c[1].includes('/watch?v=')) return 'live';
+    return /youtube\.com\/(channel\/UC|@)/.test(c[1]) && !/"isLive":true|"style":"LIVE"/.test(html) ? 'none' : 'unknown';
+  } catch { return 'unknown'; }
+}
+
 async function liveOnChannel(channel) {
   const base = channel.startsWith('UC') ? `https://www.youtube.com/channel/${channel}` : `https://www.youtube.com/${channel}`;
   const html = await (await fetch(base + '/live', { headers: hdr })).text();
@@ -117,7 +130,7 @@ function start({ channel, onMessage, log = console.log, status = () => {} }) {
   return () => { stopped = true; };
 }
 
-module.exports = { start, findLiveVideo };
+module.exports = { start, findLiveVideo, channelLiveState };
 
 if (require.main === module) {   // Test: node chat.js @LofiGirl
   start({ channel: process.argv[2] || '@LofiGirl', onMessage: m => console.log(m.user, '>', m.text) });
