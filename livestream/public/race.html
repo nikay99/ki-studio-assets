@@ -170,6 +170,7 @@ async function newRace(){
   if(chaos) say(['chaos',chaos.id,'double'],2);
   else if(finalMin() && saidFinal!==board.hourEnds){ saidFinal=board.hourEnds; say(['final-minutes'],2) }
   else say([['type-country','own-ball','get-ready'][raceNo%3]],2);
+  if(musicWant()===musicMode) mixNext(DECK[musicMode]);   // Mix: jedes Rennen ein anderes Lied (Niklas 06.10.)
 }
 
 // Aufholjagd, sichtbar: der Führende trägt die Krone und wird größer, je weiter er allein vorne fährt (bleibt eher an Stiften hängen),
@@ -334,13 +335,21 @@ function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, d
   AC.createMediaElementSource(d.a).connect(d.g); d.g.connect(musicBus);
   d.a.onended = ()=>playNext(d); d.a.onerror = ()=>setTimeout(()=>playNext(d), 3000); return d }
 const DECK = {calm:deck(false), dnb:deck(true)}; let musicMode = 'calm', lastFetch = 0;
-async function playNext(d){
+// Mix-Übergang: kurz ausblenden, nächstes Stück an zufälliger Stelle (10–60 %) starten, einblenden
+function mixNext(d){
+  if(!d.a.src || d.mixing) return; d.mixing=true;
+  d.g.gain.cancelScheduledValues(AC.currentTime); d.g.gain.setTargetAtTime(0, AC.currentTime, 0.2);
+  setTimeout(()=>{ d.mixing=false; playNext(d, true);
+    if(musicMode===(d.dnb?'dnb':'calm')){ d.g.gain.cancelScheduledValues(AC.currentTime); d.g.gain.setTargetAtTime(MUSIC_VOL, AC.currentTime+0.15, 0.25) } }, 900);
+}
+async function playNext(d, seek){
   if(Date.now()-lastFetch > 10*60000){ try{ const all = await (await fetch('/api/music')).json(); lastFetch = Date.now();   // neue Stücke ab und zu nachladen
     for(const x of Object.values(DECK)){ const l = all.filter(n=>/dnb/i.test(n)===x.dnb); if(l.slice().sort().join()!==x.list.slice().sort().join()){ x.list = shuffle(l); x.i = 0 } } }catch{} }
   const l = d.list.length ? d.list : (d.dnb ? DECK.calm : DECK.dnb).list;   // fehlt eine Sorte, nimm die andere
   if(!l.length){ lastFetch = 0; setTimeout(()=>playNext(d), 30000); return }
   if(d.i >= l.length){ shuffle(l); d.i = 0 }
-  d.a.src = '/music/'+encodeURIComponent(l[d.i++ % l.length]); if(musicMode===(d.dnb?'dnb':'calm')) d.a.play().catch(()=>setTimeout(()=>playNext(d), 3000)) }
+  d.a.src = '/music/'+encodeURIComponent(l[d.i++ % l.length]);
+  if(seek) d.a.addEventListener('loadedmetadata', ()=>{ if(d.a.duration>40) d.a.currentTime = d.a.duration*(0.1+Math.random()*0.5) }, {once:true}); if(musicMode===(d.dnb?'dnb':'calm')) d.a.play().catch(()=>setTimeout(()=>playNext(d), 3000)) }
 const musicWant = ()=>(chaos || finalMin()) ? 'dnb' : 'calm';
 function setMusic(mode){ if(mode===musicMode) return; const from = DECK[musicMode], to = DECK[mode]; musicMode = mode;
   from.g.gain.cancelScheduledValues(AC.currentTime); from.g.gain.setTargetAtTime(0, AC.currentTime, 0.25); setTimeout(()=>{ if(musicMode!==mode) return; from.a.pause() }, 1500);
