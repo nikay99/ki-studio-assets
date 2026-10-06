@@ -526,7 +526,7 @@ function drawColumn(rank){
   rank.slice(0,3).forEach((b,i)=>{ const x=MID-105+i*80; txt(['1','2','3'][i],x,104,22,['#ffd700','#d1d5db','#cd7f32'][i],'700','center'); ctx.drawImage(ballSprite(b,16),x+12,78) });
   // Mitmach-Aufruf oben (unten und rechts verdeckt am Handy die YouTube-Oberfläche/der Chat), im Wechsel mit „Next race: …“
   const F=128;   // fester Text, kein Wechsel/Blinken (Niklas 06.10. Ruhe-Durchgang)
-  ctx.fillStyle='rgba(40,12,30,0.95)'; ctx.fillRect(CX,F,CW,110); bulbRow(CX+12,F+7,CW-24); bulbRow(CX+12,F+103,CW-24,1);   // Lauflichter wie am Jahrmarkt
+  ctx.fillStyle='rgba(40,12,30,0.95)'; ctx.fillRect(CX,F,CW,110); ctx.fillStyle='rgba(253,224,71,0.6)'; ctx.fillRect(CX,F+108,CW,2);   // Lauflichter am Aufruf entfernt (Niklas 06.10. „augenschmerzend“)
   txt('🎯 GET YOUR OWN BALL!',MID,F+48,42,'#fde047','700','center',CW-40);
   txt('type your COUNTRY in the chat',MID,F+92,30,'#fff','700','center',CW-40);
   // Stunden-Wertung: Countdown bis zur Nation of the Hour
