@@ -1,5 +1,6 @@
 #!/bin/bash
 # Länder-Kugelrennen: Bildschirm (Xvfb) + Ton (PulseAudio) + Chrome mit der Rennseite + ffmpeg.
+# Latenz in YouTube Studio: „Niedrig“ (Standard), Test „Sehr niedrig“ seit 06.10. (Niklas).
 # Mit STREAM_KEY → RTMP zu YouTube in Blöcken (< 12 h, damit YouTube jede Sendung archiviert und die Zeit zählt).
 # Ohne STREAM_KEY → Testmodus: schreibt 60-s-Testclips nach $DATA_DIR/test0..2.mp4.
 set -u
