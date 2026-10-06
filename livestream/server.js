@@ -33,7 +33,7 @@ const lastFan = new Map();        // user → Zeit des letzten Fanpunkts
 let st = { day: '', countryWins: {}, playerWins: {}, fans: {}, races: 0, totalRaces: 0 };
 try { st = { ...st, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }; } catch {}
 const today = () => new Date().toISOString().slice(0, 10);
-function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.best = {}; st.races = 0; lastFan.clear(); } }
+function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.best = {}; st.points = {}; st.races = 0; lastFan.clear(); } }
 const save = () => fs.writeFile(STATE_FILE, JSON.stringify(st), () => {});
 rollDay();
 // Nation of the Hour: Siege pro volle Stunde (UTC); beim Stundenwechsel wird der Stundensieger festgehalten
@@ -205,9 +205,12 @@ http.createServer(async (req, res) => {
     if (r.winner) { st.countryWins[r.winner] = (st.countryWins[r.winner] || 0) + k; st.hourWins[r.winner] = (st.hourWins[r.winner] || 0) + k; }
     for (const p of r.players || []) st.playerWins[p] = (st.playerWins[p] || 0) + k;
     // Ergebnis pro Spieler (Niklas 06.10. „Sichtbarkeit“): bester Platz heute, Antwort nennt ihn für die Siegerehrung
-    st.best = st.best || {}; const best = {};
+    // Punkte für jede Platzierung (Niklas 06.10.): jede Kugel hinter dir = 1 Punkt, Letzter bekommt 1, Chaos doppelt
+    st.best = st.best || {}; st.points = st.points || {}; const best = {};
+    const total = Math.min(MAX_BALLS, Math.max(1, Number(r.total) || 0));
     for (const x of (r.places || []).slice(0, MAX_BALLS)) if (x && typeof x.user === 'string' && x.place > 0) {
-      const old = st.best[x.user]; best[x.user] = { place: x.place, best: old || null, record: !old || x.place < old };
+      const pts = Math.max(1, total - x.place + 1) * k; st.points[x.user] = (st.points[x.user] || 0) + pts;
+      const old = st.best[x.user]; best[x.user] = { place: x.place, best: old || null, record: !old || x.place < old, pts, points: st.points[x.user] };
       if (!old || x.place < old) st.best[x.user] = x.place;
     }
     st.races++; st.totalRaces++; save(); return send(res, 200, { ...board(), best });
@@ -223,7 +226,7 @@ function board() {
   const hourEnds = new Date(st.hour + ':00:00Z').getTime() + 3600000;
   const teams = {}, cut = Date.now() - 20 * 60 * 1000;   // aktive Spieler je Nation (gleiche 20-Min.-Regel wie die Aufstellung)
   for (const p of picks.values()) if (p.ts >= cut) teams[p.code] = (teams[p.code] || 0) + 1;
-  return { teams: top(teams, 5), races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), fans: top(st.fans || {}, 5),
+  return { teams: top(teams, 5), races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), points: top(st.points || {}, 5), fans: top(st.fans || {}, 5),
     hour: top(st.hourWins || {}, 3), hourEnds, champ: st.champ || null };
 }
 

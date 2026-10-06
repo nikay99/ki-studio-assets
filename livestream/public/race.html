@@ -240,7 +240,7 @@ function step(){
     if(b.position.y>FINISH_Y){
       b.done=true; b.ft=t; endFx(b); finished.push(b); const k=finished.length; if(k===1) winAt=t;
       if(k<=3) sfx.finish(k);
-      if(b.players.length && phase==='race') toast(`🏁 ${b.players[0]} finished #${k} of ${balls.length} with ${b.flag}!`, k<=3?'#4ade80':'#e2e8f0')   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
+      if(b.players.length && phase==='race') { b.pts=ptsFor(k); toast(`🏁 ${b.players[0]} finished #${k} of ${balls.length} with ${b.flag}!  +${b.pts} pts`, k<=3?'#4ade80':'#e2e8f0') }   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
     if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(3+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
@@ -261,9 +261,9 @@ function step(){
     for(const b of balls) if(b.players.length && b.charge>0){ carry[b.players[0]]=Math.min(3,(carry[b.players[0]]||0)+b.charge); b.charge=0 }
     const w=finished[0], fin=ranking();
     // Ergebnis für jeden Spieler: Platz (auch wer noch nicht im Ziel war, nach Lage auf der Bahn) + bester Platz heute vom Server
-    results = fin.map((b,i)=>({b, place:i+1})).filter(x=>x.b.players.length).map(x=>({user:x.b.players[0], flag:x.b.flag, place:x.place, done:x.b.done}));
-    if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players,double:!!chaos, places:results.map(x=>({user:x.user,place:x.place}))})})
-      .then(r=>r.json()).then(b=>{ board=b; for(const x of results){ const k=(b.best||{})[x.user]; if(k){ x.best=k.best; x.record=k.record && k.best!==null } } }).catch(()=>{});
+    results = fin.map((b,i)=>({b, place:i+1})).filter(x=>x.b.players.length).map(x=>({user:x.b.players[0], flag:x.b.flag, place:x.place, done:x.b.done, pts:ptsFor(x.place)}));
+    if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players,double:!!chaos, total:balls.length, places:results.map(x=>({user:x.user,place:x.place}))})})
+      .then(r=>r.json()).then(b=>{ board=b; for(const x of results){ const k=(b.best||{})[x.user]; if(k){ x.best=k.best; x.record=k.record && k.best!==null; x.points=k.points } } }).catch(()=>{});
   }
   if(phase==='podium' && phaseT>60*8){ if(reloadPending){ location.reload(); phase='loading'; return } phase='loading'; newRace()}
 }
@@ -402,6 +402,7 @@ async function say(names, rank=1){
 const VOICE = ['off','here-we-go','new-leader','change-top','photo','comeback','finish-coming','chaos','moon','bounce','quake','rocket','double','type-country','own-ball','chat-boost','welcome','new-hour','final-minutes','get-ready','what-a-race'];
 VOICE.forEach(vload);
 let results = [], joinedAt = {}, carry = {};
+const ptsFor = place => Math.max(1, balls.length-place+1)*(chaos?2:1);   // Punkte: jede Kugel hinter dir = 1, Chaos doppelt
 let winAt = -1, slowT = -1, slowDone = false, timeScale = 1, saidFinal = 0, comebackRank = {}, lastWelcome = 0;
 
 // ---------- Darstellung ----------
@@ -488,7 +489,7 @@ function draw(){
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H+40)
-    txt((phase==='countdown' && Date.now()-(joinedAt[b.players[0]]||0)<180000 ? 'NEW ' : '')+who(b)+(b.charge>0?' '+'⚡'.repeat(b.charge):''),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
+    txt((phase==='countdown' && Date.now()-(joinedAt[b.players[0]]||0)<180000 ? 'NEW ' : '')+who(b)+(b.charge>0?' '+'⚡'.repeat(b.charge):'')+(b.done&&b.pts?` +${b.pts}`:''),Math.min(Math.max(b.position.x,70),TW-70),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),22,'#fde047','700','center',150,true);
   ctx.restore();
   if(timeScale<0.9){ const k=Math.min(1,(1-timeScale)/0.5);   // Zeitlupe: heller Schleier + Schriftzug
     ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
@@ -575,7 +576,7 @@ function drawColumn(rank){
       if(b.players.length) txt(b.players[0],x,866,20,'#fde047','400','center',260)});
     const top=(board.countries||[])[0];
     // Ergebnis jedes Spielers (Platz, bester Platz heute) statt „Most wins today“, sobald Spieler mitgefahren sind
-    if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user}: #${x.place} of ${balls.length}`+(x.record?'  ⭐ best today!':x.best?`  · best today #${x.best}`:''),MID,912+j*36,24,x.place<=3?'#4ade80':'#e2e8f0','700','center',CW-40));
+    if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user}: #${x.place} of ${balls.length}  +${x.pts} pts`+(x.points?` (${x.points} today)`:'')+(x.record?'  ⭐ best!':''),MID,912+j*36,24,x.place<=3?'#4ade80':'#e2e8f0','700','center',CW-40));
       if(results.length>3) txt(`+${results.length-3} more players`,MID,912+3*36,20,'#94a3b8','700','center') }
     else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,935,26,'#94a3b8','700','center',CW-40);
     ctx.globalAlpha=1;
@@ -619,9 +620,9 @@ function drawLeft(){
   if(teams.length) teams.forEach(([c,n],i)=>{ const x=x0+i*112; ctx.drawImage(flagSprite(c,20),x,fy+22); txt(String(n),x+50,fy+56,28,i===0?'#fde047':'#e2e8f0','700') });
   else txt('no players yet – be the first!',x0,fy+50,24,'#64748b','400');
   txt('more players = more balls for your nation',x0,fy+108,22,'#cbd5e1','400','left',w);
-  const pl=(board.players||[]).slice(0,3);
-  txt('👑 TOP PLAYERS today',x0,fy+170,26,'#94a3b8','700','left',w);
-  txt(pl.length?pl.map(([u,n])=>`${u} ${n}🏆`).join('   '):'win a race to get on this list!',x0,fy+212,24,pl.length?'#fde047':'#64748b',pl.length?'700':'400','left',w);
+  const pl=(board.points||[]).slice(0,3);   // Tagespunkte statt nur Siege (Niklas 06.10.)
+  txt('⭐ TOP PLAYERS today · points',x0,fy+170,26,'#94a3b8','700','left',w);
+  txt(pl.length?pl.map(([u,n])=>`${u} ${n}`).join('   '):'every race scores – join to get on this list!',x0,fy+212,24,pl.length?'#fde047':'#64748b',pl.length?'700':'400','left',w);
   txt(`🏁 ${board.races||0} races today`,x0,H-30,22,'#94a3b8','400');
 }
 
