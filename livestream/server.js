@@ -98,6 +98,10 @@ function cheer(user) {
 const STATS = path.join(DATA, 'stats.csv'), SEEN = path.join(DATA, 'seen.json');
 let hourStat = { hour: new Date().toISOString().slice(0, 13), msgs: 0, joins: 0, cheers: 0, users: new Set() }, races0 = st.totalRaces, seen = new Set();
 try { seen = new Set(JSON.parse(fs.readFileSync(SEEN, 'utf8'))); } catch {}
+// Laufende Stunde überlebt Server-Neustarts (sonst zählte das Protokoll nach jedem main-Push von vorn, 06.10.: 1 statt 15 Nachrichten)
+const HOUR_FILE = path.join(DATA, 'hour.json');
+try { const h = JSON.parse(fs.readFileSync(HOUR_FILE, 'utf8')); if (h.hour === hourStat.hour) { hourStat = { ...h, users: new Set(h.users) }; races0 = h.races0 ?? races0; } } catch {}
+setInterval(() => fs.writeFile(HOUR_FILE, JSON.stringify({ ...hourStat, users: [...hourStat.users], races0 }), () => {}), 15000);
 function flushHour() {
   const h = new Date().toISOString().slice(0, 13); if (h === hourStat.hour) return;
   const u = [...hourStat.users], back = u.filter(x => seen.has(x)).length;
