@@ -171,7 +171,6 @@ async function newRace(){
   if(chaos) say(['chaos',chaos.id,'double'],2);
   else if(finalMin() && saidFinal!==board.hourEnds){ saidFinal=board.hourEnds; say(['final-minutes'],2) }
   else say([['type-country','own-ball','get-ready'][raceNo%3]],2);
-  if(musicWant()===musicMode) mixNext(DECK[musicMode]);   // Mix: jedes Rennen ein anderes Lied (Niklas 06.10.)
 }
 
 // Aufholjagd, sichtbar: der Führende trägt die Krone und wird größer, je weiter er allein vorne fährt (bleibt eher an Stiften hängen),
@@ -336,35 +335,45 @@ const hourLeft = ()=>{ const ms=Math.max(0,(board.hourEnds||0)-Date.now()); retu
 // ---------- Ton ----------
 const AC = new (window.AudioContext||window.webkitAudioContext)();
 const master = AC.createGain(); master.gain.value = 0.9; master.connect(AC.destination);
-const sfxBus = AC.createGain(); sfxBus.gain.value = 0.5; sfxBus.connect(master);
+const sfxBus = AC.createGain(); sfxBus.gain.value = 0.4; sfxBus.connect(master);
 function tone(f, d=0.12, type='sine', v=0.3, when=0){
   const o=AC.createOscillator(), g=AC.createGain(), t0=AC.currentTime+when;
   o.type=type; o.frequency.value=f; g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(v,t0+0.005);
   g.gain.exponentialRampToValueAtTime(0.001,t0+d); o.connect(g); g.connect(sfxBus); o.start(t0); o.stop(t0+d+0.02);
 }
 const SCALE=[523.25,587.33,659.25,783.99,880,1046.5,1174.66,1318.5]; let hitBudget=0;
-const sfx = {
-  beep:f=>tone(f,0.25,'square',0.25), go:()=>{tone(1046,0.5,'square',0.3);tone(1318,0.5,'square',0.2,0.05)},
-  plink:(y)=>{ if(hitBudget<=0) return; hitBudget--; tone(SCALE[Math.floor(Math.random()*SCALE.length)]*(y>5500?0.5:1),0.18,'triangle',0.12)},
-  join:()=>{tone(1318,0.08,'sine',0.2);tone(1760,0.12,'sine',0.2,0.07)},
-  lead:()=>{tone(784,0.1,'square',0.2);tone(1175,0.18,'square',0.2,0.08)},
-  finish:k=>tone([0,1046,880,784][k],0.35,'triangle',0.35),
-  boost:()=>{tone(660,0.07,'square',0.15);tone(990,0.07,'square',0.15,0.05);tone(1480,0.12,'square',0.15,0.1)},
-  chaos:()=>[392,523,392,659,784].forEach((f,i)=>tone(f,0.12,'sawtooth',0.15,i*0.09)),
-  quake:()=>{tone(55,0.5,'sawtooth',0.3);tone(70,0.4,'square',0.2,0.05)},
-  turbo:()=>[220,330,440,660,880].forEach((f,i)=>tone(f,0.09,'sawtooth',0.12,i*0.04)),
-  slow:()=>{tone(880,0.6,'sine',0.2);tone(440,0.9,'sine',0.2,0.15)},
-  fanfare:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i===3?0.8:0.18,'square',0.22,i*0.14)),
+const sfx = {   // Summer Radio (07.10.): runde, leise Töne statt 8-Bit-Piepser, damit die Musik trägt
+  beep:f=>tone(f*0.75,0.3,'sine',0.22), go:()=>[523,659,784].forEach((f,i)=>tone(f,0.6,'triangle',0.18,i*0.04)),
+  plink:(y)=>{ if(hitBudget<=0) return; hitBudget--; tone(SCALE[Math.floor(Math.random()*SCALE.length)]*(y>5500?0.5:1),0.14,'sine',0.06)},
+  join:()=>{tone(1318,0.12,'sine',0.16);tone(1760,0.18,'sine',0.14,0.08)},
+  lead:()=>{tone(784,0.18,'sine',0.14);tone(1175,0.28,'sine',0.12,0.09)},
+  finish:k=>tone([0,1046,880,784][k],0.5,'sine',0.25),
+  boost:()=>whoosh(0.35,0.25),
+  chaos:()=>[392,523,659,784].forEach((f,i)=>tone(f,0.25,'triangle',0.14,i*0.1)),
+  quake:()=>{tone(55,0.6,'sine',0.35);whoosh(0.5,0.15)},
+  turbo:()=>whoosh(0.5,0.3),
+  slow:()=>{tone(880,0.7,'sine',0.16);tone(440,1,'sine',0.16,0.15)},
+  fanfare:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i===3?1:0.3,'triangle',0.2,i*0.13)),
 };
+function whoosh(d=0.4, v=0.25){   // gefiltertes Rauschen, Filter fährt hoch (Schub/Turbo)
+  const n=AC.createBufferSource(), b=AC.createBuffer(1,Math.ceil(AC.sampleRate*d),AC.sampleRate), x=b.getChannelData(0);
+  for(let i=0;i<x.length;i++) x[i]=Math.random()*2-1;
+  const f=AC.createBiquadFilter(), g=AC.createGain(), t0=AC.currentTime; f.type='bandpass'; f.Q.value=1.2;
+  f.frequency.setValueAtTime(400,t0); f.frequency.exponentialRampToValueAtTime(4000,t0+d);
+  g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(v,t0+d*0.3); g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+  n.buffer=b; n.connect(f); f.connect(g); g.connect(sfxBus); n.start(t0); n.stop(t0+d+0.02);
+}
 setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
 function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(s&&s.peg){ sfx.plink(s.position.y); if(PX.ready){ const o=s===p.bodyA?p.bodyB:p.bodyA; PX.spark((s.position.x+o.position.x)/2,(s.position.y+o.position.y)/2,s.col) } } } }
 // Musik (Dateien in /var/lib/marble/music), leiser unter den Effekten. Zwei Decks:
 // ruhig = mitsummbare Chiptune + Pixel-Klassiker, dnb = Pixel-DnB nur wenn es um etwas geht (Chaos-Rennen, letzte 5 Minuten der Stunde).
 // Beim Wechsel wird übergeblendet und das andere Deck pausiert, das unterbrochene Stück läuft danach an derselben Stelle weiter.
-const musicBus = AC.createGain(); musicBus.connect(master); const MUSIC_VOL = 0.55;
+const musicBus = AC.createGain(); musicBus.connect(master); const MUSIC_VOL = 0.75;
 function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, dnb}; d.g.gain.value = 0;
   AC.createMediaElementSource(d.a).connect(d.g); d.g.connect(musicBus);
   d.a.onended = ()=>playNext(d); d.a.onerror = ()=>setTimeout(()=>playNext(d), 3000); return d }
+let nowPlaying = '', nowAt = 0;
+const songTitle = f => f.replace(/\.(mp3|ogg)$/,'').replace(/^summer-\d+-/,'').split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
 const DECK = {calm:deck(false), dnb:deck(true)}; let musicMode = 'calm', lastFetch = 0;
 // Mix-Übergang: kurz ausblenden, nächstes Stück an zufälliger Stelle (10–60 %) starten, einblenden
 function mixNext(d){
@@ -379,9 +388,10 @@ async function playNext(d, seek){
   const l = d.list.length ? d.list : (d.dnb ? DECK.calm : DECK.dnb).list;   // fehlt eine Sorte, nimm die andere
   if(!l.length){ lastFetch = 0; setTimeout(()=>playNext(d), 30000); return }
   if(d.i >= l.length){ shuffle(l); d.i = 0 }
-  d.a.src = '/music/'+encodeURIComponent(l[d.i++ % l.length]);
+  const file = l[d.i++ % l.length]; d.a.src = '/music/'+encodeURIComponent(file);
+  nowPlaying = songTitle(file); nowAt = Date.now(); if(phase && phase!=='loading') toast(`🎵 Now playing: ${nowPlaying}`,'#f9a8d4',200);
   if(seek) d.a.addEventListener('loadedmetadata', ()=>{ if(d.a.duration>40) d.a.currentTime = d.a.duration*(0.1+Math.random()*0.5) }, {once:true}); if(musicMode===(d.dnb?'dnb':'calm')) d.a.play().catch(()=>setTimeout(()=>playNext(d), 3000)) }
-const musicWant = ()=>(chaos || finalMin()) ? 'dnb' : 'calm';
+const musicWant = ()=>'calm';   // Summer Radio (Niklas 07.10.): eine durchgehende Linie, Lieder laufen ganz durch
 function setMusic(mode){ if(mode===musicMode) return; const from = DECK[musicMode], to = DECK[mode]; musicMode = mode;
   from.g.gain.cancelScheduledValues(AC.currentTime); from.g.gain.setTargetAtTime(0, AC.currentTime, 0.25); setTimeout(()=>{ if(musicMode!==mode) return; from.a.pause() }, 1500);
   to.g.gain.cancelScheduledValues(AC.currentTime); to.g.gain.setTargetAtTime(MUSIC_VOL, AC.currentTime, 0.25);
@@ -469,12 +479,14 @@ function draw(){
   const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
   // Kamera näher (Niklas 07.10.): am Handy sind die Kugeln sonst winzig. Start/Siegerehrung ganzes Feld, im Rennen näher,
   // beim Duell um Platz 1 und auf der Zielgeraden am nächsten. ?zoom=0 schaltet ab.
-  const run=rank.filter(b=>!b.done), duel=run[1] && Math.abs(run[0].position.y-run[1].position.y)<60;
-  const wantZ = ZOOM_OFF || phase!=='race' || t<120 || finished.length ? 1 : lead.position.y>FINISH_Y-900 ? 1.7 : duel ? 1.55 : 1.35;
+  // Zoom nur so weit, dass die ersten 5 Kugeln im Bild bleiben (sonst wirkt das Feld leer), höchstens 1,25; ganz nah nur in der Zeitlupe am Ziel
+  const grp=rank.filter(b=>!b.done).slice(0,5), span=grp.length>1 ? grp[0].position.y-grp[grp.length-1].position.y : 0;
+  const gx=grp.length ? grp.reduce((a,b)=>a+b.position.x,0)/grp.length : TW/2;
+  const wantZ = ZOOM_OFF || phase!=='race' || t<120 || finished.length ? 1 : timeScale<0.9 ? 1.6 : Math.min(1.25, Math.max(1, 170/Math.max(span,1)));
   camZ += (wantZ-camZ)*0.06;
   const VW=TW/camZ, VH=H/camZ;
-  camX += (Math.min(Math.max(lead.position.x-VW/2,0),TW-VW)-camX)*0.1; camX=Math.min(Math.max(camX,0),TW-VW);
-  const target=Math.min(Math.max(lead.position.y+(camZ>1.05?lead.velocity.y*4:0)-H*(camZ>1.05?0.5:0.54)/camZ,-330/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
+  camX += (Math.min(Math.max(gx-VW/2,0),TW-VW)-camX)*0.1; camX=Math.min(Math.max(camX,0),TW-VW);
+  const target=Math.min(Math.max(lead.position.y+(camZ>1.05?lead.velocity.y*4:0)-H*0.54/camZ,-330/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*(0.12+0.3*Math.max(0,camZ-1));   // näher dran → Kamera folgt straffer, sonst rutscht der Erste unter den Chat
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   if(PX.ready){ ctx.clearRect(0,0,W,H); PX.draw({pal:PAL, camY, camX, camZ, trackLayer, statics, spinners, balls, rank, phase, R, ballSprite}) } else { ctx.fillStyle=bg; ctx.fillRect(0,0,W,H) }
@@ -507,7 +519,7 @@ function draw(){
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   const nx = x => Math.min(Math.max(x,camX+70/camZ),camX+(TW-70)/camZ);
-  for(const b of balls) if(b.bot && b.position.y>camY-40 && b.position.y<camY+H/camZ+40)
+  for(const b of balls) if(b.bot && !b.done && b.position.y>camY-40 && b.position.y<camY+H/camZ+40)
     txt('🤖 '+b.bot,Math.min(Math.max(b.position.x,camX+120/camZ),camX+(TW-120)/camZ),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),26,BOT_COL,'700','center',200,true);
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H/camZ+40)
     txt((phase==='countdown' && Date.now()-(joinedAt[b.players[0]]||0)<180000 ? 'NEW ' : '')+who(b)+(b.charge>0?' '+'⚡'.repeat(b.charge):'')+(b.done&&b.pts?` +${b.pts}`:''),nx(b.position.x),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),30,'#fde047','700','center',220,true);
@@ -570,7 +582,7 @@ function drawColumn(rank){
     const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
     txt(n>0?String(n):'GO!',MID,500,72,'#fde047','700','center',0,true);
     if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,640,24,'#c084fc','700','center',SW,true);
-    else if(!mine.length && balls.some(b=>b.bot)) txt('🤖 Can you beat the bots? Type your country!',MID,640,24,BOT_COL,'700','center',SW,true);
+    else if(!mine.length && balls.some(b=>b.bot)) txt('🤖 Beat the bots! Type your country',MID,640,36,BOT_COL,'700','center',SW+40,true);
     else txt('💬 chat = ⚡ charge your ball',MID,640,24,'#22d3ee','700','center',SW,true);
     if(!mine.length && balls.some(b=>b.bot)) txt('vs '+balls.filter(b=>b.bot).map(b=>`${b.flag} 🤖 ${b.bot}`).join('  '),MID,672,20,BOT_COL,'700','center',SW,true);
     if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,672,20,'#4ade80','700','center',SW,true);
@@ -590,7 +602,7 @@ function drawColumn(rank){
     // Ergebnis jedes Spielers (Platz, Punkte) statt „Most wins today“, sobald Spieler mitgefahren sind
     if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user} #${x.place}/${balls.length}  +${x.pts} pts${x.beat?' 🏆':''}`,MID,ry+j*30,24,x.place<=3?'#4ade80':'#e2e8f0','700','center',SW));
       if(results.length>3) txt(`+${results.length-3} more players`,MID,ry+3*34,22,'#94a3b8','700','center') }
-    else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,600,22,'#94a3b8','700','center',SW);
+    else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,640,22,'#94a3b8','700','center',SW);
     ctx.globalAlpha=1;
   }
   drawConfetti();
@@ -626,6 +638,7 @@ function drawLeft(){
   txt('⭐ TOP PLAYERS today',x0,fy+230,40,'#94a3b8','700','left',w);
   if(!pl.length) txt('every race scores points!',x0,fy+296,40,'#64748b','700','left',w);
   pl.forEach(([u,n],i)=>{ const y=fy+296+i*66; txt(`${i+1}. ${u}`,x0,y,44,i?'#fff':'#fde047','700','left',w-170); txt(`${n} pts`,x1,y,40,'#fde047','700','right') });
+  if(nowPlaying){ box(x0,940,w,108,'rgba(244,114,182,0.12)',16); txt('🎵 SUMMER RADIO 24/7',x0+20,982,32,'#f9a8d4','700','left',w-40); txt(nowPlaying,x0+20,1028,38,'#fff','700','left',w-40) }   // Musik als Grund zu bleiben (Niklas 07.10.)
 }
 
 // rechts: Live-Rangliste + Mitmachen + letzte Beitritte (nur im 16:9-Bild)
@@ -667,12 +680,13 @@ function drawConfetti(){ if(!conf.length) return; ctx.save(); ctx.beginPath(); c
   ctx.restore(); conf=conf.filter(p=>p.y<H+20) }
 
 // ---------- Takt ----------
-let acc=0, last=performance.now(), lastDraw=0, fpsN=0, fpsT=last; window.fps=0;
+let acc=0, last=performance.now(), lastDraw=0, fpsN=0, fpsT=last, tick=0, rafDt=16.7; window.fps=0;
 function loop(now){
-  acc += Math.min(now-last, 250)*timeScale; last=now;   // timeScale < 1 = Zeitlupe
+  rafDt += (Math.min(now-last,100)-rafDt)*0.05; acc += Math.min(now-last, 250)*timeScale; last=now;   // timeScale < 1 = Zeitlupe
   let n=0; while(acc>=1000/60 && n<6){ if(phase!=='loading') step(); acc-=1000/60; n++ }
   if(acc>1000/60) acc=0;                   // zu langsam: lieber Zeit verlieren als ruckeln
-  if(phase!=='loading' && now-lastDraw>=31){ lastDraw = now-lastDraw>100 ? now : lastDraw+1000/30; draw(); fpsN++ }   // 30 Bilder/s reichen (ffmpeg greift 30 ab), spart ~1/3 Chrome-CPU
+  // gleichmäßiger Takt (07.10.: Zeit-Drossel holte nach verspäteten Bildern auf → 6,5 % doppelte Bilder): bei 60 Hz strikt jedes zweite Bild zeichnen
+  tick++; if(phase!=='loading' && (rafDt>24 || tick%2===0)){ lastDraw=now; draw(); fpsN++ }   // 30 Bilder/s reichen (ffmpeg greift 30 ab), spart ~1/3 Chrome-CPU
   if(now-fpsT>2000){ window.fps=fpsN*1000/(now-fpsT); fpsN=0; fpsT=now }
   requestAnimationFrame(loop);
 }
