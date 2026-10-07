@@ -369,9 +369,9 @@ function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s
 // ruhig = mitsummbare Chiptune + Pixel-Klassiker, dnb = Pixel-DnB nur wenn es um etwas geht (Chaos-Rennen, letzte 5 Minuten der Stunde).
 // Beim Wechsel wird übergeblendet und das andere Deck pausiert, das unterbrochene Stück läuft danach an derselben Stelle weiter.
 const musicBus = AC.createGain(); musicBus.connect(master); const MUSIC_VOL = 0.75;
-function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, dnb}; d.g.gain.value = 0;
+function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, dnb, gen:0}; d.g.gain.value = 0;
   AC.createMediaElementSource(d.a).connect(d.g); d.g.connect(musicBus);
-  d.a.onended = ()=>playNext(d); d.a.onerror = ()=>{ lastFetch = 0; setTimeout(()=>playNext(d), 1000) };   // Datei fehlt (Musiktausch) → Liste sofort neu holen
+  d.a.onended = ()=>playNext(d); d.a.onerror = ()=>{ lastFetch = 0; const g=d.gen; setTimeout(()=>{ if(g===d.gen) playNext(d) }, 1000) };   // Datei fehlt (Musiktausch) → Liste sofort neu holen
   d.a.onplaying = ()=>{ const n = songTitle(decodeURIComponent(d.a.src.split('/').pop())); if(n!==nowPlaying){ nowPlaying = n; nowAt = Date.now(); if(phase && phase!=='loading') toast(`🎵 Now playing: ${n}`,'#f9a8d4',200) } }; return d }
 let nowPlaying = '', nowAt = 0;
 const songTitle = f => f.replace(/\.(mp3|ogg)$/,'').replace(/^summer-\d+-/,'').split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
@@ -384,14 +384,17 @@ function mixNext(d){
     if(musicMode===(d.dnb?'dnb':'calm')){ d.g.gain.cancelScheduledValues(AC.currentTime); d.g.gain.setTargetAtTime(MUSIC_VOL, AC.currentTime+0.15, 0.25) } }, 900);
 }
 async function playNext(d, seek){
+  // gen: nur der jüngste Aufruf zählt. Sonst startete jeder abgebrochene play()-Versuch einen weiteren Wechsel → Lied wechselte im Sekundentakt (07.10.)
+  const my = ++d.gen;
   if(Date.now()-lastFetch > 10*60000){ try{ const all = await (await fetch('/api/music')).json(); lastFetch = Date.now();   // neue Stücke ab und zu nachladen
     for(const x of Object.values(DECK)){ const l = all.filter(n=>/dnb/i.test(n)===x.dnb); if(l.slice().sort().join()!==x.list.slice().sort().join()){ x.list = shuffle(l); x.i = 0 } } }catch{} }
   const l = d.list.length ? d.list : (d.dnb ? DECK.calm : DECK.dnb).list;   // fehlt eine Sorte, nimm die andere
-  if(!l.length){ lastFetch = 0; setTimeout(()=>playNext(d), 30000); return }
+  if(my!==d.gen) return;
+  if(!l.length){ lastFetch = 0; setTimeout(()=>{ if(my===d.gen) playNext(d) }, 30000); return }
   if(d.i >= l.length){ shuffle(l); d.i = 0 }
   const file = l[d.i++ % l.length]; d.a.src = '/music/'+encodeURIComponent(file);
 
-  if(seek) d.a.addEventListener('loadedmetadata', ()=>{ if(d.a.duration>40) d.a.currentTime = d.a.duration*(0.1+Math.random()*0.5) }, {once:true}); if(musicMode===(d.dnb?'dnb':'calm')) d.a.play().catch(()=>setTimeout(()=>playNext(d), 3000)) }
+  if(seek) d.a.addEventListener('loadedmetadata', ()=>{ if(d.a.duration>40) d.a.currentTime = d.a.duration*(0.1+Math.random()*0.5) }, {once:true}); if(musicMode===(d.dnb?'dnb':'calm')) d.a.play().catch(e=>{ if(e && e.name==='AbortError') return; setTimeout(()=>{ if(my===d.gen) playNext(d) }, 3000) }) }
 const musicWant = ()=>'calm';   // Summer Radio (Niklas 07.10.): eine durchgehende Linie, Lieder laufen ganz durch
 function setMusic(mode){ if(mode===musicMode) return; const from = DECK[musicMode], to = DECK[mode]; musicMode = mode;
   from.g.gain.cancelScheduledValues(AC.currentTime); from.g.gain.setTargetAtTime(0, AC.currentTime, 0.25); setTimeout(()=>{ if(musicMode!==mode) return; from.a.pause() }, 1500);
