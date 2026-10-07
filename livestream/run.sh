@@ -8,7 +8,17 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 DATA_DIR="${DATA_DIR:-/var/lib/marble}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/stream.env ] && . /etc/marble/stream.env
 BLOCK_S="${BLOCK_S:-41400}"          # 11,5 h pro Sendung
-PAUSE_S="${PAUSE_S:-60}"
+PAUSE_S="${PAUSE_S:-60}"            # nach planmäßigem Blockende: lange Lücke → YouTube beendet die Sendung, neue beginnt
+RETRY_S="${RETRY_S:-3}"             # nach Abbruch mitten im Block: sofort neu verbinden → YouTube setzt dieselbe Sendung fort (07.10.: 22 s Lücke überbrückt)
+# Blockbeginn merken: Kurze Lücken (Abbruch, Skript-Neustart) setzen dieselbe YouTube-Sendung fort, also läuft auch der Block weiter
+# statt neu zu beginnen – sonst würde eine Sendung länger als 12 h und nicht archiviert. block_start.txt im Repo = Startwert.
+BS_FILE="$DATA_DIR/block_start"
+block_left(){
+  local now bs last; now=$(date +%s); last=$(stat -c %Y "$DATA_DIR/progress.txt" 2>/dev/null || echo 0)
+  bs=$(cat "$BS_FILE" 2>/dev/null || echo 0); local seed=0; [ -s "$DIR/block_start.txt" ] && seed=$(date -d "$(cat "$DIR/block_start.txt")" +%s 2>/dev/null || echo 0)
+  [ "$seed" -gt "$bs" ] && bs=$seed
+  if [ $((now-last)) -lt 45 ] && [ $((now-bs)) -lt $((BLOCK_S-300)) ]; then echo $((BLOCK_S-(now-bs))); else echo "$now" > "$BS_FILE"; echo "$BLOCK_S"; fi
+}
 VBIT="${VBIT:-3000k}"; RES="${RES:-1280x720}"; PRESET="${PRESET:-veryfast}"; FPS="${FPS:-30}"
 CHROME="${CHROME:-$(command -v chromium || command -v chromium-browser || command -v google-chrome)}"
 [ -n "${STREAM_KEY_V:-}" ] && VERT=1 || VERT=0          # zweiter Schlüssel = zusätzlich 9:16-Stream (720x1280)
@@ -82,19 +92,21 @@ while true; do
     runjson pause "PAUSE-Datei im Repo"; sleep 20; continue
   fi
   if [ -n "${STREAM_KEY:-}" ] && [ "${STREAM_ENABLED:-1}" = "1" ]; then
-    snap "$BLOCK_S"; runjson live; log "Sendung startet (Block ${BLOCK_S}s)"
+    LEFT=$(block_left); T0=$(date +%s)
+    snap "$LEFT"; runjson live; log "Sendung startet (noch ${LEFT}s im Block)"
     if [ "$VERT" = 1 ]; then
       # ein Bildschirm, zwei Ausschnitte: links 16:9, rechts 9:16 → zwei Sendungen (YouTube „In zwei Formaten streamen“)
       ffmpeg -y -hide_banner -loglevel error -nostats -progress "$DATA_DIR/progress.txt" "${IN[@]}" \
         -filter_complex "[0:v]split=3[a][b][c];[a]crop=${RW}:${RH}:0:0[h];[b]crop=720:1280:${RW}:0[v];[c]crop=${RW}:${RH}:0:0,fps=1/10,scale=640:-2[s]" \
-        -map "[h]" -map 1:a -t "$BLOCK_S" "${ENC[@]}" -f flv "rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}" \
-        -map "[v]" -map 1:a -t "$BLOCK_S" "${ENC[@]}" -f flv "rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY_V}" \
-        -map "[s]" -t "$BLOCK_S" -update 1 -q:v 4 "$DATA_DIR/snap.jpg" 2>>"$DATA_DIR/ffmpeg.err"
+        -map "[h]" -map 1:a -t "$LEFT" "${ENC[@]}" -f flv "rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}" \
+        -map "[v]" -map 1:a -t "$LEFT" "${ENC[@]}" -f flv "rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY_V}" \
+        -map "[s]" -t "$LEFT" -update 1 -q:v 4 "$DATA_DIR/snap.jpg" 2>>"$DATA_DIR/ffmpeg.err"
     else
-      ffmpeg -y -hide_banner -loglevel error -nostats -progress "$DATA_DIR/progress.txt" "${IN[@]}" -t "$BLOCK_S" \
+      ffmpeg -y -hide_banner -loglevel error -nostats -progress "$DATA_DIR/progress.txt" "${IN[@]}" -t "$LEFT" \
         -map 0:v -map 1:a "${ENC[@]}" -f flv "rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}" "${SNAP[@]}" 2>>"$DATA_DIR/ffmpeg.err"
     fi
-    log "Sendung beendet (Exit $?), Pause ${PAUSE_S}s"; sleep "$PAUSE_S"
+    RC=$?; if [ $(( $(date +%s)-T0 )) -lt $((LEFT-60)) ]; then log "Sendung abgebrochen (Exit $RC), sofort neu verbinden"; sleep "$RETRY_S"
+    else log "Block zu Ende (Exit $RC), Pause ${PAUSE_S}s"; sleep "$PAUSE_S"; fi
   else
     snap 3600; runjson test "kein STREAM_KEY: Testclips"; log "Testmodus"
     ffmpeg -y -hide_banner -loglevel error -nostats -progress "$DATA_DIR/progress.txt" "${IN[@]}" -t 3600 \
