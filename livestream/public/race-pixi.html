@@ -371,7 +371,8 @@ function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s
 const musicBus = AC.createGain(); musicBus.connect(master); const MUSIC_VOL = 0.75;
 function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, dnb}; d.g.gain.value = 0;
   AC.createMediaElementSource(d.a).connect(d.g); d.g.connect(musicBus);
-  d.a.onended = ()=>playNext(d); d.a.onerror = ()=>setTimeout(()=>playNext(d), 3000); return d }
+  d.a.onended = ()=>playNext(d); d.a.onerror = ()=>{ lastFetch = 0; setTimeout(()=>playNext(d), 1000) };   // Datei fehlt (Musiktausch) → Liste sofort neu holen
+  d.a.onplaying = ()=>{ const n = songTitle(decodeURIComponent(d.a.src.split('/').pop())); if(n!==nowPlaying){ nowPlaying = n; nowAt = Date.now(); if(phase && phase!=='loading') toast(`🎵 Now playing: ${n}`,'#f9a8d4',200) } }; return d }
 let nowPlaying = '', nowAt = 0;
 const songTitle = f => f.replace(/\.(mp3|ogg)$/,'').replace(/^summer-\d+-/,'').split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
 const DECK = {calm:deck(false), dnb:deck(true)}; let musicMode = 'calm', lastFetch = 0;
@@ -389,7 +390,7 @@ async function playNext(d, seek){
   if(!l.length){ lastFetch = 0; setTimeout(()=>playNext(d), 30000); return }
   if(d.i >= l.length){ shuffle(l); d.i = 0 }
   const file = l[d.i++ % l.length]; d.a.src = '/music/'+encodeURIComponent(file);
-  nowPlaying = songTitle(file); nowAt = Date.now(); if(phase && phase!=='loading') toast(`🎵 Now playing: ${nowPlaying}`,'#f9a8d4',200);
+
   if(seek) d.a.addEventListener('loadedmetadata', ()=>{ if(d.a.duration>40) d.a.currentTime = d.a.duration*(0.1+Math.random()*0.5) }, {once:true}); if(musicMode===(d.dnb?'dnb':'calm')) d.a.play().catch(()=>setTimeout(()=>playNext(d), 3000)) }
 const musicWant = ()=>'calm';   // Summer Radio (Niklas 07.10.): eine durchgehende Linie, Lieder laufen ganz durch
 function setMusic(mode){ if(mode===musicMode) return; const from = DECK[musicMode], to = DECK[mode]; musicMode = mode;
