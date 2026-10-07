@@ -1,7 +1,7 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Country Marble Race LIVE</title>
 <style>html,body{margin:0;background:#0b0f1e;overflow:hidden;cursor:none}canvas{display:block;position:absolute;top:0;left:0}</style>
-<script src="/matter.min.js"></script><script src="/countries.js"></script>
+<script src="/matter.min.js"></script><script src="/pixi.min.js"></script><script src="/countries.js"></script>
 </head><body><canvas id="c" width="1920" height="1080"></canvas>
 <script>
 // Länder-Kugelrennen LIVE. Physik: Matter.js (fester 60-Hz-Takt), Darstellung: eigenes Canvas, Ton: WebAudio.
@@ -214,7 +214,7 @@ function step(){
   for(const s of spinners) Body.setAngle(s, s.angle+s.spin);
   if(phase==='countdown'){
     if(phaseT%60===0 && phaseT<START_WAIT) sfx.beep(phaseT>=START_WAIT-60?880:440);
-    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go();
+    if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go(); for(let x=50;x<TW;x+=44) fx.burst(x,300,'#fde047',6,4);
       for(const b of balls) if(b.players.length && carry[b.players[0]]){ b.charge=Math.min(3,(b.charge||0)+carry[b.players[0]]); delete carry[b.players[0]]; b.startPush=true } goAt=performance.now(); leadTimes=[]; say([raceNo%2?'off':'here-we-go'],2); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
   }
   Engine.update(engine, 1000/60);
@@ -224,8 +224,8 @@ function step(){
     if(chaos.id==='quake' && t%(60*4)===0){ for(const b of run) Body.setVelocity(b,{x:b.velocity.x+(Math.random()-0.5)*14, y:b.velocity.y-Math.random()*4}); sfx.quake(); say(['quake']); toast('🌋 EARTHQUAKE!','#c084fc',90) }
     if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; sfx.boost() } }
   if(phase==='race'){ const tb=assist(balls, t, finished.length);
-    if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
-    for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]; if(z.type==='speed') sfx.boost();
+    if(tb){ sfx.turbo(); fx.burst(tb.position.x,tb.position.y,'#fb923c',34,9); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
+    for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]; if(z.type==='speed') sfx.boost(); fx.burst(b.position.x,b.position.y,Z.col,22,6);
       if(b.players.length) toast(`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
   if(phase==='race') for(const b of balls){ if(b.done || !(b.charge>0) || !b.players.length) continue;
     b.chargeCd=(b.chargeCd||0)-1; if(b.chargeCd>0) continue;
@@ -240,7 +240,7 @@ function step(){
     if(b.done) continue;
     if(b.position.y>FINISH_Y){
       b.done=true; b.ft=t; endFx(b); finished.push(b); const k=finished.length; if(k===1) winAt=t;
-      if(k<=3) sfx.finish(k);
+      if(k<=3){ sfx.finish(k); fx.burst(b.position.x,FINISH_Y,['#ffd700','#d1d5db','#cd7f32'][k-1],30,8) } if(k===1) fx.firework(TW/2,FINISH_Y);
       if(b.players.length && phase==='race') { b.pts=ptsFor(k); toast(`🏁 ${b.flag} ${b.players[0]} #${k}/${balls.length}  +${b.pts} pts`, k<=3?'#4ade80':'#e2e8f0') }   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
@@ -248,7 +248,7 @@ function step(){
     if(b.position.x<-20 || b.position.x>TW+20 || b.position.y<-400){ Body.setPosition(b,{x:Math.min(Math.max(b.position.x,R+30),TW-R-30), y:Math.max(b.position.y,40)}); Body.setVelocity(b,{x:0,y:2}) }   // aus der Bahn gesprungen (selten, Flummi) → zurück
   }
   if(phase==='race' && t>60*3 && t%15===0){ const l=ranking()[0];
-    if(l && l!==leader){ if(leader){ leadTimes.push(t); if(l.players.length) toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead();   // Flummi: viele Wechsel → Meldung höchstens alle 4 s (außer Spieler-Kugeln)
+    if(l && l!==leader){ if(leader){ leadTimes.push(t); fx.burst(l.position.x,l.position.y,'#fde047',20,6); if(l.players.length) toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:''), '#fde047', 150); sfx.lead();   // Flummi: viele Wechsel → Meldung höchstens alle 4 s (außer Spieler-Kugeln)
         say([(comebackRank[l.id]||0)>=6 ? 'comeback' : Math.random()<0.5 ? 'new-leader' : 'change-top']) } leader=l } }
   // Sprecher: Ränge von vor ein paar Sekunden (für „What a comeback!“), Zielgerade, Sieger
   if(phase==='race' && t%240===0){ comebackRank={}; ranking().forEach((b,i)=>comebackRank[b.id]=i) }
@@ -275,7 +275,7 @@ function boost(b, user, why){
   // jeder weitere Schub derselben Kugel im Rennen wirkt schwächer (große Fan-Gruppen gewinnen nicht automatisch)
   b.boosts=(b.boosts||0)+1; const dv=Math.max(1.5, 7*Math.pow(0.8, b.boosts-1))*(chaos&&chaos.id==='rocket'?1.5:1);
   Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+dv,17)});
-  b.boostT=45;
+  b.boostT=45; fx.burst(b.position.x,b.position.y,'#22d3ee',36,9);
   toast(why==='start'?`🚀 ${user}'s saved boost: START PUSH!`:why==='stuck'?`⚡ ${user}'s boost frees ${b.flag} ${b.name}!`:`⚡ ${user}'s boost fires on the final stretch!`, '#22d3ee', 120); sfx.boost();
 }
 function toast(s, col='#fde047', life=240){ toasts.push({s,col,t:0,life}); if(toasts.length>2) toasts.shift() }
@@ -350,7 +350,8 @@ const sfx = {
   fanfare:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i===3?0.8:0.18,'square',0.22,i*0.14)),
 };
 setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
-function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(s&&s.peg) sfx.plink(s.position.y) } }
+function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(!s) continue; if(s.peg) sfx.plink(s.position.y);
+    if(s.peg||s.spin){ const b=s===p.bodyA?p.bodyB:p.bodyA; if(b.speed>2.5) fx.spark((b.position.x*2+s.position.x)/3, (b.position.y*2+s.position.y)/3, s.col, 7, s.position.x, s.position.y, s.peg?s.circleRadius:0) } } }
 // Musik (Dateien in /var/lib/marble/music), leiser unter den Effekten. Zwei Decks:
 // ruhig = mitsummbare Chiptune + Pixel-Klassiker, dnb = Pixel-DnB nur wenn es um etwas geht (Chaos-Rennen, letzte 5 Minuten der Stunde).
 // Beim Wechsel wird übergeblendet und das andere Deck pausiert, das unterbrochene Stück läuft danach an derselben Stelle weiter.
@@ -497,6 +498,14 @@ function draw(){
     ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
     txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true); ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
+  if(fx.on){ if(phase==='race') rank.filter(b=>!b.done).slice(0,3).forEach((b,i)=>{ if(b.speed>1.2) for(let j=0;j<(i?1:2);j++) fx.glow(b.position.x+(Math.random()-0.5)*8, b.position.y+(Math.random()-0.5)*8, ['#ffd700','#e2e8f0','#f59e0b'][i], 52-i*12, 0.7-i*0.12, 20-i*3) });
+    for(const b of balls){ if(b.done) continue;
+      if(b.players.length) fx.glow(b.position.x,b.position.y,'#fde047',118+10*Math.sin(Date.now()/260),0.42);   // die Kugel eines Zuschauers leuchtet (pulsierend)
+      if(b.turboT>0) for(let j=0;j<4;j++) fx.glow(b.position.x+(Math.random()-0.5)*16, b.position.y-10, j?'#fb923c':'#fde047', 40, 0.85, 14, -3-Math.random()*4);
+      if(b.fxT>0 && Math.random()<0.5) fx.glow(b.position.x+(Math.random()-0.5)*20, b.position.y+(Math.random()-0.5)*20, ZONES[b.fx].col, 22, 0.8, 10, -0.8);
+      if(b.crown && phase==='race' && Math.random()<0.5) fx.glow(b.position.x+(Math.random()-0.5)*34, b.position.y-b.circleRadius-14+(Math.random()-0.5)*16, '#ffffff', 16, 0.95, 9, -0.7) }
+    if(phase==='podium' && phaseT<60*5 && phaseT%40===1) fx.firework(TW/2, camY+FX_TOP+520);   // Siegerehrung: Feuerwerk über dem Sieger
+    fx.frame(camY) }
   drawColumn(rank); drawLeft(); drawRight(rank);
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
@@ -642,6 +651,43 @@ function confetti(n){ const cols=PAL===PALETTES[1]?['#ffc8dd','#7fd1e8','#ffd166
 function drawConfetti(){ if(!conf.length) return; ctx.save(); ctx.beginPath(); ctx.rect(CX,378,CW,H-378); ctx.clip();
   for(const p of conf){ p.x+=p.vx+Math.sin(p.a)*0.6; p.y+=p.vy; p.a+=p.va; ctx.fillStyle=p.c; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); ctx.restore() }
   ctx.restore(); conf=conf.filter(p=>p.y<H+20) }
+
+// ---------- Effektschicht (PixiJS/WebGL): Funken, Lichtschweife, Stoßwellen, Feuerwerk ----------
+// Eigene durchsichtige Leinwand über der Bahn in der Mittelspalte (unter der Statuszeile); das Spiel darunter bleibt Canvas 2D.
+// Additives Licht, deshalb leuchtet es, ohne das Bild zuzudecken. Ohne WebGL oder ohne pixi.min.js gibt es die Schicht einfach nicht (?nofx schaltet sie ab).
+const FX_TOP = 378, hex = c => typeof c==='number' ? c : parseInt(String(c).slice(1,7),16);
+const fx = (()=>{
+  const off = {spark(){}, burst(){}, firework(){}, glow(){}, frame(){}, on:false};
+  if(!window.PIXI || Q.has('nofx')) return off;
+  let app;
+  try{ const el=document.createElement('canvas'); el.style.cssText=`position:absolute;left:${CX*SC}px;top:${FX_TOP*SC}px;pointer-events:none`;
+    app=new PIXI.Application({view:el, width:Math.round(CW*SC), height:Math.round((H-FX_TOP)*SC), backgroundAlpha:0, antialias:false, autoStart:false, powerPreference:'high-performance'});
+    document.body.appendChild(el) }catch(e){ return off }
+  const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'), gr=g.createRadialGradient(32,32,0,32,32,32);   // weicher Lichtpunkt
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.3,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64);
+  const tex=PIXI.Texture.from(c), world=new PIXI.Container(); world.scale.set(SC); app.stage.addChild(world);
+  const layer=new PIXI.ParticleContainer(2600,{position:true,scale:true,alpha:true,tint:true}); layer.blendMode=PIXI.BLEND_MODES.ADD; world.addChild(layer);
+  const P=[], pool=[]; let budget=0, cam=0;
+  const seen = y => y>cam+FX_TOP-60 && y<cam+H+60;
+  function add(x,y,vx,vy,life,size,col,grav=0,drag=0.96,a=1){ if(P.length>2400) return;
+    const s=pool.pop()||new PIXI.Sprite(tex); s.anchor.set(0.5); s.tint=col; s.position.set(x,y); s.alpha=a; s.scale.set(size/64);
+    s.q={vx,vy,life,max:life,size,grav,drag,a}; layer.addChild(s); P.push(s) }
+  return { on:true,
+    spark(x,y,col,n=7,px,py,pr){ if(budget<=0 || !seen(y)) return; budget--; col=hex(col);
+      if(pr) add(px,py,0,0,9,pr*7,col,0,1,0.9);   // der getroffene Stift leuchtet kurz auf (Flipper-Gefühl)
+      for(let i=0;i<n;i++){ const a=Math.random()*6.283, v=2.5+Math.random()*6; add(x,y,Math.cos(a)*v,Math.sin(a)*v-1.5,12+Math.random()*14,20+Math.random()*22,i>1?col:0xffffff,0.35) } },
+    burst(x,y,col,n=28,v=7){ if(!seen(y)) return; col=hex(col); add(x,y,0,0,10,240,col,0,1,0.9); add(x,y,0,0,6,120,0xffffff,0,1,0.9);
+      for(let i=0;i<n;i++){ const a=i/n*6.283+Math.random()*0.2, sp=v*(0.6+Math.random()*0.7); add(x,y,Math.cos(a)*sp,Math.sin(a)*sp,18+Math.random()*16,24+Math.random()*22,i%4?col:0xffffff,0.12) } },
+    firework(x,y){ const cols=[0xfde047,0xf87171,0x22d3ee,0xf9a8d4,0x86efac];
+      for(let k=0;k<7;k++) setTimeout(()=>{ const bx=60+Math.random()*(TW-120), by=y-120-Math.random()*380, cl=cols[k%5]; add(bx,by,0,0,12,340,cl,0,1,0.8);
+        for(let i=0;i<60;i++){ const a=i/60*6.283, sp=4+Math.random()*8; add(bx,by,Math.cos(a)*sp,Math.sin(a)*sp,34+Math.random()*26,24+Math.random()*20,i%5?cl:0xffffff,0.16,0.955) } }, k*150) },
+    glow(x,y,col,size,a=0.5,life=2,vy=0){ if(seen(y)) add(x,y,0,vy,life,size,hex(col),0,1,a) },
+    frame(camY){ cam=camY; budget=22;
+      if(Math.random()<0.5) add(30+Math.random()*(TW-60), camY+FX_TOP+Math.random()*(H-FX_TOP), (Math.random()-0.5)*0.3, -0.25-Math.random()*0.3, 70+Math.random()*60, 8+Math.random()*10, 0x93c5fd, 0, 1, 0.35);   // schwebender Staub
+      for(let i=P.length-1;i>=0;i--){ const s=P[i], q=s.q; q.life--; if(q.life<=0){ layer.removeChild(s); pool.push(s); P[i]=P[P.length-1]; P.pop(); continue }
+        q.vy+=q.grav; q.vx*=q.drag; q.vy*=q.drag; s.x+=q.vx; s.y+=q.vy; const k=q.life/q.max; s.alpha=q.a*k; s.scale.set(q.size*(0.45+0.55*k)/64) }
+      world.y=-(camY+FX_TOP)*SC; app.render() } };
+})();
 
 // ---------- Takt ----------
 let acc=0, last=performance.now(), lastDraw=0, fpsN=0, fpsT=last; window.fps=0;

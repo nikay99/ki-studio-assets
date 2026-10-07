@@ -196,6 +196,7 @@ http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/') return file(res, path.join(PUB, 'race.html'));
   if (u.pathname === '/matter.min.js') return file(res, require.resolve('matter-js/build/matter.min.js'));
+  if (u.pathname === '/pixi.min.js') { try { return file(res, path.join(path.dirname(require.resolve('pixi.js')), '..', 'dist', 'pixi.min.js')); } catch { return send(res, 404, 'not found', 'text/plain'); } }   // Effektschicht; fehlt das Paket, läuft das Spiel ohne Effekte
   if (u.pathname === '/api/version') return send(res, 200, { v: VERSION });
   if (u.pathname === '/api/lineup') return send(res, 200, lineup());
   if (u.pathname === '/api/joined') return send(res, 200, joined);
