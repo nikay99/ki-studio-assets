@@ -12,6 +12,7 @@ echo 'DPkg::Lock::Timeout "900";' > /etc/apt/apt.conf.d/99marble-lock
 APT="apt-get -o DPkg::Lock::Timeout=900 -y -q"
 $APT update
 $APT install --no-install-recommends vainfo intel-media-va-driver-non-free || $APT install --no-install-recommends vainfo intel-media-va-driver || true
+$APT install --no-install-recommends sway xwayland libegl1 libgles2 x11-utils || true   # Bildschirm auf der Intel-Grafik (run.sh, sonst Xvfb)
 $APT install --no-install-recommends xvfb pulseaudio pulseaudio-utils ffmpeg git curl ca-certificates \
   fonts-noto-color-emoji fonts-dejavu-core unattended-upgrades
 # Chrome (offizielles .deb, kein Snap)

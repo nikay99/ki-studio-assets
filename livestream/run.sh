@@ -25,14 +25,30 @@ log "Kodierung: $HW"
 cleanup(){ pkill -P $$ 2>/dev/null; kill $(jobs -p) 2>/dev/null; }
 trap cleanup EXIT
 
-rm -f /tmp/.X99-lock
-Xvfb :99 -screen 0 ${SW}x${SH}x24 -nolisten tcp >/dev/null 2>&1 &
+# Bildschirm: wenn möglich auf der Intel-Grafik (sway ohne Monitor + Xwayland als :99) – dann rechnet Chrome auf der GPU
+# (halbe Renderer-Last, WebGL möglich). Klappt das nicht, wie bisher Xvfb (reiner Software-Bildschirm). GPU_DISPLAY=0 schaltet es ab.
+rm -f /tmp/.X99-lock; GPU_X=0
+if [ "${GPU_DISPLAY:-1}" = 1 ] && [ -e /dev/dri/renderD128 ] && command -v sway >/dev/null && command -v Xwayland >/dev/null; then
+  rm -f "$XDG_RUNTIME_DIR"/wayland-*
+  printf 'output HEADLESS-1 resolution %sx%s position 0 0 bg #000000 solid_color\nxwayland disable\n' "$SW" "$SH" > "$XDG_RUNTIME_DIR/sway.conf"
+  WLR_BACKENDS=headless WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128 WLR_LIBINPUT_NO_DEVICES=1 sway -c "$XDG_RUNTIME_DIR/sway.conf" >/dev/null 2>&1 &
+  SWAY_PID=$!
+  for i in $(seq 1 20); do WL=$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -E '^wayland-[0-9]+$' | head -1); [ -n "$WL" ] && break; sleep 0.5; done
+  if [ -n "${WL:-}" ]; then
+    WAYLAND_DISPLAY="$WL" Xwayland :99 -noreset -nolisten tcp >/dev/null 2>&1 &
+    XWL_PID=$!
+    for i in $(seq 1 20); do xdpyinfo -display :99 2>/dev/null | grep -q "dimensions: *${SW}x${SH} " && { GPU_X=1; break; }; sleep 0.5; done
+  fi
+  [ "$GPU_X" = 1 ] || { kill ${XWL_PID:-} $SWAY_PID 2>/dev/null; rm -f /tmp/.X99-lock /tmp/.X11-unix/X99; }
+fi
+[ "$GPU_X" = 1 ] || Xvfb :99 -screen 0 ${SW}x${SH}x24 -nolisten tcp >/dev/null 2>&1 &
+log "Bildschirm: $([ "$GPU_X" = 1 ] && echo 'Intel-Grafik (sway + Xwayland)' || echo 'Xvfb (Software)')"
 pulseaudio --daemonize=no --exit-idle-time=-1 --log-target=stderr >/dev/null 2>&1 &
 sleep 2
 pactl load-module module-null-sink sink_name=race sink_properties=device.description=race >/dev/null
 pactl set-default-sink race
 
-# Rennseite: Chrome im Kiosk-Modus (Software-Rendering reicht für 2D-Canvas)
+# Rennseite: Chrome im Kiosk-Modus (auf dem GPU-Bildschirm mit Grafikkarte, auf Xvfb in Software)
 start_chrome(){
   "$CHROME" --no-first-run --no-default-browser-check --disable-infobars --kiosk --window-position=0,0 --window-size=${SW},${SH} \
     --autoplay-policy=no-user-gesture-required --disable-background-timer-throttling --disable-renderer-backgrounding \
