@@ -199,7 +199,8 @@ function body(req) { return new Promise(r => { let d = ''; req.on('data', c => d
 
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
-  if (u.pathname === '/') return file(res, path.join(PUB, 'race.html'));
+  // Pixi-Fassung live (Niklas 07.10. „live“): Effekte, Zoom-Kamera, Bots. Zurück zur alten Seite: Datei livestream/CLASSIC oder CLASSIC=1
+  if (u.pathname === '/') return file(res, path.join(PUB, process.env.CLASSIC === '1' || fs.existsSync(path.join(__dirname, 'CLASSIC')) ? 'race.html' : 'race-pixi.html'));
   if (u.pathname === '/matter.min.js') return file(res, require.resolve('matter-js/build/matter.min.js'));
   if (u.pathname === '/api/version') return send(res, 200, { v: VERSION });
   if (u.pathname === '/api/lineup') return send(res, 200, lineup());
