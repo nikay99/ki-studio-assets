@@ -159,6 +159,8 @@ const DEFAULT_POOL = ['US','GB','DE','AT','FR','IT','ES','NL','PL','UA','TR','BR
 // Aufstellung (Niklas 06.10.): jeder Spieler fährt eine EIGENE Kugel seiner Nation (höchstens 6 pro Nation, 48 insgesamt),
 // der Rest wird mit Haus-Kugeln (je ein Land, ohne Spieler) auf n aufgefüllt – das Feld ist nie leer.
 const PER_NATION = 6, MAX_BALLS = 48;
+const BOTS = ['Robo-Rita', 'CPU-Carl', 'Byte-Bob'];   // Favoritin, Angeber, Pechvogel; Schalter: Datei livestream/NOBOTS oder BOTS=0
+const botsOn = () => process.env.BOTS !== '0' && !fs.existsSync(path.join(__dirname, 'NOBOTS'));
 function lineup(n = 30) {
   const cutoff = Date.now() - ACTIVE_MS, perCode = new Map(), out = [];
   for (const [user, p] of [...picks.entries()].sort((a, b) => b[1].ts - a[1].ts)) {
@@ -170,6 +172,9 @@ function lineup(n = 30) {
   }
   const pool = DEFAULT_POOL.filter(c => !perCode.has(c));
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  // Haus-Bots (Niklas 07.10.): offen als Bots erkennbar (🤖), machen Platz für echte Spieler, zählen nie in Spieler-Wertungen
+  const nb = !botsOn() ? 0 : out.length === 0 ? 3 : out.length <= 2 ? 2 : out.length <= 4 ? 1 : 0;
+  for (const b of BOTS.slice(0, nb)) if (pool.length) out.push({ code: pool.shift(), players: [], bot: b });
   while (out.length < n && pool.length) out.push({ code: pool.shift(), players: [] });
   return out;
 }
@@ -214,7 +219,7 @@ http.createServer(async (req, res) => {
     st.best = st.best || {}; st.points = st.points || {}; const best = {};
     const total = Math.min(MAX_BALLS, Math.max(1, Number(r.total) || 0));
     for (const x of (r.places || []).slice(0, MAX_BALLS)) if (x && typeof x.user === 'string' && x.place > 0) {
-      const pts = Math.max(1, total - x.place + 1) * k; st.points[x.user] = (st.points[x.user] || 0) + pts;
+      const pts = Math.max(1, total - x.place + 1) * k + (x.beatBots ? 10 : 0); st.points[x.user] = (st.points[x.user] || 0) + pts;
       const old = st.best[x.user]; best[x.user] = { place: x.place, best: old || null, record: !old || x.place < old, pts, points: st.points[x.user] };
       if (!old || x.place < old) st.best[x.user] = x.place;
     }

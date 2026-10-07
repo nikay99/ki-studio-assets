@@ -103,7 +103,7 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
     L.s.x = L.x; L.s.y = L.y; L.s.width = L.s.height = L.r * 2; L.s.tint = cols[L.k];
     L.s.alpha = 0.03 + 0.05 * (1 + Math.sin(now * L.sp * 0.06 + L.ph)) / 2;
   }
-  world.y = -st.camY;
+  const Z = st.camZ || 1; world.scale.set(Z); world.x = -(st.camX || 0) * Z; world.y = -st.camY * Z;   // Kamera mit Zoom
   // Leistungs-Sicherung: läuft die Darstellung länger zu langsam (< 24 Bilder/s), Leuchten abschalten
   const dt = now - frameT; frameT = now; if (bloom && glowC.filters && !/noguard/.test(location.search)) { slowN = dt > 42 ? slowN + 1 : Math.max(0, slowN - 2); if (slowN > 150) { glowC.filters = null; console.log('Pixi: Leuchten aus (zu langsam)') } }
   beamList.forEach(B => { const a = Math.sin(now / 3200 + B.ph) * 0.35; B.s.x = B.x; B.s.y = -40; B.s.rotation = a; B.s.width = 260; B.s.height = PX.H * 1.25; B.s.tint = cols[B.k]; B.s.alpha = 0.07 });
@@ -113,7 +113,7 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
     const v = s.vertices; dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col));
   }
   // Kugeln, Schatten und Lichtspuren
-  const vis = st.balls.filter(b => b.position.y > st.camY - 60 && b.position.y < st.camY + PX.H + 60);
+  const vis = st.balls.filter(b => b.position.y > st.camY - 60 && b.position.y < st.camY + PX.H / Z + 60);
   const top = new Map(st.phase === 'race' ? st.rank.slice(0, 3).map((b, i) => [b, [0xffd700, 0xe5e7eb, 0xcd7f32][i]]) : []);
   while (ballsC.children.length < vis.length) { const s = new PIXI.Sprite(); s.anchor.set(0.5); ballsC.addChild(s) }
   while (shadows.children.length < vis.length) { const s = new PIXI.Sprite(dotTex); s.anchor.set(0.5); s.tint = 0x000000; shadows.addChild(s) }
