@@ -34,6 +34,7 @@ let PAL = PALETTES[0];
 // Regeln: Abstand zur Wand und zwischen Hindernissen ≥ 2 Kugeldurchmesser, sonst klemmen Kugeln.
 const MODULES = {
   pegs(T,y){ const sp=56+Math.floor(rand()*16), rows=7+Math.floor(rand()*4), r=6+rand()*4, off=rand()*sp;
+    T.noses(y+40+(sp+28)/2, y+rows*(sp+28), 2*(sp+28));
     for(let i=0;i<rows;i++) for(let x=off+(i%2?sp/2:0);x<TW;x+=sp) if(x>=90&&x<=TW-90) T.peg(x,y+40+i*(sp+28),r,PAL.peg);
     return rows*(sp+28)+80 },
   zigzag(T,y){ const n=4+Math.floor(rand()*3), gap=220+rand()*60, ang=0.13+rand()*0.08, first=rand()<0.5;
@@ -41,8 +42,10 @@ const MODULES = {
     return n*gap+120 },
   paddles(T,y){ const rows=2+Math.floor(rand()*2), v=0.02+rand()*0.02;
     for(let i=0;i<rows;i++) for(let j=0;j<2;j++) T.spin(j?TW-180:180,y+120+i*290,200+rand()*20,18,((i+j)%2?1:-1)*(v+0.008*i),PAL.paddle);
+    T.noses(y+265, y+rows*290, 290);
     return rows*290+120 },
   bumpers(T,y){ const rows=4+Math.floor(rand()*2), cols=4, dx=150;
+    T.noses(y+160, y+rows*160, 320);
     for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const x=120+c*dx+(r%2?75:0); if(x>=110&&x<=TW-110) T.peg(x,y+80+r*160,20+rand()*7,PAL.bump) }
     return rows*160+120 },
   funnel(T,y){ const g=200+rand()*40, w=(TW-80-g)/2, a=0.55+rand()*0.1, cx=TW/2+(rand()-0.5)*120;
@@ -51,7 +54,13 @@ const MODULES = {
   windmill(T,y){ const two=rand()<0.5, v=(rand()<0.5?1:-1)*(0.04+rand()*0.02);
     const xs=two?[TW/2-150,TW/2+150]:[TW/2];
     for(const x of xs){ T.spin(x,y+200,two?200:300,18,v,PAL.paddle); T.spin(x,y+200,two?200:300,18,v,PAL.paddle,Math.PI/2) }
+    T.noses(y+60, y+400, 170);
     return 440 },
+  // Schranke: zwei Hälften schließen im Takt, das Feld staut sich und startet eng beieinander neu (Niklas 08.10.)
+  barrier(T,y){ const open=150+Math.floor(rand()*60), shut=80+Math.floor(rand()*40), ph=Math.floor(rand()*(open+shut));
+    T.funnelIn(y+40);
+    for(const j of [0,1]) T.door(j?TW-46:46, y+220, 258, j?-1:1, open, shut, ph, PAL.paddle);
+    return 340 },
   slalom(T,y){ const n=4+Math.floor(rand()*3), gap=190+rand()*30;
     for(let i=0;i<n;i++){ const left=i%2===0; T.wall(left?40+140:TW-40-140,y+80+i*gap,300,22,left?0.32:-0.32,PAL.fun) }
     return n*gap+120 },
@@ -90,12 +99,26 @@ function zoneStep(bs){
     for(const z of zones) if(!((b.zHit||0)&(1<<z.id)) && b.position.x>z.x && b.position.x<z.x+z.w && b.position.y>z.y && b.position.y<z.y+z.h){ enterZone(b,z); hits.push([b,z]) } }
   return hits;
 }
+// Bewegliche Teile pro Takt: Paddel drehen, Schranken fahren (tt = Takt seit Rennstart)
+function moveParts(sp, tt){
+  for(const s of sp){ if(s.spin){ Body.setAngle(s, s.angle+s.spin); continue }
+    const d=s.slide; if(!d) continue;
+    const c=(tt+d.ph)%(d.open+d.shut), k=c<d.shut ? Math.max(0,1-c/15) : Math.min(1,(c-d.shut)/15);   // 0 = zu, 1 = offen (hängt an der Wand), 15 Takte Klappen
+    const th=d.dir*k*Math.PI/2, ph=(d.dir>0?0:Math.PI)+th;
+    Body.setAngle(s, th); Body.setPosition(s, {x:d.hx+Math.cos(ph)*d.len/2, y:d.hy+Math.sin(ph)*d.len/2}) }
+}
 function buildTrack(){
-  const S = [], sp = [];
+  const S = [], sp = [], N = [];
   const T = {
     wall:(x,y,w,h,a=0,col='#1e293b')=>{const b=Bodies.rectangle(x,y,w,h,{isStatic:true,angle:a,friction:0.02,restitution:0.3});b.col=col;S.push(b);return b},
-    peg:(x,y,r,col)=>{const b=Bodies.circle(x,y,r,{isStatic:true,restitution:0.7});b.col=col;b.peg=true;S.push(b)},
+    peg:(x,y,r,col)=>{ if(N.some(n=>Math.hypot(n[0]-x,n[1]-y)<95+r)) return;   // keine Stifte direkt unter/neben einer Nase, sonst klemmt die Kugel
+      const b=Bodies.circle(x,y,r,{isStatic:true,restitution:0.7});b.col=col;b.peg=true;S.push(b)},
     spin:(x,y,w,h,v,col,a0=0)=>{const b=Bodies.rectangle(x,y,w,h,{isStatic:true,restitution:0.4,angle:a0});b.col=col;b.spin=v;S.push(b);sp.push(b)},
+    // Wand-Nasen: kurze Keile direkt an der Wand, schubsen Randläufer zur Mitte (sonst fallen sie am Rand an Stiften vorbei)
+    noses:(y0,y1,step,left=rand()<0.5)=>{ for(let yy=y0;yy<y1;yy+=step){ const x=left?40+28:TW-40-28; T.wall(x,yy,72,16,left?0.6:-0.6,PAL.fun); N.push([x,yy]); left=!left } },
+    funnelIn:(yy)=>{ T.wall(40+50,yy,120,18,0.5,PAL.fun); T.wall(TW-40-50,yy,120,18,-0.5,PAL.fun) },
+    // Falltür: Scharnier an der Wand (dir 1 = links), klappt im Takt nach unten weg und wieder hoch
+    door:(hx,hy,len,dir,open,shut,ph,col)=>{const b=Bodies.rectangle(hx+dir*len/2,hy,len,18,{isStatic:true,restitution:0.3});b.col=col;b.slide={hx,hy,len,dir,open,shut,ph};S.push(b);sp.push(b)},
   };
   T.wall(20,WORLD_H/2,40,WORLD_H); T.wall(TW-20,WORLD_H/2,40,WORLD_H);
   // Startgitter (öffnet sich nach dem Countdown)
@@ -105,7 +128,8 @@ function buildTrack(){
   let y = START_Y + MODULES.pegs(T, START_Y), last='pegs', ramps=0;
   const RAMPS=['zigzag','flats','slalom'];   // höchstens 2 Rampen-Bausteine, sonst wird das Rennen zäh (Simulation)
   while(true){
-    const opts=keys.filter(k=>k!==last && !(ramps>=2 && RAMPS.includes(k))), k=opts[Math.floor(rand()*opts.length)];
+    const opts=keys.filter(k=>k!==last && k!=='barrier' && !(ramps>=2 && RAMPS.includes(k)) && !(last==='barrier' && (k==='flats'||k==='zigzag')));   // nach der Schranke sind die Kugeln langsam, flache Rampen würden sie stoppen
+    const k=!used.includes('barrier') && y>(START_Y+END_Y)/2 ? 'barrier' : opts[Math.floor(rand()*opts.length)];   // genau eine Schranke, etwa in der Streckenmitte
     if(RAMPS.includes(k)) ramps++;
     if(y + 800 > END_Y) break;
     const before=S.length, spBefore=sp.length, h=MODULES[k](T,y);
@@ -115,8 +139,10 @@ function buildTrack(){
   trackName = used.join(' · ');
   // Schluss (fest): feine Stifte, Trichter, Zielkanal
   for(let r=0;r<4;r++) for(let c=0;c<11;c++){const x=48+c*56+(r%2?28:0); if(x>=90&&x<=TW-90) T.peg(x,6950+r*80,6,PAL.peg)}
-  T.wall(150,7500,300,24,0.62,PAL.fun); T.wall(TW-150,7500,300,24,-0.62,PAL.fun);
-  T.wall(TW/2-46,7750,20,200,0,PAL.fun); T.wall(TW/2+46,7750,20,200,0,PAL.fun);
+  T.noses(6990, 7200, 160);
+  // Offener Zieleinlauf (Niklas 08.10.): statt Trichter + engem Kanal ein paar Bumper über die volle Breite, Ziellinie über die ganze Bahn
+  for(let r=0;r<3;r++) for(let c=0;c<4;c++){ const x=125+c*120+(r%2?60:0); if(x<=TW-110) T.peg(x,7380+r*150,16,PAL.bump) }
+  T.noses(7450, 7800, 150);
   T.wall(TW/2,WORLD_H-20,TW,40);
   placeZones();
   return [S,sp];
@@ -134,7 +160,7 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
     g.strokeStyle=Z.col; g.lineWidth=3; g.setLineDash([10,7]); g.strokeRect(z.x,z.y,z.w,z.h); g.setLineDash([]);
     g.font='700 22px "DejaVu Sans"'; g.fillStyle='#fff'; g.textAlign='center'; g.fillText(Z.name,z.x+z.w/2,z.y+z.h-14);
     g.font='40px "Noto Color Emoji"'; g.fillText(Z.icon,z.x+z.w/2,z.y+54); g.globalAlpha=1 }
-  for(const s of statics) if(!s.gate && !s.spin) drawBody(g,s);   // Paddel drehen sich, werden live gezeichnet
+  for(const s of statics) if(!s.gate && !s.spin && !s.slide) drawBody(g,s);   // Paddel und Schranken bewegen sich, werden live gezeichnet
 }
 
 function addBall(code, players, i, bot){
@@ -210,7 +236,7 @@ function step(){
   phaseT++;
   for(const o of toasts) o.t++;
   toasts = toasts.filter(o=>o.t<o.life);
-  for(const s of spinners) Body.setAngle(s, s.angle+s.spin);
+  moveParts(spinners, phase==='race' ? t : 0);
   if(phase==='countdown'){
     if(phaseT%60===0 && phaseT<START_WAIT) sfx.beep(phaseT>=START_WAIT-60?880:440);
     if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go();
