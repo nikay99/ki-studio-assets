@@ -56,6 +56,29 @@ const MODULES = {
     for(const x of xs){ T.spin(x,y+200,two?200:300,18,v,PAL.paddle); T.spin(x,y+200,two?200:300,18,v,PAL.paddle,Math.PI/2) }
     T.noses(y+60, y+400, 170);
     return 440 },
+  // Pendel-Hammer: schwingt quer über die Bahn und schlägt Kugeln zur Seite (Niklas 08.10.)
+  pendulum(T,y){ const L=230+rand()*40, amp=0.9+rand()*0.25, per=150+Math.floor(rand()*50), ph=Math.floor(rand()*per);
+    T.noses(y+120, y+420, 150);
+    T.pend(TW/2, y+30, L, amp, per, ph, PAL.paddle);
+    return L+150 },
+  // Trampolin: zwei federnde, leicht zur Mitte geneigte Matten werfen Kugeln wieder hoch
+  trampoline(T,y){ const a=0.26+rand()*0.06;
+    for(const j of [0,1]){ const b=T.wall(j?TW-40-95:40+95, y+160, 190, 16, j?-a:a, PAL.bump); b.restitution=1.0; b.tramp=true }
+    for(let r=0;r<2;r++) for(let c=0;c<3;c++) T.peg(TW/2-120+c*120+(r%2?60:0), y+330+r*110, 9, PAL.peg);
+    return 520 },
+  // Portal: wer in einen Ring rollt, kommt auf der anderen Bahnseite weiter unten wieder heraus
+  portal(T,y){ const x1=120+rand()*60, dy=260+rand()*80;
+    for(let r=0;r<2;r++) for(let c=0;c<5;c++){ const x=150+c*80+(r%2?40:0); if(x<=TW-110) T.peg(x, y+60+r*80, 7, PAL.peg) }
+    T.portal(x1, y+260, TW-x1, y+260+dy); T.portal(TW-x1, y+200, x1, y+200+dy);
+    return 300+dy },
+  // Weiche: Trennwand in der Mitte, eine Seite schnell aber eng (Drehkreuz), die andere langsam aber sicher (Stifte)
+  split(T,y){ const fast=rand()<0.5?0:1, L0=40, M=TW/2, H=480;
+    T.wall(M, y+60, 70, 70, Math.PI/4, PAL.fun);   // Spitze oben verteilt auf beide Seiten
+    T.wall(M, y+100+H/2, 18, H, 0, PAL.fun);
+    for(const side of [0,1]){ const cx=side?(M+TW-L0)/2:(L0+M)/2;
+      if(side===fast){ T.spin(cx, y+330, 150, 16, (side?-1:1)*0.05, PAL.paddle) }
+      else for(let r=0;r<4;r++) for(const dx of (r%2?[0]:[-55,55])) T.peg(cx+dx, y+180+r*90, 8, PAL.peg) }
+    return H+180 },
   // Schranke: zwei Hälften schließen im Takt, das Feld staut sich und startet eng beieinander neu (Niklas 08.10.)
   barrier(T,y){ const open=150+Math.floor(rand()*60), shut=80+Math.floor(rand()*40), ph=Math.floor(rand()*(open+shut));
     T.funnelIn(y+40);
@@ -77,7 +100,8 @@ const ZONES = {
   shrink: {icon:'🔻', name:'SHRINK', col:'#c084fc', dur:300},   // 5 s kleine Kugel (assist() skaliert), rutscht durch Engstellen
   bouncy: {icon:'🏀', name:'BOUNCE', col:'#f472b6', dur:210},   // 3,5 s Flummi
 };
-let zones = [];
+let zones = [], portals = [];
+const PORTAL = {icon:'🌀', name:'PORTAL', col:'#a78bfa'};
 function placeZones(){
   const types = shuffle(Object.keys(ZONES), rand), seg = (END_Y-START_Y-500)/3;
   zones = [0,1,2].map(i=>{ const w=170+rand()*70; return {type:types[i], x:50+rand()*(TW-100-w), y:START_Y+400+i*seg+rand()*(seg-140), w, h:110, id:i} });
@@ -96,6 +120,7 @@ function zoneStep(bs){
   const hits=[];
   for(const b of bs){ if(b.done) continue;
     if(b.fxT>0 && --b.fxT===0) endFx(b);
+    if(!b.ported) for(const p of portals) if(Math.hypot(b.position.x-p.x1,b.position.y-p.y1)<p.r){ b.ported=true; Body.setPosition(b,{x:p.x2,y:p.y2}); Body.setVelocity(b,{x:b.velocity.x*0.5,y:Math.max(b.velocity.y,2)}); hits.push([b,{type:'portal'}]); break }
     for(const z of zones) if(!((b.zHit||0)&(1<<z.id)) && b.position.x>z.x && b.position.x<z.x+z.w && b.position.y>z.y && b.position.y<z.y+z.h){ enterZone(b,z); hits.push([b,z]) } }
   return hits;
 }
@@ -103,12 +128,14 @@ function zoneStep(bs){
 function moveParts(sp, tt){
   for(const s of sp){ if(s.spin){ Body.setAngle(s, s.angle+s.spin); continue }
     const d=s.slide; if(!d) continue;
+    if(d.kind==='pend'){ const th=d.amp*Math.sin(2*Math.PI*(tt+d.ph)/d.per), dx=Math.sin(th), dy=Math.cos(th);
+      Body.setPosition(s, {x:d.px+dx*d.off, y:d.py+dy*d.off}); if(!s.circleRadius) Body.setAngle(s, Math.atan2(dy,dx)); continue }
     const c=(tt+d.ph)%(d.open+d.shut), k=c<d.shut ? Math.max(0,1-c/15) : Math.min(1,(c-d.shut)/15);   // 0 = zu, 1 = offen (hängt an der Wand), 15 Takte Klappen
     const th=d.dir*k*Math.PI/2, ph=(d.dir>0?0:Math.PI)+th;
     Body.setAngle(s, th); Body.setPosition(s, {x:d.hx+Math.cos(ph)*d.len/2, y:d.hy+Math.sin(ph)*d.len/2}) }
 }
 function buildTrack(){
-  const S = [], sp = [], N = [];
+  const S = [], sp = [], N = []; portals = [];
   const T = {
     wall:(x,y,w,h,a=0,col='#1e293b')=>{const b=Bodies.rectangle(x,y,w,h,{isStatic:true,angle:a,friction:0.02,restitution:0.3});b.col=col;S.push(b);return b},
     peg:(x,y,r,col)=>{ if(N.some(n=>Math.hypot(n[0]-x,n[1]-y)<95+r)) return;   // keine Stifte direkt unter/neben einer Nase, sonst klemmt die Kugel
@@ -118,6 +145,8 @@ function buildTrack(){
     noses:(y0,y1,step,left=rand()<0.5)=>{ for(let yy=y0;yy<y1;yy+=step){ const x=left?40+28:TW-40-28; T.wall(x,yy,72,16,left?0.6:-0.6,PAL.fun); N.push([x,yy]); left=!left } },
     funnelIn:(yy)=>{ T.wall(40+50,yy,120,18,0.5,PAL.fun); T.wall(TW-40-50,yy,120,18,-0.5,PAL.fun) },
     // Falltür: Scharnier an der Wand (dir 1 = links), klappt im Takt nach unten weg und wieder hoch
+    pend:(px,py,L,amp,per,ph,col)=>{ for(const [off,body] of [[L/2,Bodies.rectangle(px,py+L/2,L,16,{isStatic:true,restitution:0.5})],[L,Bodies.circle(px,py+L,30,{isStatic:true,restitution:0.9})]]){ body.col=col; body.slide={kind:'pend',px,py,off,amp,per,ph}; S.push(body); sp.push(body) } },
+    portal:(x1,y1,x2,y2)=>portals.push({x1,y1,x2,y2,r:34}),
     door:(hx,hy,len,dir,open,shut,ph,col)=>{const b=Bodies.rectangle(hx+dir*len/2,hy,len,18,{isStatic:true,restitution:0.3});b.col=col;b.slide={hx,hy,len,dir,open,shut,ph};S.push(b);sp.push(b)},
   };
   T.wall(20,WORLD_H/2,40,WORLD_H); T.wall(TW-20,WORLD_H/2,40,WORLD_H);
@@ -155,6 +184,10 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
   for(let y=0;y<WORLD_H;y+=120){g.beginPath();g.moveTo(0,y);g.lineTo(TW,y);g.stroke()}
   for(let i=0;i<13;i++){g.fillStyle=i%2?'#fff':'#111'; g.fillRect(i*48,FINISH_Y,48,14)}
   g.font='700 36px "DejaVu Sans"'; g.fillStyle='rgba(255,255,255,0.25)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-20);
+  for(const p of portals){ g.lineWidth=6; g.strokeStyle=PORTAL.col; g.globalAlpha=0.9;
+    g.beginPath(); g.arc(p.x1,p.y1,p.r,0,7); g.stroke(); g.globalAlpha=0.25; g.fillStyle=PORTAL.col; g.fill();
+    g.globalAlpha=0.6; g.setLineDash([8,6]); g.beginPath(); g.arc(p.x2,p.y2,p.r-6,0,7); g.stroke(); g.setLineDash([]); g.globalAlpha=1;
+    g.font='34px "Noto Color Emoji"'; g.textAlign='center'; g.fillText('🌀',p.x1,p.y1+12) }
   for(const z of zones){ const Z=ZONES[z.type];
     g.globalAlpha=0.22; g.fillStyle=Z.col; g.fillRect(z.x,z.y,z.w,z.h); g.globalAlpha=0.9;
     g.strokeStyle=Z.col; g.lineWidth=3; g.setLineDash([10,7]); g.strokeRect(z.x,z.y,z.w,z.h); g.setLineDash([]);
@@ -250,7 +283,7 @@ function step(){
     if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; sfx.boost() } }
   if(phase==='race'){ const tb=assist(balls, t, finished.length);
     if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
-    for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]; if(z.type==='speed') sfx.boost();
+    for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]||PORTAL; if(z.type==='speed') sfx.boost();
       if(b.players.length) toast(`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
   if(phase==='race') for(const b of balls){ if(b.done || !(b.charge>0) || !b.players.length) continue;
     b.chargeCd=(b.chargeCd||0)-1; if(b.chargeCd>0) continue;
