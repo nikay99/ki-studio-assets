@@ -109,7 +109,7 @@ function placeZones(){
 // Feld betreten: Wirkung starten (jede Kugel löst jedes Feld höchstens einmal aus).
 function enterZone(b, z){
   b.zHit=(b.zHit||0)|(1<<z.id); endFx(b);
-  if(z.type==='speed'){ Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45 }
+  if(z.type==='speed'){ Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; b.boostBy=null }
   else { b.fx=z.type; b.fxT=ZONES[z.type].dur;
     if(z.type==='mud') Body.setVelocity(b,{x:b.velocity.x*0.25, y:b.velocity.y*0.25});
     if(z.type==='bouncy'){ b.rest0=b.restitution; b.restitution=0.95 } }
@@ -243,6 +243,8 @@ function assist(bs, tt, nFin){
     const want = (b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1)*(b.fx==='shrink'?0.7:1), cur=b.circleRadius/R;
     if(Math.abs(want-cur)>0.005){ const f=Math.min(Math.max(want/cur,0.992),1.008); Body.scale(b,f,f) }
     if(b.turboT>0){ b.turboT--; b.frictionAir=0.001; b.force.y += b.mass*0.0011;   // ~85 % mehr Schwerkraft
+      if(b.velocity.y>17) Body.setVelocity(b,{x:b.velocity.x,y:17}) }
+    if(b.pushT>0){ b.pushT--; b.frictionAir=0.001; b.force.y += b.mass*0.0009;   // Boost-Nachschub ~0,7 s
       if(b.velocity.y>17) Body.setVelocity(b,{x:b.velocity.x,y:17}) } });   // gedeckelt, sonst tunnelt sie durch Stifte
   if(tt<60*4 || tt%TURBO_EVERY || nFin || run.length<6) return null;
   const lead=run[0], cand=run.slice(3).filter(b=>!b.hadTurbo && lead.position.y-b.position.y<620);   // 620 ≈ was hinter dem Ersten noch im Bild ist
@@ -280,7 +282,7 @@ function step(){
   t++;
   if(phase==='race' && chaos){ const run=balls.filter(b=>!b.done);
     if(chaos.id==='quake' && t%(60*4)===0){ for(const b of run) Body.setVelocity(b,{x:b.velocity.x+(Math.random()-0.5)*14, y:b.velocity.y-Math.random()*4}); sfx.quake(); say(['quake']); toast('🌋 EARTHQUAKE!','#c084fc',90) }
-    if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; sfx.boost() } }
+    if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; b.boostBy=null; sfx.boost() } }
   if(phase==='race'){ const tb=assist(balls, t, finished.length);
     if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
     for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]||PORTAL; if(z.type==='speed') sfx.boost();
@@ -338,11 +340,15 @@ function step(){
 // CHEER-Schub: Kugel nach unten beschleunigen (gedeckelt, damit sie nicht durch Stifte tunnelt) + Funken
 function boost(b, user, why, k=1){
   // jeder weitere Schub derselben Kugel im Rennen wirkt schwächer (große Fan-Gruppen gewinnen nicht automatisch)
-  b.boosts=(b.boosts||0)+1; const dv=Math.max(1.5, 7*Math.pow(0.8, b.boosts-1))*(chaos&&chaos.id==='rocket'?1.5:1)*k;
+  b.boosts=(b.boosts||0)+1; const dv=Math.max(2, 10.5*Math.pow(0.8, b.boosts-1))*(chaos&&chaos.id==='rocket'?1.5:1)*k;
   Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+dv,17)});
-  b.boostT=45;
+  b.boostT=60; b.pushT=Math.round(40*k); b.boostBy=user;   // Niklas 08.10.: Boost soll mehr bringen und klar sichtbar sein
   toast(why==='start'?`🚀 ${user}'s saved boost: START PUSH!`:why==='stuck'?`⚡ ${user}'s boost frees ${b.flag} ${b.name}!`:`⚡ ${user}'s boost fires on the final stretch!`, '#22d3ee', 120); sfx.boost();
 }
+// Kommentator sagt den Boost an („Israel got a boost!“, Niklas 08.10.): höchstens alle 6 s, je Land alle 20 s
+let lastBoostSay=0; const boostSaid={};
+function sayBoost(code){ const now=Date.now(); if(!code || now-lastBoostSay<6000 || now-(boostSaid[code]||0)<20000) return;
+  lastBoostSay=now; boostSaid[code]=now; say(['boost-'+code],2) }
 function toast(s, col='#fde047', life=240){ toasts.push({s,col,t:0,life}); if(toasts.length>2) toasts.shift() }
 async function pollChat(){
   if(OFFLINE) return;
@@ -360,7 +366,7 @@ async function pollChat(){
       if(e.cheer){ const tgt = mine && !(mine.done && phase==='race') && phase!=='podium' ? mine : null;
         if(tgt){ tgt.charge=Math.min(3,(tgt.charge||0)+1); toast(`⚡ ${e.user} charged ${tgt.flag} ${tgt.name} (${tgt.charge}/3)`, '#22d3ee', 120) }
         else { carry[e.user]=Math.min(3,(carry[e.user]||0)+1); toast(`⚡ ${e.user}: boost saved for the next race (${carry[e.user]}/3)`, '#22d3ee', 120) }
-        sfx.join(); continue }
+        sfx.charge(tgt?tgt.charge:carry[e.user]); sayBoost(tgt?tgt.code:e.code); continue }
       // Eigene Kugel pro Spieler (Niklas 06.10.): im Countdown sofort – freie Haus-Kugel des Landes übernehmen oder neue Kugel
       // (höchstens 6 pro Nation, 48 insgesamt); im Rennen erst ab dem nächsten (kein Aufspringen auf den Führenden)
       let b = null;
@@ -407,7 +413,10 @@ const sfx = {   // Summer Radio (07.10.): runde, leise Töne statt 8-Bit-Piepser
   join:()=>{tone(1318,0.12,'sine',0.16);tone(1760,0.18,'sine',0.14,0.08)},
   lead:()=>{tone(784,0.18,'sine',0.14);tone(1175,0.28,'sine',0.12,0.09)},
   finish:k=>tone([0,1046,880,784][k],0.5,'sine',0.25),
-  boost:()=>whoosh(0.35,0.25),
+  boost:()=>{whoosh(0.45,0.42);tone(110,0.25,'sine',0.3);[784,1046,1568].forEach((f,i)=>tone(f,0.16,'triangle',0.13,0.05+i*0.05))},   // Schub zündet: Rauschen + Bass-Stoß + Funken-Lauf
+  charge:n=>{ n=Math.max(1,Math.min(3,n||1)); const base=[0,659,784,988][n];   // Chat lädt Boost (Niklas 08.10.): hörbares Aufladen, je Stufe höher, bei 3/3 Glitzer
+    tone(base*0.5,0.12,'triangle',0.16); tone(base,0.16,'triangle',0.16,0.06); tone(base*1.5,0.22,'sine',0.14,0.12);
+    if(n===3) [1568,1976,2349,3136].forEach((f,i)=>tone(f,0.14,'sine',0.08,0.2+i*0.05)) },
   chaos:()=>[392,523,659,784].forEach((f,i)=>tone(f,0.25,'triangle',0.14,i*0.1)),
   quake:()=>{tone(55,0.6,'sine',0.35);whoosh(0.5,0.15)},
   turbo:()=>whoosh(0.5,0.3),
@@ -525,6 +534,7 @@ function ranking(){
   return [...finished,...rest];
 }
 // Text; maxW > 0 verkleinert die Schrift, bis er hineinpasst. outline = dunkler Rand (lesbar über der Bahn)
+function textW(s,size,w='700'){ ctx.font=`${w} ${size}px "DejaVu Sans"`; return ctx.measureText(s).width }
 function txt(s,x,y,size,col='#fff',w='700',al='left',maxW=0,outline=false){
   ctx.font=`${w} ${size}px "DejaVu Sans"`;
   if(maxW){ const m=ctx.measureText(s).width; if(m>maxW) ctx.font=`${w} ${Math.floor(size*maxW/m)}px "DejaVu Sans"` }
@@ -572,8 +582,17 @@ function draw(){
     if(b.bot){ ctx.strokeStyle=BOT_COL; ctx.lineWidth=3; ctx.globalAlpha=0.8; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke(); ctx.globalAlpha=1 }
     if(b.players.length){ ctx.strokeStyle='#fde047'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke();
       if(phase==='countdown'){ ctx.globalAlpha=0.45; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+14,0,7); ctx.stroke(); ctx.globalAlpha=1 } }   // Spieler am Start sofort finden
-    if(b.boostT>0){ b.boostT--; const k=b.boostT/45; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=5; ctx.globalAlpha=k;
-      ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+8+(1-k)*26,0,7); ctx.stroke();
+    if(b.charge>0 && !b.done && (phase==='race'||phase==='countdown')){ const pu=0.55+0.45*Math.sin(performance.now()/160);
+      ctx.strokeStyle='#22d3ee'; ctx.lineWidth=4; for(let j=0;j<b.charge;j++){ ctx.globalAlpha=pu*(0.9-j*0.2); ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+9+j*8,0,7); ctx.stroke() }
+      ctx.globalAlpha=1; txt('⚡'.repeat(b.charge),b.position.x,b.position.y-r-14,24,'#22d3ee','700','center',0,true) }
+    if(b.boostT>0){ const k=Math.min(1,b.boostT/25);   // blauer Boost-Schweif nach oben
+      for(let j=0;j<7;j++){ const fl=r*(2.6+Math.random()*1.8)*(1-j/9), ox=(Math.random()-0.5)*r*0.8;
+        ctx.globalAlpha=k*(0.8-j*0.09); ctx.fillStyle=j<2?'#ffffff':j<4?'#67e8f9':'#2563eb';
+        ctx.beginPath(); ctx.ellipse(b.position.x+ox,b.position.y-r*0.3-fl*0.5-j*r*0.5,r*(0.95-j*0.08),fl*0.55,0,0,7); ctx.fill() }
+      ctx.globalAlpha=1;
+      if(b.boostT>20) txt('⚡ BOOST!',Math.min(Math.max(b.position.x,80),TW-80),b.position.y+r+30,28,'#67e8f9','700','center',0,true) }
+    if(b.boostT>0){ b.boostT--; const k=b.boostT/60; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=6; ctx.globalAlpha=k;
+      ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+8+(1-k)*40,0,7); ctx.stroke();
       for(let j=0;j<6;j++){ const a=j*1.047+b.boostT*0.3, rr=R+10+(1-k)*30; ctx.fillStyle=j%2?'#fde047':'#22d3ee'; ctx.fillRect(b.position.x+Math.cos(a)*rr-3,b.position.y-Math.sin(a)*rr*0.6-rr*0.5-3,6,6) }
       ctx.globalAlpha=1 }
     if(!PX.ready){ const sp=ballSprite(b,R); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); if(r!==R) ctx.scale(r/R,r/R); ctx.drawImage(sp,-R-3,-R-3); ctx.restore() }
@@ -690,8 +709,8 @@ function drawLeft(){
   hl.forEach(([c,n],i)=>{ const y=86+i*96;
     box(x0,y,w,86,i?'rgba(255,255,255,0.05)':'#ffd70030',14);
     ctx.drawImage(flagSprite(c,30),x0+14,y+10);
-    txt(NAME[c]||c,x0+92,y+58,44,'#fff','700','left',w-240);
-    txt(`${n} ${n===1?'win':'wins'}`,x1-18,y+58,40,'#fde047','700','right') });
+    const ws=`${n} ${n===1?'win':'wins'}`; txt(NAME[c]||c,x0+92,y+58,44,'#fff','700','left',w-92-18-textW(ws,40)-24);
+    txt(ws,x1-18,y+58,40,'#fde047','700','right') });
   const fy=420;
   txt('👥 PLAYERS NOW',x0,fy+44,40,'#94a3b8','700','left',w);
   const teams=(board.teams||[]).slice(0,4);
@@ -700,7 +719,7 @@ function drawLeft(){
   const pl=(board.points||[]).slice(0,3);   // Tagespunkte (Niklas 06.10.)
   txt('⭐ TOP PLAYERS today',x0,fy+230,40,'#94a3b8','700','left',w);
   if(!pl.length) txt('every race scores points!',x0,fy+296,40,'#64748b','700','left',w);
-  pl.forEach(([u,n],i)=>{ const y=fy+296+i*66; txt(`${i+1}. ${u}`,x0,y,44,i?'#fff':'#fde047','700','left',w-170); txt(`${n} pts`,x1,y,40,'#fde047','700','right') });
+  pl.forEach(([u,n],i)=>{ const y=fy+296+i*66, pw=textW(`${n} pts`,40); txt(`${i+1}. ${u}`,x0,y,44,i?'#fff':'#fde047','700','left',w-pw-24); txt(`${n} pts`,x1,y,40,'#fde047','700','right') });   // Platz für Punkte messen (Niklas 08.10.: lange Namen liefen in 4-stellige Punkte)
   if(nowPlaying){ box(x0,940,w,108,'rgba(244,114,182,0.12)',16); txt('🎵 SUMMER RADIO 24/7',x0+20,982,32,'#f9a8d4','700','left',w-40); txt(nowPlaying,x0+20,1028,38,'#fff','700','left',w-40) }   // Musik als Grund zu bleiben (Niklas 07.10.)
 }
 
