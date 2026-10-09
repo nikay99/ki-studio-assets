@@ -19,7 +19,7 @@ const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
 const CHAT_BOTS = /^(nightbot|streamelements|moobot|fossabot)$/i;
 
 // Zeiten: das Videobild hängt einige Sekunden hinter dem Chat, Runden bleiben deshalb lange offen
-const ROUND_MS = 32000, REVEAL_EVERY = 4000, SHOW_MS = 7000, FIRST_REVEAL = 6000;
+const ROUND_MS = 55000, REVEAL_EVERY = 6500, SHOW_MS = 8000, FIRST_REVEAL = 10000;   // länger wegen Stream-Verzögerung (Niklas 09.10.)
 const PTS = [10, 7, 5];             // Platz 1–3, danach je 3 Punkte für alle weiteren Richtigen
 
 // ---------- Tageszustand ----------
@@ -95,7 +95,7 @@ function onChat(user, text) {
     st.points[user] = (st.points[user] || 0) + pts;
     if (place === 0) { st.wins[user] = (st.wins[user] || 0) + 1; if (!st.fastest || ms < st.fastest.ms) st.fastest = { user, ms, word: round.q.shown }; }
     feed.push({ id: ++feedId, user, ok: 1, pts, place }); save();
-    if (place === 0) round.end = Math.min(round.end, Date.now() + 10000);   // nach dem ersten Treffer noch 10 s für alle anderen
+    if (place === 0) round.end = Math.min(round.end, Date.now() + 20000);   // nach dem ersten Treffer noch 20 s für alle anderen
   } else if (late) {
     feed.push({ id: ++feedId, user, late: 1 });   // richtig, aber nach Rundenende (Bildverzögerung) – freundlich quittieren
   } else if (!round || !round.solvers.some(s => s.user === user)) {
