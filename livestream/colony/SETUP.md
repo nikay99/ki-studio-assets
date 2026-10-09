@@ -1,14 +1,15 @@
 # Chat Colony – dritter Livestream (Test auf dem N95, Niklas 09.10.)
 
-Hochkant 720×1280, 30 fps. Besitz: Spiel (server.js, public/, broadcast.json, thumbnail.jpg, Musik) = Chat-Colony-Thread;
+Hochkant 720×1280, 24 fps (?fps=24). Spiel nur über y 880 (Handy-Chat darunter), großer Aufruf „Type 1, 2 or 3“ direkt über der Linie. Besitz: Spiel (server.js, public/, broadcast.json, thumbnail.jpg, Musik) = Chat-Colony-Thread;
 Sende-Technik (run-colony.sh, install-colony.sh, colony-guard.sh), Wächter und VM = Kugelrennen-Thread.
 
 | Datei | Zweck |
 |---|---|
 | server.js | 127.0.0.1:${PORT:-8091}. Liest den Chat der eigenen Sendung (../chat.js, VIDEO_ID_FILE + VIDEO_ID_ONLY=1), reicht ihn an die Seite (/api/chat), speichert das Dorf (/api/save → $DATA_DIR/state.json, über .tmp + rename). /api/state = Lebenszeichen für run-colony.sh (chatStatus, msgCount, lastPage). |
 | public/index.html | das Spiel; Logik läuft in der Seite. Lädt eine neue Version erst zwischen zwei Runden. |
-| public/img | Kenney Tiny Town + Tiny Dungeon (CC0, kenney-lizenz.txt) |
-| public/fonts | Pixelify Sans (SIL OFL, OFL.txt) |
+| public/img/cartoon | Cartoon-Grafiken (Nano Banana Pro im Stil von Thumbnail A, 09.10.): village.jpg Hintergrund, house0–3, folk0–7, dragon (freigestellt) |
+| public/img | alte Kenney-Pixelgrafik (CC0), seit dem Cartoon-Look ungenutzt |
+| public/fonts | Lilita One + Nunito (SIL OFL, OFL-lilita-one.txt), alte Pixelify Sans ungenutzt |
 | public/music | 8 eigene Stücke (stable-audio-3, −16 LUFS), Wahl nach Tageszeit und Ereignis, Ton direkt aus der Seite |
 | broadcast.json | Titel (Präfix „Chat Colony“), Beschreibung, chatHint (Hinweis-Bot vorerst aus, Kontingent) |
 | thumbnail.jpg | 1280×720 aus echtem Spielbild |
