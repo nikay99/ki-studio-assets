@@ -372,6 +372,7 @@ function onChat(name,text,me){
     const first=!R.votes.has(p.name);R.votes.set(p.name,+m-1);
     if(first){const w=walker(p);w.tag=now()+3}
     const hum=activeHumans();
+    if(R.waiting){R.waiting=false;tEnd=now()+(hum.length>1?10:5)} // erste Stimme nach dem Warten: kurz zählen, dann Ergebnis
     if(hum.length===1&&tEnd-now()>5)tEnd=now()+5; // solo: your vote decides fast
     renderCard();
   }else if(m==='!house'){
@@ -451,7 +452,7 @@ function renderCard(){
     let badge='<span class="badge">Vote now</span>';
     if(R.dragon)badge='<span class="badge dragon">Dragon attack · everyone vote!</span>';
     else if(hum.length===1)badge=`<span class="badge solo">Solo · @${esc(hum[0].name)} decides</span>`;
-    else if(!hum.length)badge='<span class="badge auto">Autopilot · type 1, 2 or 3</span>';
+    else if(!hum.length)badge=(R.waiting?'<span class="badge solo">The village waits for YOU</span>':'<span class="badge">Your turn · type 1, 2 or 3</span>');
     c.innerHTML=`<div class="ctop">${badge}<span class="timer" id="tmr"></span></div><div class="q">${esc(R.ev.q)}</div><div class="opts">${R.ev.o.map((o,i)=>`<div class="opt"><span class="fill" style="width:${total?counts[i]/total*100:0}%"></span><span class="n">${i+1}</span><span class="t">${esc(o.t)}</span><span class="c">${counts[i]||''}</span></div>`).join('')}</div>`;
   }else{
     const r=lastRes;
@@ -571,7 +572,7 @@ let botsVoted=new Set();
 function botTick(){
   const n=DEMO_BOTS;const bots=BOTS.slice(0,n);
   for(const b of bots){
-    if(phase==='vote'&&!R.votes.has(b)&&Math.random()<.06&&tEnd-now()>2){onChat(b,String(1+Math.floor(Math.random()*3)),false)}
+    if(phase==='vote'&&!R.votes.has(b)&&Math.random()<.06&&(R.waiting||tEnd-now()>2)){onChat(b,String(1+Math.floor(Math.random()*3)),false)}
     else if(Math.random()<.004){onChat(b,pick(['!fish','!chop','!build']),false)}
     else if(Math.random()<.003){onChat(b,pick(['lol the wolves again','go lighthouse!!','first time here, this is cool','we need food fr','my house is so small haha','gg chat']),false)}
   }
@@ -583,9 +584,10 @@ const FPS_CAP=+QS.get('fps')||0;let lastDraw=0;
 function frame(ts){requestAnimationFrame(frame);
   if(FPS_CAP&&ts-lastDraw<1000/FPS_CAP-2)return;lastDraw=ts;
   const t=now();g.clearRect(0,0,W,H);scene(t);g.fillStyle='rgba(16,20,48,.88)';g.fillRect(0,CHAT_Y,W,H-CHAT_Y);
-  const el=$('tmr');if(el)el.textContent=Math.max(0,Math.ceil(tEnd-t))}
+  const el=$('tmr');if(el)el.textContent=R&&R.waiting?'':Math.max(0,Math.ceil(tEnd-t))}
 setInterval(()=>{const t=now();botTick();
-  if(t>=tEnd){if(phase==='vote')endVote();else newRound()}
+  // kein Autopilot (Niklas 09.10.): ohne Stimme bleibt die Frage offen, bis jemand 1, 2 oder 3 schreibt; nur der Drache kommt trotzdem
+  if(t>=tEnd){if(phase==='vote'){if(R.votes.size||R.dragon)endVote();else if(!R.waiting){R.waiting=true;renderCard()}else if(reloadPending)saveNow().then(()=>location.reload())}else newRound()}
   if(t-tickT>4&&$('spot').hidden){showLog^=1;
     if(showLog&&(logQ.length||S.log.length))tick(logQ.length?logQ.shift():S.log[S.log.length-1],false);
     else{const hum=activeHumans();ruleI=(ruleI+1)%RULES.length;const r=ruleI===0&&hum.length===1?`@${hum[0].name}, the colony is in your hands.`:RULES[ruleI];tick(r,true)}}
@@ -594,7 +596,7 @@ setInterval(()=>{const t=now();botTick();
 
 // großer Aufruf über dem Handy-Chat: meist „Type 1, 2 or 3“, dazwischen der Einstieg „type hi = eigenes Haus“
 let ctaI=0;const CTA_VOTE='TYPE <em>1</em>, <em>2</em> OR <em>3</em> IN CHAT',CTA_NEW='NEW? TYPE <em>hi</em> = YOUR OWN HOUSE';
-setInterval(()=>{ctaI=(ctaI+1)%3;$('ctaTxt').innerHTML=phase==='vote'?(ctaI<2?CTA_VOTE:CTA_NEW):(ctaI<2?CTA_NEW:'NEXT VOTE IN A FEW SECONDS')},3000);
+setInterval(()=>{ctaI=(ctaI+1)%3;$('ctaTxt').innerHTML=phase==='vote'?(R&&R.waiting&&ctaI===1?'THE VILLAGE WAITS · TYPE <em>1</em>, <em>2</em> OR <em>3</em>':ctaI<2?CTA_VOTE:CTA_NEW):(ctaI<2?CTA_NEW:'NEXT VOTE IN A FEW SECONDS')},3000);
 
 /* ---------- music: own chiptune tracks (stable-audio), picked by time of day and events ---------- */
 const TRACKS={village:'music/00-village-cozy.mp3',morning:'music/01-morning-farm.mp3',town:'music/02-town-upbeat.mp3',evening:'music/03-evening-lake.mp3',night:'music/04-night-quiet.mp3',festival:'music/05-festival.mp3',rain:'music/06-rain-cozy.mp3',dragon:'music/07-dragon-battle.mp3'};
