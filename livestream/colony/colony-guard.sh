@@ -14,8 +14,12 @@ CPU=$(( 100 - 100*(i2-i1)/(t2-t1) ))
 M=$(last /var/lib/marble/progress.txt drop_frames); W=$(last /var/lib/marble-words/progress.txt drop_frames)
 MS=$(last /var/lib/marble/progress.txt speed); WS=$(last /var/lib/marble-words/progress.txt speed)
 K=$(last $C/progress.txt fps)
-PM=0 PW=0 HOT=0; [ -f $S ] && . $S
+PM=0 PW=0 HOT=0; FIRST=0; [ -f $S ] && . $S || FIRST=1
 WHY=""
+# Erster Lauf: nur Ausgangswerte merken, sonst zählt der Gesamtstand seit Stream-Start als Sprung
+if [ "$FIRST" = 1 ]; then printf 'PM=%s PW=%s HOT=0\n' "${M:-0}" "${W:-0}" > $S; exit 0; fi
+# Stream neu gestartet (Zähler kleiner als vorher): Basis neu setzen
+[ -n "$M" ] && [ "$M" -lt "$PM" ] && PM=$M; [ -n "$W" ] && [ "$W" -lt "$PW" ] && PW=$W
 [ -n "$M" ] && [ "$M" -ge "$PM" ] && [ $((M-PM)) -gt $DROP_MAX ] && WHY="Kugelrennen verliert Bilder (+$((M-PM)))"
 [ -n "$W" ] && [ "$W" -ge "$PW" ] && [ $((W-PW)) -gt $DROP_MAX ] && WHY="Wortraten verliert Bilder (+$((W-PW)))"
 for s in "${MS%x}" "${WS%x}"; do [ -n "$s" ] && awk "BEGIN{exit !($s>0 && $s<0.97)}" && WHY="Encoder zu langsam (speed $s)"; done
