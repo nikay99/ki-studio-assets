@@ -1,157 +1,200 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Guess the Word LIVE</title>
 <style>
-/* Wortraten-Stream (Entwurf): 1920×1080, alles Wichtige in der Mitte (608 px = Shorts-Ausschnitt, Handy zeigt ~490 px) */
-:root{--bg1:#ffe4ec;--bg2:#e6e0ff;--ink:#2b2140;--muted:#7a6f8f;--pink:#ff5d8f;--violet:#7c5cff;--mint:#2ec4a6;--gold:#ffb627;--tile:#fff;--card:rgba(255,255,255,.82)}
+/* Wortraten-Stream, Apple-Stil (Niklas 09.10.): ruhiger dunkler Grund, Glas-Flächen, klare Hierarchie (das Wort ist der Held),
+   Federn statt fester Animationen, Ton und Bild im selben Frame. 1920×1080; alles Wichtige in der Mitte (Handy zeigt ~490 px). */
+@font-face{font-family:Inter;src:url(fonts/InterVariable.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{
+  --bg0:#120b24;--bg1:#24123f;
+  --glass:rgba(255,255,255,.075);--glass-hi:rgba(255,255,255,.14);--edge:rgba(255,255,255,.16);
+  --ink:#fff;--ink2:rgba(255,255,255,.62);--ink3:rgba(255,255,255,.38);
+  --pink:#ff4d8d;--violet:#8b6bff;--mint:#34d9b3;--gold:#ffc53d;--red:#ff3b5c;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:1920px;height:1080px;overflow:hidden;background:linear-gradient(135deg,var(--bg1),var(--bg2));font-family:"Nunito","Baloo 2","Segoe UI",system-ui,sans-serif;color:var(--ink)}
-#stage{position:absolute;inset:0;transform-origin:0 0}
-.blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;animation:float 18s ease-in-out infinite}
-@keyframes float{50%{transform:translate(40px,-30px) scale(1.08)}}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg0);color:var(--ink);
+  font-family:Inter,system-ui,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;inset:0;transform-origin:0 0;background:radial-gradient(120% 90% at 50% 0%,var(--bg1),var(--bg0) 70%)}
+/* Farbflächen hinter dem Glas: sehr langsam (60 s), damit nichts pulsiert */
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;animation:drift 60s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(60px,-40px) scale(1.12)}}
 .col{position:absolute;top:0;bottom:0}
-#mid{left:656px;width:608px;display:flex;flex-direction:column;align-items:center;padding-top:132px}
-#left{left:40px;width:560px;padding-top:150px}
-#right{right:40px;width:560px;padding-top:150px}
-.live{display:inline-flex;align-items:center;gap:10px;background:var(--pink);color:#fff;font-weight:900;font-size:26px;padding:6px 18px;border-radius:30px;letter-spacing:1px}
-.live i{width:12px;height:12px;border-radius:50%;background:#fff;animation:blink 1.2s infinite}
-@keyframes blink{50%{opacity:.25}}
-h1{font-size:46px;font-weight:900;margin:10px 0 2px;letter-spacing:.5px}
-.sub{font-size:26px;font-weight:800;color:var(--violet)}
-#cat{margin-top:26px;font-size:30px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
-#emoji{font-size:120px;line-height:1.1;margin:6px 0 4px;filter:drop-shadow(0 8px 14px rgba(80,40,120,.18));transition:transform .3s}
-#emoji.flag{font-size:150px}
-#tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:580px;margin-top:8px}
-.word{display:flex;gap:8px}
-.t{background:var(--tile);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:900;box-shadow:0 5px 0 #d9cff0,0 10px 20px rgba(80,40,120,.12);color:var(--ink)}
-.t.on{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
-.t.solved{background:var(--mint);color:#fff;box-shadow:0 5px 0 #1f9a82}
-@keyframes pop{0%{transform:scale(.4)}100%{transform:scale(1)}}
-#timer{width:540px;height:16px;border-radius:10px;background:rgba(255,255,255,.7);margin-top:26px;overflow:hidden}
-#bar{height:100%;width:100%;background:linear-gradient(90deg,var(--mint),var(--gold),var(--pink));border-radius:10px;transition:width .25s linear}
-#cta{margin-top:18px;font-size:30px;font-weight:900;background:var(--violet);color:#fff;padding:10px 24px;border-radius:18px;box-shadow:0 6px 0 #5a3fd1}
-#solvers{margin-top:20px;width:560px;display:flex;flex-direction:column;gap:8px;min-height:180px}
-.sol{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:8px 16px;font-size:30px;font-weight:900;animation:slide .4s ease-out}
-.sol .m{font-size:34px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sol .p{color:var(--mint)}
-.sol.more{font-size:24px;color:var(--muted);justify-content:center}
-@keyframes slide{from{transform:translateY(20px);opacity:0}}
-#answer{position:absolute;left:656px;width:608px;top:470px;text-align:center;pointer-events:none}
-.card{background:var(--card);border-radius:24px;padding:22px 26px;box-shadow:0 10px 30px rgba(80,40,120,.10);margin-bottom:22px}
-.card h2{font-size:30px;font-weight:900;letter-spacing:1px;margin-bottom:12px;color:var(--violet)}
-.row{display:flex;align-items:center;gap:12px;font-size:30px;font-weight:800;padding:5px 0}
-.row .r{width:44px;text-align:center;font-weight:900;color:var(--muted)}.row .n{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.row .p{font-weight:900;color:var(--pink)}
-.row.g1 .r{color:var(--gold)}
-#feed .row{font-size:26px}
-.ok{color:var(--mint)}.no{color:#b9aec9;text-decoration:line-through}
-.how li{font-size:26px;font-weight:700;margin:8px 0 8px 28px}
-#toast{position:absolute;left:50%;top:60px;transform:translateX(-50%);font-size:34px;font-weight:900;color:#fff;background:var(--pink);padding:8px 24px;border-radius:20px;opacity:0;transition:opacity .3s}
+#mid{left:656px;width:608px;display:flex;flex-direction:column;align-items:center;padding-top:118px}
+#left{left:48px;width:552px;padding-top:150px}
+#right{right:48px;width:552px;padding-top:150px}
+
+.glass{background:var(--glass);backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);
+  border:1px solid var(--edge);border-top-color:rgba(255,255,255,.26);border-radius:32px;box-shadow:0 30px 60px rgba(5,0,20,.35)}
+.card{padding:26px 30px;margin-bottom:24px}
+.label{font-size:21px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);margin-bottom:14px}
+
+.live{display:inline-flex;align-items:center;gap:10px;background:var(--red);font-weight:800;font-size:22px;letter-spacing:.08em;
+  padding:7px 18px 7px 16px;border-radius:999px;box-shadow:0 8px 24px rgba(255,59,92,.35)}
+.live i{width:10px;height:10px;border-radius:50%;background:#fff}
+h1{font-size:72px;font-weight:800;letter-spacing:-.035em;line-height:1.02;margin-top:16px}
+.sub{font-size:26px;font-weight:600;color:var(--ink2);margin-top:6px;letter-spacing:-.01em}
+
+#hero{position:relative;margin-top:34px;display:flex;flex-direction:column;align-items:center}
+#cat{font-size:22px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+#emoji{position:relative;font-size:132px;line-height:1.15;margin:6px 0 10px}
+#emoji::before{content:"";position:absolute;inset:-30px;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,rgba(139,107,255,.45),transparent)}
+#emoji.flag{font-size:156px}
+#tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:600px}
+.word{display:flex;gap:10px}
+.t{display:flex;align-items:center;justify-content:center;font-weight:800;letter-spacing:-.02em;border-radius:18px;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.22);border-top-color:rgba(255,255,255,.38);color:var(--ink)}
+.t.on{background:#fff;color:#1a1030;border-color:#fff;box-shadow:0 10px 30px rgba(255,255,255,.18)}
+.t.solved{background:linear-gradient(180deg,#46e6c1,#22b893);color:#fff;border-color:rgba(255,255,255,.4);box-shadow:0 12px 34px rgba(52,217,179,.35)}
+
+#timer{width:520px;height:8px;border-radius:999px;background:rgba(255,255,255,.12);margin-top:30px;overflow:hidden}
+#bar{height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--violet));transition:width .3s linear}
+#bar.low{background:linear-gradient(90deg,var(--gold),var(--pink))}
+#cta{margin-top:22px;font-size:28px;font-weight:700;letter-spacing:-.01em;padding:14px 30px;border-radius:999px;
+  background:rgba(139,107,255,.9);box-shadow:0 12px 32px rgba(139,107,255,.4)}
+#cta.wait{background:rgba(255,255,255,.12);box-shadow:none;color:var(--ink2)}
+
+#solvers{margin-top:22px;width:540px;display:flex;flex-direction:column;gap:10px}
+.sol{display:flex;align-items:center;gap:14px;padding:12px 22px;border-radius:22px;font-size:28px;font-weight:700}
+.sol .m{font-size:30px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
+.sol .p{color:var(--mint);font-weight:800}
+.sol.first{background:linear-gradient(90deg,rgba(255,197,61,.22),rgba(255,197,61,.06));border-color:rgba(255,197,61,.45)}
+.sol.more{justify-content:center;font-size:22px;color:var(--ink2);font-weight:600}
+
+.row{display:flex;align-items:center;gap:14px;font-size:28px;font-weight:600;padding:7px 0;letter-spacing:-.01em}
+.row .r{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;background:rgba(255,255,255,.1);color:var(--ink2)}
+.row.g1 .r{background:var(--gold);color:#2a1a00}.row.g2 .r{background:#d9dbe6;color:#22232b}.row.g3 .r{background:#e3a06b;color:#2b1405}
+.row .n{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.row .p{font-weight:800}
+.rec{font-size:24px;font-weight:600;color:var(--ink2);padding:5px 0}.rec b{color:var(--ink);font-weight:700}
+#feed .row{font-size:24px;padding:6px 0}
+.ok{color:var(--mint);font-weight:700}.no{color:var(--ink3);text-decoration:line-through;font-weight:600;letter-spacing:.04em}
+.how{font-size:24px;font-weight:600;color:var(--ink2);line-height:1.6}.how b{color:var(--ink)}
 canvas#fx{position:absolute;inset:0;pointer-events:none}
 </style></head>
 <body><div id="stage">
-  <div class="blob" style="left:-120px;top:600px;width:520px;height:520px;background:#ffc2d6"></div>
-  <div class="blob" style="right:-80px;top:-80px;width:600px;height:600px;background:#cfc2ff;animation-delay:-6s"></div>
-  <div class="blob" style="left:760px;top:820px;width:420px;height:420px;background:#bff0e3;animation-delay:-11s"></div>
+  <div class="orb" style="left:-160px;top:560px;width:640px;height:640px;background:#ff4d8d"></div>
+  <div class="orb" style="right:-140px;top:-160px;width:700px;height:700px;background:#6b4bff;animation-delay:-20s"></div>
+  <div class="orb" style="left:700px;top:760px;width:520px;height:520px;background:#1fbf9b;opacity:.35;animation-delay:-40s"></div>
 
   <div class="col" id="left">
-    <div class="card"><h2>🏆 TOP PLAYERS TODAY</h2><div id="top"></div></div>
-    <div class="card" id="records"></div>
+    <div class="glass card"><div class="label">Top players today</div><div id="top"></div></div>
+    <div class="glass card" id="records"></div>
   </div>
 
   <div class="col" id="mid">
     <div class="live"><i></i>LIVE</div>
-    <h1>GUESS THE WORD</h1>
-    <div class="sub">type your answer in chat ✍️</div>
-    <div id="cat"></div>
-    <div id="emoji"></div>
-    <div id="tiles"></div>
+    <h1>Guess the Word</h1>
+    <div class="sub">Type your answer in chat</div>
+    <div id="hero"><div id="cat"></div><div id="emoji"></div><div id="tiles"></div></div>
     <div id="timer"><div id="bar"></div></div>
-    <div id="cta">💬 TYPE IT IN CHAT!</div>
+    <div id="cta">💬 Type it in chat</div>
     <div id="solvers"></div>
   </div>
 
   <div class="col" id="right">
-    <div class="card"><h2>💬 LIVE GUESSES</h2><div id="feed"></div></div>
-    <div class="card how"><h2>HOW TO PLAY</h2><ul>
-      <li>Type the word in chat</li><li>Everyone who's right scores</li><li>Fastest = most points 🥇</li><li>Type your country for a flag 🏳️</li>
-    </ul></div>
+    <div class="glass card"><div class="label">Live guesses</div><div id="feed"></div></div>
+    <div class="glass card how"><div class="label">How to play</div>
+      <div><b>Type the word</b> in chat</div><div><b>Everyone right</b> scores · fastest most</div><div><b>Type your country</b> for a flag</div>
+    </div>
   </div>
   <canvas id="fx" width="1920" height="1080"></canvas>
-  <div id="toast"></div>
 </div>
 <script>
-// Größe: Seite ist für 1920×1080 gebaut und wird auf das Fenster skaliert
 const fit=()=>{const s=Math.min(innerWidth/1920,innerHeight/1080);document.getElementById('stage').style.transform=`scale(${s})`};addEventListener('resize',fit);fit();
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let S=null, lastN=0, lastRev=-1, lastSolv=0, ver=null, feedSince=0;
 
-// ---------- Ton (synthetisch, wie im Rennen) + Musik leise im Hintergrund ----------
-const AC=new (window.AudioContext||window.webkitAudioContext)(), master=AC.createGain(); master.gain.value=0.9; master.connect(AC.destination);
-function tone(f,d,type='sine',v=.2,at=0){const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+at;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05)}
+// ---------- Federn (Apple: Dämpfung + Antwortzeit statt fester Dauer) als CSS linear()-Kurve ----------
+const springCache={};
+function spring(damping=1,response=.4){
+  const k=damping+'/'+response; if(springCache[k]) return springCache[k];
+  const w=2*Math.PI/response, z=damping, pts=[]; let dur=0;
+  const x=t=>{ if(z<1){const wd=w*Math.sqrt(1-z*z);return 1-Math.exp(-z*w*t)*(Math.cos(wd*t)+(z*w/wd)*Math.sin(wd*t))} return 1-Math.exp(-w*t)*(1+w*t) };
+  for(let t=0;t<3;t+=1/120){ if(t>.1 && Math.abs(1-x(t))<.001 && Math.abs(1-x(t+.05))<.001){dur=t;break} dur=t }
+  for(let i=0;i<=60;i++) pts.push(+x(dur*i/60).toFixed(4));
+  return springCache[k]={easing:`linear(${pts.join(',')})`,duration:dur*1000};
+}
+const pop=(el,from,d=.8,r=.38,delay=0)=>{const s=spring(d,r);el.animate([from,{transform:'none',opacity:1}],{duration:s.duration,easing:s.easing,delay,fill:'backwards'})};
+
+// ---------- Ton: weich, harmonisch (Pentatonik), feuert im selben Frame wie das Bild ----------
+const AC=new (window.AudioContext||window.webkitAudioContext)(), master=AC.createGain(); master.gain.value=.9; master.connect(AC.destination);
+function bell(f,d=.5,v=.14,at=0){const t=AC.currentTime+at;for(const [m,vv] of [[1,1],[2.01,.35],[3.02,.12]]){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f*m;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*vv,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05)}}
+const PENTA=[523.25,587.33,659.25,783.99,880,1046.5];
 const sfx={
-  reveal:()=>tone(880,.12,'triangle',.12),
-  correct:p=>{const b=[784,988,1175][Math.min(p,2)];tone(b,.18,'triangle',.18);tone(b*1.5,.25,'triangle',.14,.08)},
-  start:()=>[523,659,784].forEach((f,i)=>tone(f,.18,'sine',.14,i*.09)),
-  end:()=>[784,988,1175,1568].forEach((f,i)=>tone(f,.3,'triangle',.15,i*.1)),
-  miss:()=>tone(220,.35,'sine',.12),
+  reveal:i=>bell(PENTA[i%PENTA.length],.35,.07),
+  correct:p=>{const b=[1046.5,880,783.99][Math.min(p,2)];bell(b,.6,.14);bell(b*1.5,.7,.08,.07)},
+  start:()=>[0,2,4].forEach((n,i)=>bell(PENTA[n],.5,.08,i*.08)),
+  end:()=>[0,2,4,5].forEach((n,i)=>bell(PENTA[n],.9,.1,i*.09)),
+  miss:()=>bell(392,.8,.08),
 };
-const music=new Audio(); music.volume=.35; let mlist=[], mi=0;
+const music=new Audio(); music.volume=.32; let mlist=[], mi=0;
 async function nextSong(){ try{ if(!mlist.length) mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
 music.onended=nextSong; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
 
-// ---------- Konfetti ----------
+// ---------- Konfetti nur für den Erstplatzierten und die Auflösung (sparsam, sonst stumpft es ab) ----------
 const fx=$('fx').getContext('2d'); let parts=[];
-function confetti(x,y,n=90){const cols=['#ff5d8f','#7c5cff','#2ec4a6','#ffb627','#fff'];for(let i=0;i<n;i++)parts.push({x,y,vx:(Math.random()-.5)*16,vy:-Math.random()*16-4,c:cols[i%5],r:Math.random()*6+4,a:Math.random()*6,l:90+Math.random()*40})}
-(function loop(){fx.clearRect(0,0,1920,1080);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.a+=.2;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
+function confetti(x,y,n=60){const cols=['#ff4d8d','#8b6bff','#34d9b3','#ffc53d','#ffffff'];for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,v=8+Math.random()*12;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:cols[i%5],r:Math.random()*5+4,a:Math.random()*6,l:80+Math.random()*40})}}
+(function loop(){fx.clearRect(0,0,1920,1080);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=.15;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
 
-// ---------- Darstellung ----------
-function tileSize(words){const longest=Math.max(...words.map(w=>w.length)),total=words.join(' ').length;
-  let s=Math.min(84,Math.floor(((longest>7?560:470)-(longest-1)*8)/longest)); if(total>12&&words.length>1)s=Math.min(s,64); return Math.max(44,s)}
-function renderTiles(){
-  const t=S.tiles, words=[]; let cur=[]; t.forEach((ch,i)=>{ if(ch===' '){words.push(cur);cur=[]} else cur.push([ch,i]) }); words.push(cur);
-  const sz=tileSize(words.map(w=>w)), solved=S.phase==='show';
-  $('tiles').innerHTML=words.map(w=>`<div class="word">${w.map(([ch,i])=>`<div class="t ${ch?'on':''} ${solved?'solved':''}" style="width:${sz}px;height:${Math.round(sz*1.12)}px;font-size:${Math.round(sz*.62)}px">${esc(ch)}</div>`).join('')}</div>`).join('');
+// ---------- Zustand ----------
+let S=null, lastN=0, shownN=0, lastSolv=0, ver=null, feedSince=0, tileEls=[], revSet=new Set();
+function tileSize(words){const longest=Math.max(...words.map(w=>w.length)),total=words.reduce((a,w)=>a+w.length,0)+words.length-1;
+  let s=Math.min(88,Math.floor(((longest>7?580:480)-(longest-1)*10)/longest)); if(total>12&&words.length>1)s=Math.min(s,66); return Math.max(44,s)}
+function buildTiles(){
+  const words=[]; let cur=[]; S.tiles.forEach((ch,i)=>{ if(ch===' '){words.push(cur);cur=[]} else cur.push(i) }); words.push(cur);
+  const sz=tileSize(words); tileEls=[]; revSet=new Set();
+  $('tiles').innerHTML=words.map(w=>`<div class="word">${w.map(i=>`<div class="t" data-i="${i}" style="width:${sz}px;height:${Math.round(sz*1.14)}px;font-size:${Math.round(sz*.6)}px"></div>`).join('')}</div>`).join('');
+  $('tiles').querySelectorAll('.t').forEach(el=>tileEls[+el.dataset.i]=el);
+  [...$('tiles').querySelectorAll('.t')].forEach((el,k)=>pop(el,{transform:'translateY(24px) scale(.9)',opacity:0},1,.45,k*30));
+}
+function updateTiles(){
+  let k=0;
+  S.tiles.forEach((ch,i)=>{ const el=tileEls[i]; if(!el||!ch||revSet.has(i)) return; revSet.add(i); el.textContent=ch; el.classList.add('on');
+    if(S.phase==='guess'){ pop(el,{transform:'scale(.7)'},.7,.35); sfx.reveal(revSet.size) } });
+  if(S.phase==='show' && !$('tiles').dataset.solved){ $('tiles').dataset.solved=S.n; tileEls.forEach((el,i)=>{ if(!el) return; el.textContent=S.tiles[i]; el.classList.add('solved');
+    pop(el,{transform:'scale(.86)'},.65,.4,(k++)*45) }) }   // Welle von links nach rechts: zeigt, wohin es geht
 }
 function renderSolvers(){
-  const m=['🥇','🥈','🥉'], s=S.solvers;
-  let h=s.slice(0,3).map((x,i)=>`<div class="sol"><span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">+${x.pts}</span></div>`).join('');
-  if(s.length>3) h+=`<div class="sol more">+ ${s.length-3} more got it ✅</div>`;
-  if(!s.length && S.phase==='show') h=`<div class="sol more">Nobody got it 😮 next one is easier!</div>`;
-  if(h!==renderSolvers.last){ renderSolvers.last=h; $('solvers').innerHTML=h }
+  const m=['🥇','🥈','🥉'], s=S.solvers, box=$('solvers');
+  if(String(S.n)!==box.dataset.n){ box.dataset.n=S.n; box.innerHTML=''; lastSolv=0 }
+  for(let i=lastSolv;i<Math.min(s.length,3);i++){ const x=s[i], d=document.createElement('div');
+    d.className='sol glass'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">+${x.pts}</span>`;
+    box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4); sfx.correct(i); if(!i) confetti(960,650,60) }
+  if(s.length>3){ let more=box.querySelector('.more'); if(!more){ more=document.createElement('div'); more.className='sol more'; box.appendChild(more); pop(more,{opacity:0},1,.3) }
+    more.textContent=`+ ${s.length-3} more got it`; if(s.length>lastSolv) sfx.correct(2) }
+  if(!s.length && S.phase==='show' && !box.querySelector('.more')){ const d=document.createElement('div'); d.className='sol more'; d.textContent='Nobody got it – the next one is easier'; box.appendChild(d); pop(d,{opacity:0},1,.3) }
+  lastSolv=s.length;
 }
 async function poll(){
   try{
     const s=await (await fetch('/api/state',{cache:'no-store'})).json();
-    if(ver && s.v!==ver) return location.reload(); ver=s.v;
-    const fresh=s.n!==lastN; S=s;
-    if(fresh){ lastN=s.n; lastRev=-1; lastSolv=0; $('cat').textContent=s.cat; $('emoji').textContent=s.emoji; $('emoji').className=s.flagRound?'flag':''; sfx.start() }
-    const rev=s.tiles.filter(Boolean).length;
-    if(rev!==lastRev){ if(lastRev>=0 && s.phase==='guess') sfx.reveal(); lastRev=rev; renderTiles() }
-    if(s.solvers.length!==lastSolv){ for(let i=lastSolv;i<s.solvers.length;i++){ sfx.correct(i); if(i<3) confetti(960,620,i?40:90) } lastSolv=s.solvers.length }
-    renderSolvers();
-    const left=s.phase==='guess'?Math.max(0,(s.end-s.now)/(s.end-s.start)):0; $('bar').style.width=(left*100)+'%';
-    $('cta').textContent=s.phase==='guess'?(s.solvers.length?'⏱️ STILL TIME – TYPE IT!':'💬 TYPE IT IN CHAT!'):'NEXT WORD IN A MOMENT…';
+    if(ver && s.v!==ver) return location.reload(); ver=s.v; S=s;
+    if(s.n!==lastN){ lastN=s.n; delete $('tiles').dataset.solved; $('cat').textContent=s.cat+' · '+s.tiles.filter(c=>c!==' ').length+' letters'; $('emoji').textContent=s.emoji; $('emoji').className=s.flagRound?'flag':'';
+      pop($('emoji'),{transform:'scale(.6)',opacity:0},.7,.45); buildTiles(); sfx.start() }
+    updateTiles(); renderSolvers();
+    if(s.phase==='show' && shownN!==s.n){ shownN=s.n; if(s.solvers.length){ sfx.end(); confetti(960,520,80) } else sfx.miss() }
+    const left=s.phase==='guess'?Math.max(0,(s.end-s.now)/(s.end-s.start)):0; $('bar').style.width=(left*100)+'%'; $('bar').className=left<.3?'low':'';
+    const cta=$('cta'); cta.textContent=s.phase==='guess'?(s.solvers.length?'⏱️ Still time – type it':'💬 Type it in chat'):'Next word in a moment'; cta.className=s.phase==='guess'?'':'wait';
   }catch{}
 }
-let shownN=0;
-const _poll=poll; poll=async()=>{ await _poll(); if(S && S.phase==='show' && shownN!==S.n){ shownN=S.n; renderTiles(); if(S.solvers.length){sfx.end();confetti(960,420,140)} else sfx.miss() } };
 setInterval(poll,300); poll();
 
 async function pollBoard(){
   try{
     const b=await (await fetch('/api/board',{cache:'no-store'})).json();
-    $('top').innerHTML=b.top.slice(0,8).map((x,i)=>`<div class="row ${i?'':'g1'}"><span class="r">${i+1}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">${x.pts}</span></div>`).join('')||'<div class="row">Be the first! ✍️</div>';
-    let r=''; if(b.fastest) r+=`<div class="row">⚡ Fastest: ${esc(b.fastest.user)} · ${(b.fastest.ms/1000).toFixed(1)}s</div>`;
-    if(b.streak&&b.streak.n>1) r+=`<div class="row">🔥 ${esc(b.streak.user)} · ${b.streak.n} in a row</div>`;
-    r+=`<div class="row">🎯 ${b.rounds} words today · ${b.players} players</div>`; $('records').innerHTML=r;
+    $('top').innerHTML=b.top.slice(0,8).map((x,i)=>`<div class="row g${i+1}"><span class="r">${i+1}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">${x.pts}</span></div>`).join('')||'<div class="rec">Be the first to score</div>';
+    let r='<div class="label">Today</div>';
+    if(b.fastest) r+=`<div class="rec">⚡ Fastest <b>${esc(b.fastest.user)}</b> · ${(b.fastest.ms/1000).toFixed(1)} s</div>`;
+    if(b.streak&&b.streak.n>1) r+=`<div class="rec">🔥 <b>${esc(b.streak.user)}</b> · ${b.streak.n} in a row</div>`;
+    r+=`<div class="rec">🎯 <b>${b.rounds}</b> words · <b>${b.players}</b> players</div>`; $('records').innerHTML=r;
   }catch{}
 }
 setInterval(pollBoard,2000); pollBoard();
 
-const feedRows=[];
 async function pollFeed(){
   try{
-    const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last;
-    for(const e of f.feed) feedRows.unshift(e.ok?`<div class="row"><span class="ok">✅</span><span class="n">${esc(e.user)}</span><span class="ok">got it!</span></div>`:`<div class="row"><span>🤔</span><span class="n">${esc(e.user)}</span><span class="no">${esc(e.guess)}</span></div>`);
-    feedRows.length=Math.min(feedRows.length,9); $('feed').innerHTML=feedRows.join('');
+    const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last; const box=$('feed');
+    for(const e of f.feed){ const d=document.createElement('div'); d.className='row';
+      d.innerHTML=e.ok?`<span class="n">${esc(e.user)}</span><span class="ok">got it ✓</span>`:`<span class="n">${esc(e.user)}</span><span class="no">${esc(e.guess)}</span>`;
+      box.prepend(d); pop(d,{transform:'translateY(-16px)',opacity:0},1,.35) }
+    while(box.children.length>9) box.lastChild.remove();
   }catch{}
 }
 setInterval(pollFeed,700);

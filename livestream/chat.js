@@ -12,6 +12,12 @@ async function hasChat(videoId) {
   return /"continuation":"/.test(html);
 }
 
+// Sendungs-ID aus der Datei des Wächters (VIDEO_ID_FILE), sonst null
+function fileVideoId() {
+  if (!process.env.VIDEO_ID_FILE) return null;
+  try { const f = require('fs').readFileSync(process.env.VIDEO_ID_FILE, 'utf8').trim(); return /^[\w-]{11}$/.test(f) ? f : null; } catch { return null; }
+}
+
 async function findLiveVideo(channel) {
   if (process.env.VIDEO_ID) return process.env.VIDEO_ID;
   // Zwei Streams auf einem Kanal (09.10.): /live zeigt nur einen davon. Der Wächter schreibt die aktuelle Sendungs-ID in eine Datei;
@@ -72,7 +78,7 @@ async function chatSession(videoId, onMessage, log, stop) {
   let cont = (html.match(/"continuation":"([^"]+)"/) || [])[1];
   if (!cont) throw new Error('keine Chat-Continuation (Chat aus?)');
   log(`Chat verbunden: ${videoId}`);
-  let first = true, errors = 0;
+  let first = true, errors = 0, lastSwitchCheck = 0;
   while (!stop()) {
     try {
       const url = 'https://www.youtube.com/youtubei/v1/live_chat/get_live_chat' + (key ? `?key=${key}&prettyPrint=false` : '?prettyPrint=false');
@@ -93,6 +99,10 @@ async function chatSession(videoId, onMessage, log, stop) {
       const c = lcc.continuations?.[0] || {};
       const cd = c.invalidationContinuationData || c.timedContinuationData || c.reloadContinuationData || {};
       if (cd.continuation) cont = cd.continuation;
+      // Sendungswechsel (09.10.): Der Wächter schreibt die neue ID sofort in die Datei. Statt ~5 Min. zu warten, bis YouTube
+      // den alten Chat schließt, sofort umschalten, sobald die neue Sendung einen Chat hat.
+      const fid = fileVideoId();
+      if (fid && fid !== videoId && Date.now() - (lastSwitchCheck || 0) > 5000) { lastSwitchCheck = Date.now(); if (await hasChat(fid).catch(() => false)) { log(`Sendung gewechselt: ${videoId} → ${fid}`); return; } }
       await sleep(1500);   // fest 1,5 s statt YouTubes Vorschlag (3–8 s): Beitritte erscheinen schneller im Bild
     } catch (e) {
       if (++errors > 5) throw e;
@@ -117,11 +127,11 @@ async function apiSession(videoId, apiKey, onMessage, log, stop) {
 }
 
 function start({ channel, onMessage, log = console.log, status = () => {} }) {
-  let stopped = false;
+  let stopped = false, lastVid = null;
   (async () => {
     while (!stopped) {
       try {
-        const vid = await findLiveVideo(channel);
+        const vid = await findLiveVideo(channel); lastVid = vid;
         if (!vid) { status({ chat: 'kein Live-Video gefunden' }); await sleep(30000); continue; }
         status({ chat: 'verbunden', videoId: vid });
         try { await chatSession(vid, onMessage, log, () => stopped); }
@@ -130,7 +140,8 @@ function start({ channel, onMessage, log = console.log, status = () => {} }) {
           if (process.env.YT_API_KEY) await apiSession(vid, process.env.YT_API_KEY, onMessage, log, () => stopped);
         }
       } catch (e) { log('Chat Fehler: ' + e.message); status({ chat: 'Fehler: ' + e.message }); }
-      await sleep(15000);
+      const fid = fileVideoId();
+      await sleep(fid && fid !== lastVid ? 500 : 15000);   // neue ID in der Datei → gleich neu verbinden
     }
   })();
   return () => { stopped = true; };

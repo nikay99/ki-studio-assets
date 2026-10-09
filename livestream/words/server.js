@@ -123,7 +123,7 @@ function view() {
   };
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mp3': 'audio/mpeg', '.json': 'application/json' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2', '.txt': 'text/plain', '.json': 'application/json' };
 const send = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
