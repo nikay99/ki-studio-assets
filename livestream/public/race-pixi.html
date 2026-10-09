@@ -19,7 +19,8 @@ const GMAP = {'#94a3b8':'#a99fc6','#64748b':'#6c6390','#cbd5e1':'#c9c0e3','#e2e8
 const gc = c => GLASS && GMAP[c] || c;
 // Neo-Brutalism wie Wortraten (Niklas 09.10. Vorschau): ?style=brutal, immer dunkel wie Wortraten (Niklas: kein Tag/Nacht-Wechsel); ?light=1 = helle Fassung
 const BRUTAL = Q.get('style')==='brutal', BDARK = Q.get('light')!=='1';
-const BK='#111', PAPER=BDARK?'#1d1640':'#fff7e0', CARDC=BDARK?'#fff7e0':'#fff', SHC=BDARK?'#fff7e0':'#111', BY='#ffd23f', BP='#ff6fb5', BC='#3ee0ff', BL='#b6f36a', BO='#ff8a3d';
+// dunkel v3 wie Wortraten (Gemini 09.10.): schwarze Schatten, hellerer Lila-Grund, weichere Farben, helle statt cremefarbene Flächen
+const BK='#111', PAPER=BDARK?'#2f2858':'#fff7e0', CARDC=BDARK?'#f8f4eb':'#fff', SHC=BDARK?'#000':'#111', BY=BDARK?'#fed439':'#ffd23f', BP=BDARK?'#ff7b9c':'#ff6fb5', BC=BDARK?'#61d4f5':'#3ee0ff', BL='#b6f36a', BO='#ff8a3d', BTS=BDARK?'#ff4b72':'#ff6fb5';
 let BINK=false;   // true = Text steht auf heller Karte → dunkle Schrift
 const BINKS={'#f3effc':'#111','#fff':'#111','#ffffff':'#111','#e6e0ff':'#111','#e6e0f7':'#222','#c9c0e3':'#333','#a99fc6':'#555','#6c6390':'#777','#22182e':'#111'};
 const BDK={'#4fe0c0':'#0a7a50','#ffd166':'#9a6400','#9b82ff':'#5b2fd6','#ff5d8d':'#c8104f','#ff8fb1':'#c8104f','#67e8f9':'#086f8a','#c4b5ff':'#5b2fd6','#ffb627':'#9a6400','#ffd2bd':'#b04a00'};
@@ -575,7 +576,7 @@ const GBOX = {'#ffd70030':'rgba(255,182,39,0.16)','#ffd70033':'rgba(255,182,39,0
 // ---------- Glas-Seitenleisten wie Wortraten: kompakte Kästen (552 px), 48 px vom Rand, oben bündig ab y 150 ----------
 let sideBg=null;
 function glassSide(x,w){ if(!sideBg && BRUTAL){ sideBg=document.createElement('canvas'); sideBg.width=W; sideBg.height=H; const g=sideBg.getContext('2d');   // Papier mit Punktraster + harter Schatten der Bahn
-    g.fillStyle=PAPER; g.fillRect(0,0,W,H); g.fillStyle=BDARK?'rgba(255,255,255,0.09)':'rgba(0,0,0,0.13)';
+    g.fillStyle=PAPER; g.fillRect(0,0,W,H); g.fillStyle=BDARK?'#4a4180':'rgba(0,0,0,0.13)';
     for(let yy=17;yy<H;yy+=34) for(let xx=17;xx<W;xx+=34){ g.beginPath(); g.arc(xx,yy,2,0,7); g.fill() }
     g.fillStyle=SHC; g.beginPath(); g.roundRect(CX+10+10,TRK_Y+10,CW-20,H-TRK_Y-14,18); g.fill() }
   if(!sideBg){ sideBg=document.createElement('canvas'); sideBg.width=W; sideBg.height=H; const g=sideBg.getContext('2d');   // einmal vorzeichnen, kein Live-Blur (GPU schonen)
@@ -604,7 +605,7 @@ function glassHeader(rank){
   if(BRUTAL){ ctx.save(); ctx.translate(MID,147); ctx.rotate(-0.05); hardBox(-56,-21,112,42,'#ff3b3b',10,4,6,SHC); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-28,0,6,0,7); ctx.fill();
       ctx.font=`900 22px ${FONT}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('LIVE',10,1); ctx.restore();
     ctx.save(); ctx.letterSpacing='-1.5px'; ctx.font=`900 52px ${FONT}`; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; let fs=52; while(fs>36 && ctx.measureText('Country Marble Race').width>SW+40){ fs--; ctx.font=`900 ${fs}px ${FONT}` }
-      ctx.fillStyle=BP; ctx.fillText('Country Marble Race',MID+5,219); ctx.fillStyle=BDARK?'#fff':BK; ctx.fillText('Country Marble Race',MID,214); ctx.restore() }
+      ctx.fillStyle=BTS; ctx.fillText('Country Marble Race',MID+5,219); ctx.fillStyle=BDARK?'#fff':BK; ctx.fillText('Country Marble Race',MID,214); ctx.restore() }
   else { box(MID-52,128,104,38,'#ff5d8d',19); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(MID-26,147,5,0,7); ctx.fill(); txt('LIVE',MID+10,156,21,'#fff','800','center');
   ctx.save(); ctx.letterSpacing='-1.5px'; txt('Country Marble Race',MID,214,50,'#f3effc','900','center',SW+40); ctx.restore() }
   // Info-Zeile wie „NATURE · 12 LETTERS“: Rennen, Top 3, Zeit
@@ -688,7 +689,7 @@ function glassTop(){
   for(let x=L0-tickX; x<L1; x+=lwid) ctx.fillText(line,x,y0+47);
   ctx.restore();
   // weiche Ränder des Laufbands (Text läuft unter Glas aus statt hart abgeschnitten)
-  const fc=BRUTAL?'255,210,63':'30,24,56';
+  const fc=BRUTAL?(BDARK?'254,212,57':'255,210,63'):'30,24,56';
   ctx.fillStyle=fade(L0,L0+40,`rgba(${fc},1)`,`rgba(${fc},0)`); ctx.fillRect(L0,y0+6,40,h-12);
   ctx.fillStyle=fade(L1-40,L1,`rgba(${fc},0)`,`rgba(${fc},1)`); ctx.fillRect(L1-40,y0+6,40,h-12);
   BINK=pb;
