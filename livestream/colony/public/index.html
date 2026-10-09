@@ -457,7 +457,9 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 let tickT=0,ruleI=0;const RULES=['YOU decide. Type 1, 2 or 3','Type anything to get your own house','!fish  !chop  !build  =  your own action','!house  =  see your home and streak','Come back daily. Dragon attack 8 PM UK'];
 function tick(t,rule){const e=$('tick');e.textContent=t;e.classList.toggle('rule',!!rule);tickT=now()}
 let spotT=0;function spotlight(title,sub,slot){const sp=$('spot');sp.innerHTML=`<div class="spotbox"><b>${esc(title)}</b><span>${esc(sub)}</span></div>`;sp.hidden=false;$('ticker').hidden=true;FX.glow={slot,until:now()+6};clearTimeout(spotT);spotT=setTimeout(()=>{sp.hidden=true;$('ticker').hidden=false},4500)}
-function vlog(t){S.log.push(t);if(S.log.length>40)S.log.shift();updateHud()}
+// Dorf-Log läuft im Hinweisband mit (Niklas 09.10.: Log unten verdeckt am Handy der Chat)
+const logQ=[];let showLog=0;
+function vlog(t){S.log.push(t);if(S.log.length>40)S.log.shift();logQ.push(t);if(logQ.length>4)logQ.shift();updateHud()}
 function logLine(n,t,me){if(!$('log'))return;const d=document.createElement('div');if(me)d.className='me';d.innerHTML=`<b>${esc(n)}</b> ${esc(t)}`;const L=$('log');L.appendChild(d);while(L.children.length>80)L.firstChild.remove();L.scrollTop=L.scrollHeight}
 
 /* ---------- visual effects ---------- */
@@ -598,7 +600,9 @@ function frame(ts){requestAnimationFrame(frame);
   const el=$('tmr');if(el)el.textContent=Math.max(0,Math.ceil(tEnd-t))}
 setInterval(()=>{const t=now();botTick();
   if(t>=tEnd){if(phase==='vote')endVote();else newRound()}
-  if(t-tickT>5&&$('spot').hidden){const hum=activeHumans();ruleI=(ruleI+1)%RULES.length;const r=ruleI===0&&hum.length===1?`@${hum[0].name}, the colony is in your hands.`:RULES[ruleI];tick(r,true)}
+  if(t-tickT>4&&$('spot').hidden){showLog^=1;
+    if(showLog&&(logQ.length||S.log.length))tick(logQ.length?logQ.shift():S.log[S.log.length-1],false);
+    else{const hum=activeHumans();ruleI=(ruleI+1)%RULES.length;const r=ruleI===0&&hum.length===1?`@${hum[0].name}, the colony is in your hands.`:RULES[ruleI];tick(r,true)}}
   if(Math.floor(t)%20===0)updateHud();
 },250);
 
