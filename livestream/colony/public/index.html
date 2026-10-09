@@ -138,17 +138,33 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 html,body{margin:0;width:720px;height:1280px;overflow:hidden}
 .wrap{display:block;padding:0}
 .screen{width:720px;height:1280px;border-radius:0;box-shadow:none}
+/* ---- Handy-Schutzbereich (09.10. 18:06Z): YouTube schneidet hochkant links/rechts ~32 px ab,
+   oben liegt bis y≈200 die Kanalleiste, ab y≈950 der Chat. Alles Wichtige zwischen x 40–680 und y 200–940. ---- */
+#brand{top:34px;left:44px;right:44px;opacity:.9}
+#brand .logo{font-size:44px}
+#hdr{top:200px;left:40px;right:40px;padding:10px 12px;gap:8px}
+.chip{font-size:25px;padding:4px 6px}.chip i{font-size:16px}
+.goal{font-size:20px}.gbar{height:20px}
+.next{font-size:21px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.next.top{color:#ffd75e}
+#card{top:352px;left:40px;right:40px;min-height:0;padding:12px 16px}
+.q{font-size:30px;line-height:1.05;margin-bottom:8px}
+.opt{font-size:23px;padding:4px 10px}
+#ticker,#spot{top:770px;left:40px;right:40px}
+#ticker span{font-size:22px}
+#board{top:1050px;left:40px;right:40px}
+.hud[hidden],#spot[hidden],#ticker[hidden]{display:none}
 </style>
 </head><body>
 <div class="wrap">
   <div class="screen" id="screen" aria-label="Stream preview, 720 by 1280">
     <div id="stage">
       <canvas id="scene" width="720" height="1280"></canvas>
+      <div class="hud hrow" id="brand">
+        <div class="logo">CHAT COLONY</div>
+        <div class="daybox"><span id="day">Day 1</span><small id="tod">Morning</small></div>
+      </div>
       <div class="hud" id="hdr">
-        <div class="hrow">
-          <div class="logo">CHAT COLONY</div>
-          <div class="daybox"><span id="day">Day 1</span><small id="tod">Morning</small></div>
-        </div>
         <div class="chips">
           <div class="chip" id="cFood"><i>Food</i><span>0</span></div>
           <div class="chip" id="cWood"><i>Wood</i><span>0</span></div>
@@ -381,11 +397,15 @@ function endVote(){
 }
 
 /* ---------- HUD ---------- */
+let nextMode=0;setInterval(()=>{nextMode^=1;updateHud()},6000);
 function updateHud(){
   $('day').textContent=`Day ${S.day}`;$('tod').textContent=TOD[S.tod];
   const set=(id,v,low)=>{const c=$(id);c.querySelector('span').textContent=v;c.classList.toggle('low',!!low)};
   set('cFood',S.food,S.food<8);set('cWood',S.wood,S.wood<6);set('cMood',S.mood+'%',S.mood<25);set('cPop',S.people.length);
-  {const ms=S.nextDragon-Date.now(),h=Math.floor(ms/36e5),mi=Math.floor(ms%36e5/6e4);const n=$('next');n.textContent=R&&R.dragon&&phase==='vote'?'The dragon is attacking right now!':`Daily dragon attack 8 PM UK · in ${h}h ${mi}m`;n.classList.toggle('hot',(R&&R.dragon)||ms<36e5)}
+  {const ms=S.nextDragon-Date.now(),h=Math.floor(ms/36e5),mi=Math.floor(ms%36e5/6e4);const n=$('next');const atk=R&&R.dragon&&phase==='vote';
+   const best=S.people.filter(p=>!p.npc&&p.pts>0).sort((a,b)=>b.pts-a.pts).slice(0,3);const showTop=!atk&&nextMode&&best.length;
+   n.textContent=atk?'The dragon is attacking right now!':showTop?'Top: '+best.map(p=>`@${p.name} ${p.pts}`).join(' · '):`Day ${S.day} · ${TOD[S.tod]} · Dragon 8 PM UK in ${h}h ${mi}m`;
+   n.classList.toggle('hot',!showTop&&(atk||ms<36e5));n.classList.toggle('top',!!showTop)}
   $('goalName').textContent=`Week goal: ${GOALS[S.goal%GOALS.length]}`;$('goalBar').style.width=S.light+'%';$('goalPct').textContent=S.light+'%';
   const top=S.people.filter(p=>!p.npc).sort((a,b)=>b.pts-a.pts).slice(0,6);
   $('top').innerHTML=top.length?top.map(p=>`<li><span>@${esc(p.name)}</span><em>${rank(p)} · ${p.pts}</em></li>`).join(''):'<li><span>Write in chat to move in</span></li>';
@@ -457,10 +477,11 @@ function buildGround(){
   groundOk=true;
 }
 function lerp(a,b,t){return a+(b-a)*t}
+const SY=48; // Verschiebung des Dorfs nach unten (Handy-Schutzbereich)
 function scene(t){
   g.imageSmoothingEnabled=false;
   if(!groundOk)buildGround();
-  if(groundOk)g.drawImage(ground,0,0);else{g.fillStyle='#6fb24a';g.fillRect(0,0,W,H)}
+  if(groundOk)g.drawImage(ground,0,0);else{g.fillStyle='#6fb24a';g.fillRect(0,-SY,W,H)}
   const dark=[.45,0,0,.05,.35,.75][S.tod];
   // pond with pixel waves
   g.fillStyle='#24467a';g.fillRect(528,480,192,96);g.fillStyle='#3b8fd6';g.fillRect(534,486,186,84);
@@ -488,11 +509,11 @@ function scene(t){
   if(FX.fire&&FX.fire.until>t){const s=SLOTS[FX.fire.slot];if(s)for(let i=0;i<14;i++){g.fillStyle=i%2?'#ff7a3d':'#ffd25a';const q=((t*60+i*13)%60);g.fillRect(Math.round(s.x-40+((i*29)%80)),Math.round(s.y-110-q),8,8)}}
   if(FX.glow&&FX.glow.until>t){const s=SLOTS[FX.glow.slot];if(s){const on=Math.floor(t*4)%2;g.strokeStyle=on?'#ffd75e':'#fff';g.lineWidth=6;g.strokeRect(s.x-78,s.y-156,156,160);g.lineWidth=2;g.fillStyle='#ffd75e';const ay=s.y-200-on*8;g.fillRect(s.x-12,ay,24,12);g.fillRect(s.x-6,ay+12,12,10)}}
   if(R&&R.dragon&&phase==='vote'){const k=((t-FX.dragon)/9)%1,x=W+150-k*(W+300),y=640+Math.sin(t*2)*14;
-    g.fillStyle='rgba(140,20,10,.2)';g.fillRect(0,0,W,H);ti('td',110,x,y-72,9);
+    g.fillStyle='rgba(140,20,10,.2)';g.fillRect(0,-SY,W,H);ti('td',110,x,y-72,9);
     for(let i=0;i<16;i++){const q=(t*3+i/16)%1;g.fillStyle=i%2?'#ff7a3d':'#ffd25a';const sz=Math.round(14*(1-q)+4);g.fillRect(Math.round(x-q*160),Math.round(y+q*90+Math.sin(i)*10),sz,sz)}}
-  if(FX.rain>t){g.fillStyle='rgba(180,210,255,.7)';for(let i=0;i<160;i++){const x=Math.round((i*53+t*240)%W),y=Math.round((i*97+t*900)%H);g.fillRect(x,y,3,12)}g.fillStyle='rgba(20,24,60,.28)';g.fillRect(0,0,W,H)}
-  if(FX.flash>t){g.fillStyle='rgba(255,255,255,.75)';g.fillRect(0,0,W,H)}
-  if(dark>0){g.fillStyle=`rgba(16,14,60,${dark*.55})`;g.fillRect(0,0,W,H)}
+  if(FX.rain>t){g.fillStyle='rgba(180,210,255,.7)';for(let i=0;i<160;i++){const x=Math.round((i*53+t*240)%W),y=Math.round((i*97+t*900)%H);g.fillRect(x,y,3,12)}g.fillStyle='rgba(20,24,60,.28)';g.fillRect(0,-SY,W,H)}
+  if(FX.flash>t){g.fillStyle='rgba(255,255,255,.75)';g.fillRect(0,-SY,W,H)}
+  if(dark>0){g.fillStyle=`rgba(16,14,60,${dark*.55})`;g.fillRect(0,-SY,W,H)}
   // lit windows at night on top of the tint
   if(dark>.3)for(const p of S.people){const s=SLOTS[p.slot];if(!s)continue;g.fillStyle='rgba(255,215,94,.85)';g.fillRect(s.x-60,s.y-36,12,12)}
   FX.conf=FX.conf.filter(c=>t-c.b<6);for(const c of FX.conf){const k=t-c.b;g.fillStyle=c.c;g.fillRect(Math.round(c.x+c.vx*k+Math.sin(k*4+c.x)*10),Math.round(c.y+c.vy*k),8,8)}
@@ -544,7 +565,7 @@ function botTick(){
 const FPS_CAP=+QS.get('fps')||0;let lastDraw=0;
 function frame(ts){requestAnimationFrame(frame);
   if(FPS_CAP&&ts-lastDraw<1000/FPS_CAP-2)return;lastDraw=ts;
-  const t=now();g.clearRect(0,0,W,H);scene(t);
+  const t=now();g.clearRect(0,0,W,H);if(groundOk)g.drawImage(ground,0,0,W,SY,0,0,W,SY);g.save();g.translate(0,SY);scene(t);g.restore();
   const el=$('tmr');if(el)el.textContent=Math.max(0,Math.ceil(tEnd-t))}
 setInterval(()=>{const t=now();botTick();
   if(t>=tEnd){if(phase==='vote')endVote();else newRound()}
