@@ -19,7 +19,7 @@ block_left(){
   [ "$seed" -gt "$bs" ] && bs=$seed
   if [ $((now-last)) -lt 45 ] && [ $((now-bs)) -lt $((BLOCK_S-300)) ]; then echo $((BLOCK_S-(now-bs))); else echo "$now" > "$BS_FILE"; echo "$BLOCK_S"; fi
 }
-VBIT="${VBIT:-3000k}"; RES="${RES:-1280x720}"; PRESET="${PRESET:-veryfast}"; FPS="${FPS:-30}"
+VBIT="${VBIT:-3000k}"; RES="${RES:-1280x720}"; PRESET="${PRESET:-veryfast}"; FPS="${FPS:-24}"   # 24 statt 30 (Niklas 09.10. 17:37Z, Last für den dritten Stream)
 CHROME="${CHROME:-$(command -v chromium || command -v chromium-browser || command -v google-chrome)}"
 [ -n "${STREAM_KEY_V:-}" ] && VERT=1 || VERT=0          # zweiter Schlüssel = zusätzlich 9:16-Stream (720x1280)
 RW=${RES%x*}; RH=${RES#*x}; [ "$VERT" = 1 ] && { SW=$((RW+720)); SH=1280; } || { SW=$RW; SH=$RH; }
@@ -39,16 +39,22 @@ trap cleanup EXIT
 # (halbe Renderer-Last, WebGL möglich). Klappt das nicht, wie bisher Xvfb (reiner Software-Bildschirm). GPU_DISPLAY=0 schaltet es ab.
 rm -f /tmp/.X99-lock; GPU_X=0
 if [ "${GPU_DISPLAY:-1}" = 1 ] && [ -e /dev/dri/renderD128 ] && command -v sway >/dev/null && command -v Xwayland >/dev/null; then
-  rm -f "$XDG_RUNTIME_DIR"/wayland-*
-  printf 'output HEADLESS-1 resolution %sx%s position 0 0 bg #000000 solid_color\nxwayland disable\n' "$SW" "$SH" > "$XDG_RUNTIME_DIR/sway.conf"
-  WLR_BACKENDS=headless WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128 WLR_LIBINPUT_NO_DEVICES=1 sway -c "$XDG_RUNTIME_DIR/sway.conf" >/dev/null 2>&1 &
-  SWAY_PID=$!
-  for i in $(seq 1 20); do WL=$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -E '^wayland-[0-9]+$' | head -1); [ -n "$WL" ] && break; sleep 0.5; done
-  if [ -n "${WL:-}" ]; then
-    WAYLAND_DISPLAY="$WL" Xwayland :99 -noreset -nolisten tcp >/dev/null 2>&1 &
-    XWL_PID=$!
-    for i in $(seq 1 20); do xdpyinfo -display :99 2>/dev/null | grep -q "dimensions: *${SW}x${SH} " && { GPU_X=1; break; }; sleep 0.5; done
-  fi
+  # Bildschirm-Takt = FPS (Chrome zeichnet dann nicht mehr als gesendet wird); klappt der eigene Takt nicht, Standard-Modus
+  for MODE in "--custom ${SW}x${SH}@${FPS}Hz" "${SW}x${SH}"; do
+    rm -f "$XDG_RUNTIME_DIR"/wayland-*
+    printf 'output HEADLESS-1 resolution %s position 0 0 bg #000000 solid_color\nxwayland disable\n' "$MODE" > "$XDG_RUNTIME_DIR/sway.conf"
+    WLR_BACKENDS=headless WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128 WLR_LIBINPUT_NO_DEVICES=1 sway -c "$XDG_RUNTIME_DIR/sway.conf" >/dev/null 2>&1 &
+    SWAY_PID=$!
+    for i in $(seq 1 20); do WL=$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -E '^wayland-[0-9]+$' | head -1); [ -n "$WL" ] && break; sleep 0.5; done
+    if [ -n "${WL:-}" ]; then
+      WAYLAND_DISPLAY="$WL" Xwayland :99 -noreset -nolisten tcp >/dev/null 2>&1 &
+      XWL_PID=$!
+      for i in $(seq 1 20); do xdpyinfo -display :99 2>/dev/null | grep -q "dimensions: *${SW}x${SH} " && { GPU_X=1; break; }; sleep 0.5; done
+    fi
+    [ "$GPU_X" = 1 ] && break
+    kill ${XWL_PID:-} $SWAY_PID 2>/dev/null; sleep 1; rm -f /tmp/.X99-lock /tmp/.X11-unix/X99 "$XDG_RUNTIME_DIR"/wayland-*; unset WL
+  done
+  log "Bildschirm-Modus: $MODE"
   [ "$GPU_X" = 1 ] || { kill ${XWL_PID:-} $SWAY_PID 2>/dev/null; rm -f /tmp/.X99-lock /tmp/.X11-unix/X99; }
 fi
 [ "$GPU_X" = 1 ] || Xvfb :99 -screen 0 ${SW}x${SH}x24 -nolisten tcp >/dev/null 2>&1 &
