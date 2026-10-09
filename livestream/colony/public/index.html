@@ -169,11 +169,11 @@ html,body{margin:0;width:720px;height:1280px;overflow:hidden}
 .headline{font-size:26px;margin-bottom:4px}
 .sub{font-size:16px;line-height:1.2;margin-bottom:6px}
 .d{font-size:15px;padding:2px 8px}
-#ticker,#spot{top:524px}
+#ticker,#spot{top:686px}
 #ticker span{font-size:17px;padding:3px 12px}
 .spotbox{padding:6px 14px}.spotbox b{font-size:24px}.spotbox span{font-size:15px}
 #brand .logo{font-size:36px}
-#board{top:1120px;opacity:.85}.bx{padding:6px 10px}.bx h3{font-size:18px;margin-bottom:2px}.bx ol,.bx ul{font-size:15px;gap:1px}.bx li em{font-size:13px}
+#board{top:1110px;opacity:.6}.bx{padding:6px 10px}.bx h3{font-size:18px;margin-bottom:2px}.bx ol,.bx ul{font-size:15px;gap:1px}.bx li em{font-size:13px}
 .hud[hidden],#spot[hidden],#ticker[hidden]{display:none}
 </style>
 </head><body>
@@ -305,7 +305,8 @@ const RANKS=[[0,'Settler'],[15,'Farmer'],[40,'Builder'],[100,'Elder']];
 
 /* ---------- slots: 3x3-tile plots, center-first, top band visible on phones ---------- */
 const TS=48;const SLOTS=[];
-[[12,[4,8,1,11]],[16,[4,8,1,11]],[20,[4,8,1,11]],[24,[4,8,1,11]]].forEach(([r,cols])=>cols.forEach(c=>SLOTS.push({c,r,x:(c+1.5)*TS,y:(r+3)*TS})));
+// nur die zwei Reihen über dem Handy-Chat (Niklas 09.10.): 8 Häuser, wer am längsten weg ist, zieht aus und bekommt beim Wiederkommen alles zurück
+[[12,[4,8,1,11]],[16,[4,8,1,11]]].forEach(([r,cols])=>cols.forEach(c=>SLOTS.push({c,r,x:(c+1.5)*TS,y:(r+3)*TS})));
 /* ---------- state ---------- */
 const KEY='chatColony.v1';
 function fresh(){return{day:1,tod:1,food:30,wood:25,mood:60,light:0,goal:0,build:{well:false,farm:1,wall:false,dock:false,market:false},
@@ -316,11 +317,16 @@ let S=fresh();
 let saveT=0;
 function saveNow(){clearTimeout(saveT);saveT=0;return fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)}).catch(()=>{})}
 function save(){if(!saveT)saveT=setTimeout(saveNow,2000)}
-async function load(){try{const o=await (await fetch('/api/load',{cache:'no-store'})).json();if(o&&o.people)S=Object.assign(fresh(),o)}catch(e){}}
+async function load(){try{const o=await (await fetch('/api/load',{cache:'no-store'})).json();if(o&&o.people)S=Object.assign(fresh(),o)}catch(e){}
+  // Häuser von früher (bis 16 Grundstücke) auf die 8 sichtbaren verteilen; Überzählige ziehen vorübergehend aus
+  const keep=S.people.filter(p=>p.slot<SLOTS.length),extra=S.people.filter(p=>p.slot>=SLOTS.length).sort((a,b)=>(b.npc?0:b.seen)-(a.npc?0:a.seen));
+  for(const p of extra){const used=new Set(keep.map(x=>x.slot));const free=SLOTS.findIndex((_,i)=>!used.has(i));
+    if(free>=0&&!p.npc){p.slot=free;keep.push(p)}else if(!p.npc){S.away=S.away||{};S.away[p.name.toLowerCase()]={name:p.name,pts:p.pts,streak:p.streak,lastDay:p.lastDay}}}
+  S.people=keep}
 
 /* walkers (runtime only) */
 const walkers=new Map();
-function walker(p){let w=walkers.get(p.name);if(!w){const s=SLOTS[p.slot]||SLOTS[0];w={x:s.x+rnd(-40,40),y:s.y+24,tx:s.x,ty:s.y+24,task:null,tag:0,bob:rnd(0,6)};walkers.set(p.name,w)}return w}
+function walker(p){let w=walkers.get(p.name);if(!w){const s=SLOTS[p.slot]||SLOTS[0];w={x:s.x+rnd(-40,40),y:Math.min(s.y+24,FOOT),tx:s.x,ty:Math.min(s.y+24,FOOT),task:null,tag:0,bob:rnd(0,6)};walkers.set(p.name,w)}return w}
 
 /* ---------- round flow ---------- */
 let R=null, phase='vote', tEnd=0, lastRes=null;
@@ -498,7 +504,9 @@ function buildGround(){
   groundOk=true;
 }
 function lerp(a,b,t){return a+(b-a)*t}
-const SY=0; // Verschiebung des Dorfs nach unten (Handy-Schutzbereich)
+const SY=-40; // Dorf 40 px höher: zwei Häuserreihen enden bei y≈870 (Niklas 09.10. 18:36Z: Spiel nur über dem Handy-Chat)
+const CHAT_Y=880;
+const FOOT=CHAT_Y-SY-12; // Figuren bleiben über der Chat-Linie // darunter liegt am Handy der YouTube-Chat: nur ruhiger, dunkler Hintergrund
 function scene(t){
   g.imageSmoothingEnabled=false;
   if(!groundOk)buildGround();
@@ -556,12 +564,12 @@ function house(p,s,dark,t){
   if(L>=4)ti('tt',blue?51:55,x0+2*TS,y0-TS+8);
   if(stale){g.fillStyle='rgba(120,110,100,.45)';g.fillRect(x0,y0,144,144)}
   if(!p.npc){g.font='700 20px "Pixelify Sans", monospace';g.textAlign='center';const tw=Math.round(g.measureText(p.name).width+12);
-    g.fillStyle='#0b0e24';g.fillRect(Math.round(s.x-tw/2),s.y+2,tw,24);g.fillStyle='#fff';g.fillText(p.name,s.x,s.y+20)}
+    g.fillStyle='#0b0e24';g.fillRect(Math.round(s.x-tw/2),s.y-30,tw,24);g.fillStyle='#fff';g.fillText(p.name,s.x,s.y-12)}
 }
 function drawPerson(p,w,dark,t){
   const dx=w.tx-w.x,dy=w.ty-w.y,d=Math.hypot(dx,dy);
   if(d>2){const sp=reduce?d:Math.min(d,1.6);w.x+=dx/d*sp;w.y+=dy/d*sp}
-  else if(!w.task||w.task.until<t){w.task=null;const s=SLOTS[p.slot]||SLOTS[0];if(Math.random()<.01){w.tx=s.x+rnd(-60,60);w.ty=s.y+rnd(10,38)}}
+  else if(!w.task||w.task.until<t){w.task=null;const s=SLOTS[p.slot]||SLOTS[0];if(Math.random()<.01){w.tx=s.x+rnd(-60,60);w.ty=Math.min(s.y+rnd(10,38),FOOT)}}
   const hop=d>2?(Math.floor(t*8+w.bob)%2)*4:0;
   ti('td',CHARS[hash(p.name)%CHARS.length],w.x-24,w.y-46-hop);
   if(w.task&&d<=2){const tool={fish:115,chop:129,build:128}[w.task.a];if(tool)ti('tt',tool,w.x+10,w.y-50-(Math.floor(t*6)%2)*6,2)}
@@ -586,7 +594,7 @@ function botTick(){
 const FPS_CAP=+QS.get('fps')||0;let lastDraw=0;
 function frame(ts){requestAnimationFrame(frame);
   if(FPS_CAP&&ts-lastDraw<1000/FPS_CAP-2)return;lastDraw=ts;
-  const t=now();g.clearRect(0,0,W,H);if(groundOk)g.drawImage(ground,0,0,W,SY,0,0,W,SY);g.save();g.translate(0,SY);scene(t);g.restore();
+  const t=now();g.clearRect(0,0,W,H);if(groundOk&&SY>0)g.drawImage(ground,0,0,W,SY,0,0,W,SY);g.save();g.translate(0,SY);scene(t);g.restore();g.fillStyle='rgba(11,14,36,.82)';g.fillRect(0,CHAT_Y,W,H-CHAT_Y);g.fillStyle='#f3e7c9';g.fillRect(0,CHAT_Y,W,4);
   const el=$('tmr');if(el)el.textContent=Math.max(0,Math.ceil(tEnd-t))}
 setInterval(()=>{const t=now();botTick();
   if(t>=tEnd){if(phase==='vote')endVote();else newRound()}
