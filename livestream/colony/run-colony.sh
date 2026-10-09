@@ -6,8 +6,8 @@
 set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-colony}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/colony.env ] && . /etc/marble/colony.env
-# 15 fps (Niklas-Karte 09.10.): Pixelgrafik braucht keine 30, spart Last auf dem N95; FPS/VBIT in colony.env überschreibbar
-VBIT="${VBIT:-1500k}"; FPS="${FPS:-15}"; RW=720; RH=1280
+# 24 fps (Niklas 09.10. 17:36Z): spart Last auf dem N95; Bildschirm läuft mit derselben Rate, FPS/VBIT in colony.env überschreibbar
+VBIT="${VBIT:-2000k}"; FPS="${FPS:-24}"; RW=720; RH=1280
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:97 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
@@ -22,7 +22,7 @@ log "Kodierung: $HW"
 rm -f /tmp/.X97-lock; GPU_X=0
 if [ "${GPU_DISPLAY:-1}" = 1 ] && [ -e /dev/dri/renderD128 ] && command -v sway >/dev/null && command -v Xwayland >/dev/null; then
   rm -f "$XDG_RUNTIME_DIR"/wayland-*
-  printf 'output HEADLESS-1 resolution %sx%s position 0 0 bg #000000 solid_color\nxwayland disable\n' "$RW" "$RH" > "$XDG_RUNTIME_DIR/sway.conf"
+  printf 'output HEADLESS-1 resolution --custom %sx%s@%sHz position 0 0 bg #000000 solid_color\nxwayland disable\n' "$RW" "$RH" "$FPS" > "$XDG_RUNTIME_DIR/sway.conf"
   WLR_BACKENDS=headless WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128 WLR_LIBINPUT_NO_DEVICES=1 sway -c "$XDG_RUNTIME_DIR/sway.conf" >/dev/null 2>&1 &
   SWAY_PID=$!
   for i in $(seq 1 20); do WL=$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -E '^wayland-[0-9]+$' | head -1); [ -n "$WL" ] && break; sleep 0.5; done
