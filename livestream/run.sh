@@ -19,7 +19,8 @@ block_left(){
   [ "$seed" -gt "$bs" ] && bs=$seed
   if [ $((now-last)) -lt 45 ] && [ $((now-bs)) -lt $((BLOCK_S-300)) ]; then echo $((BLOCK_S-(now-bs))); else echo "$now" > "$BS_FILE"; echo "$BLOCK_S"; fi
 }
-VBIT="${VBIT:-3000k}"; RES="${RES:-720x1280}"   # Hochformat 9:16 (Niklas 09.10. 20:00Z „country umbauen auf 9:16“); RES=1280x720 = altes 16:9-Bild; PRESET="${PRESET:-veryfast}"; FPS="${FPS:-24}"   # 24 statt 30 (Niklas 09.10. 17:37Z, Last für den dritten Stream)
+VBIT="${VBIT:-3000k}"; RES="${RES:-720x1280}"; PRESET="${PRESET:-veryfast}"; FPS="${FPS:-24}"   # 24 statt 30 (Niklas 09.10. 17:37Z, Last für den dritten Stream)
+# RES: Hochformat 9:16 (Niklas 09.10. 20:00Z „country umbauen auf 9:16“); RES=1280x720 = altes 16:9-Bild
 CHROME="${CHROME:-$(command -v chromium || command -v chromium-browser || command -v google-chrome)}"
 [ -n "${STREAM_KEY_V:-}" ] && VERT=1 || VERT=0          # zweiter Schlüssel = zusätzlich 9:16-Stream (720x1280)
 RW=${RES%x*}; RH=${RES#*x}; [ "$VERT" = 1 ] && { SW=$((RW+720)); SH=1280; } || { SW=$RW; SH=$RH; }
