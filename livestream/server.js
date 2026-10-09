@@ -317,7 +317,7 @@ if (CHANNEL && process.env.SELF_HEAL !== '0') setInterval(async () => {
   if (healNone >= 4 && Date.now() - healLast > 15 * 60e3) {
     healNone = 0; healLast = Date.now();
     logLine('selbstheiler: seit 4 Min. keine Sendung auf dem Kanal, Verbindung zu YouTube wird neu aufgebaut');
-    execFile('pkill', ['-TERM', '-f', `-progress ${path.join(DATA, 'progress.txt')}`], () => {});   // nur das eigene ffmpeg, nicht den Wortraten-Stream
+    execFile('pkill', ['-TERM', '-f', `progress ${path.join(DATA, 'progress.txt')}`], () => {});   // nur das eigene ffmpeg, nicht den Wortraten-Stream
   }
 }, 60e3);
 // Seiten-Wächter (09.10. 14:23–15:20Z hing die Rennseite: keine Abfragen mehr, keine Musik, keine Spieler):
@@ -331,7 +331,7 @@ if (CHANNEL) setInterval(() => {
   pageHealLast = Date.now(); lastPage = Date.now();
   logLine('seiten-wächter: Rennseite fragt seit 3 Min. nichts ab, Chrome und Sendung werden neu gestartet');
   execFile('pkill', ['-TERM', '-f', `user-data-dir=${path.join(DATA, 'chrome')}`], () =>
-    setTimeout(() => execFile('pkill', ['-TERM', '-f', `-progress ${path.join(DATA, 'progress.txt')}`], () => {}), 2000));
+    setTimeout(() => execFile('pkill', ['-TERM', '-f', `progress ${path.join(DATA, 'progress.txt')}`], () => {}), 2000));
 }, 30e3);
 const NAMES = Object.fromEntries(COUNTRY_LIST.map(c => [c[0], c[1]]));
 clips.init({ data: DATA, log: logLine, state: () => { rollDay(); const [l] = Object.entries(st.countryWins).sort((a, b) => b[1] - a[1]);
