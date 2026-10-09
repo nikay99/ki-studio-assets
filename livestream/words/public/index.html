@@ -20,7 +20,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg0);color
 .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.6;animation:drift 60s ease-in-out infinite alternate}
 @keyframes drift{to{transform:translate(60px,-40px) scale(1.12)}}
 .col{position:absolute;top:0;bottom:0}
-#mid{left:656px;width:608px;display:flex;flex-direction:column;align-items:center;padding-top:118px}
+#mid{left:656px;width:608px;display:flex;flex-direction:column;align-items:center;padding-top:96px}
 #left{left:48px;width:552px;padding-top:150px}
 #right{right:48px;width:552px;padding-top:150px}
 
@@ -63,13 +63,9 @@ h1{font-size:74px;font-weight:900;letter-spacing:-.04em;line-height:1.02;margin-
   background:var(--violet);box-shadow:0 6px 0 var(--violet-d),0 16px 30px rgba(124,92,255,.35)}
 #cta.wait{background:#fff;color:var(--ink2);box-shadow:0 5px 0 var(--tile-sh)}
 
-/* Richtig-Rater links unter Today (Niklas 09.10.), kompakt, damit die Spalte ins Bild passt */
-#solvers{display:flex;flex-direction:column;gap:8px}
-#solvers .sol{padding:7px 16px;font-size:25px}
-#solvers .wait1,#solvers .sol.more{font-size:22px;font-weight:600;color:var(--ink2);padding:2px 0;background:none;border:0;box-shadow:none}
-#gotn{margin-left:8px}
-#left .card{padding:20px 26px;margin-bottom:18px} #left .row{padding:5px 0}
-.sol{display:flex;align-items:center;gap:14px;padding:12px 22px;border-radius:22px;font-size:28px;font-weight:700}
+#solvers{margin-top:18px;width:592px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#solvers .more{justify-content:center;font-size:23px}#solvers .all{grid-column:1/-1}
+.sol{display:flex;align-items:center;gap:10px;padding:5px 14px;border-radius:22px;font-size:25px;font-weight:700;min-width:0}
 .sol .m{font-size:30px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
 .sol .p{color:var(--mint-d);font-weight:900}
 .sol.first{background:linear-gradient(90deg,#fff3d1,rgba(255,255,255,.75));border-color:#ffd77a}
@@ -110,8 +106,8 @@ html.brutal{--ink:#111;--ink2:#111;--ink3:#555;--bd:#111;--paper:#fff7e0;--y:#ff
 html.brutal #stage{background:var(--paper);background-image:radial-gradient(rgba(0,0,0,.13) 2px,transparent 2px);background-size:34px 34px}
 html.brutal .orb{display:none}
 html.brutal .glass{background:var(--card);backdrop-filter:none;-webkit-backdrop-filter:none;border:5px solid var(--bd);border-radius:14px;box-shadow:10px 10px 0 var(--bd)}
-html.brutal #left>.glass:first-child{background:var(--y)} html.brutal #right>.glass:first-child{background:var(--c)}
-html.brutal #left>.glass:first-child *,html.brutal #right>.glass:first-child *{color:#111}
+html.brutal #left .glass:first-child{background:var(--y)} html.brutal #right .glass:first-child{background:var(--c)}
+html.brutal #left .glass:first-child *,html.brutal #right .glass:first-child *{color:#111}
 html.brutal .label{color:#111;font-weight:900;letter-spacing:.06em;background:#fff;display:inline-block;padding:4px 12px;border:4px solid #111;border-radius:8px;box-shadow:4px 4px 0 #111}
 html.brutal .live{background:#ff3b3b;border:4px solid #111;border-radius:10px;box-shadow:6px 6px 0 #111;transform:rotate(-3deg)}
 html.brutal h1{font-size:80px;letter-spacing:-.03em;-webkit-text-stroke:0;text-shadow:5px 5px 0 var(--p)}
@@ -126,12 +122,12 @@ html.brutal .t.on{background:var(--y);color:#111;border:4px solid #111;box-shado
 html.brutal .t.solved{background:var(--l);color:#111;border:4px solid #111;box-shadow:5px 5px 0 #111}
 html.brutal #timer{height:26px;border:4px solid var(--bd);border-radius:8px;background:var(--card);box-shadow:5px 5px 0 var(--bd);margin-top:34px}
 html.brutal #bar{border-radius:0;background:var(--p)} html.brutal #bar.low{background:var(--o)}
-html.brutal #cta{background:var(--p);color:#111;border:5px solid #111;border-radius:12px;box-shadow:8px 8px 0 #111;margin-top:30px}
+html.brutal #cta{background:var(--p);color:#111;border:5px solid #111;border-radius:12px;box-shadow:8px 8px 0 #111;margin-top:22px}
 html.brutal #cta.wait{background:var(--card);color:var(--ink);box-shadow:8px 8px 0 var(--bd)}
 html.brutal .sol{background:var(--card);border:4px solid var(--bd);border-radius:10px;box-shadow:5px 5px 0 var(--bd);color:var(--ink)}
 html.brutal .sol.first{background:var(--y);color:#111}
 html.brutal .sol .p,html.brutal .ok{color:#0a8f5a}
-html.brutal #right>.glass:first-child .ok{color:#0a6b42}
+html.brutal #right .glass:first-child .ok{color:#0a6b42}
 html.brutal .row .r{background:#fff;border:3px solid #111;color:#111;border-radius:6px}
 html.brutal .row.g1 .r{background:var(--y)} html.brutal .row .p{color:#111}
 html.brutal .no{color:rgba(0,0,0,.45)}
@@ -165,7 +161,6 @@ html.brutal.bdark .t:not(.on):not(.solved){background:#fff}
   <div class="col" id="left">
     <div class="glass card"><div class="label">Top players today</div><div id="top"></div></div>
     <div class="glass card" id="records"></div>
-    <div class="glass card" id="roundcard"><div class="label">Got it this round<span id="gotn"></span></div><div id="solvers"></div></div>
   </div>
 
   <div class="col" id="mid">
@@ -175,6 +170,7 @@ html.brutal.bdark .t:not(.on):not(.solved){background:#fff}
     <div id="hero"><div id="cat"></div><div id="emoji"></div><div id="tiles"></div></div>
     <div id="timer"><div id="bar"></div></div>
     <div id="cta">💬 Type it in chat</div>
+    <div id="solvers"></div>
   </div>
 
   <div class="col" id="right">
@@ -251,12 +247,10 @@ function renderSolvers(){
   if(String(S.n)!==box.dataset.n){ box.dataset.n=S.n; box.innerHTML=''; lastSolv=0 }
   for(let i=lastSolv;i<Math.min(s.length,3);i++){ const x=s[i], d=document.createElement('div');
     d.className='sol glass'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">+${x.pts}</span>`;
-    box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4); sfx.correct(i); if(!i) confetti(324,900,60) }
-  $('gotn').textContent=s.length?` · ${s.length}`:'';
-  if(s.length>3 && s.length>lastSolv) sfx.correct(2);
-  const w=box.querySelector('.wait1'); if(s.length&&w) w.remove();
-  if(!s.length && S.phase==='guess' && !w){ const d=document.createElement('div'); d.className='wait1'; d.textContent='Be the first to get it!'; box.appendChild(d) }
-  if(!s.length && S.phase==='show' && !box.querySelector('.more')){ if(w) w.remove(); const d=document.createElement('div'); d.className='sol more'; d.textContent='Nobody got it – the next one is easier'; box.appendChild(d); pop(d,{opacity:0},1,.3) }
+    box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4); sfx.correct(i); if(!i) confetti(960,650,60) }
+  if(s.length>3){ let more=box.querySelector('.more'); if(!more){ more=document.createElement('div'); more.className='sol more'; box.appendChild(more); pop(more,{opacity:0},1,.3) }
+    more.textContent=`+${s.length-3} more got it`; if(s.length>lastSolv) sfx.correct(2) }
+  if(!s.length && S.phase==='show' && !box.querySelector('.more')){ const d=document.createElement('div'); d.className='sol more all'; d.textContent='Nobody got it – the next one is easier'; box.appendChild(d); pop(d,{opacity:0},1,.3) }
   lastSolv=s.length;
 }
 async function poll(){
@@ -276,7 +270,7 @@ setInterval(poll,300); poll();
 async function pollBoard(){
   try{
     const b=await (await fetch('/api/board',{cache:'no-store'})).json();
-    $('top').innerHTML=b.top.slice(0,5).map((x,i)=>`<div class="row g${i+1}"><span class="r">${i+1}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">${x.pts}</span></div>`).join('')||'<div class="rec">Be the first to score</div>';
+    $('top').innerHTML=b.top.slice(0,8).map((x,i)=>`<div class="row g${i+1}"><span class="r">${i+1}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">${x.pts}</span></div>`).join('')||'<div class="rec">Be the first to score</div>';
     let r='<div class="label">Today</div>';
     if(b.fastest) r+=`<div class="rec">⚡ Fastest <b>${esc(b.fastest.user)}</b> · ${(b.fastest.ms/1000).toFixed(1)} s</div>`;
     if(b.streak&&b.streak.n>1) r+=`<div class="rec">🔥 <b>${esc(b.streak.user)}</b> · ${b.streak.n} in a row</div>`;
