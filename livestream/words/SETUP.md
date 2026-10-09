@@ -9,6 +9,13 @@ Bei zwei gleichzeitigen Sendungen zeigt die Kanalseite /live nur eine. Ohne dies
 - marble-server bekommt `VIDEO_ID_FILE=/var/lib/marble/video_id` (z. B. in /etc/marble/server.env), danach `systemctl restart marble-server`. Der Stream läuft dabei weiter.
 - chat.js liest die ID aus der Datei. Fehlt die Datei oder ist die Sendung nicht live, weicht es wie bisher auf /live aus (nur beim Kugelrennen; das Wortraten hat VIDEO_ID_ONLY=1).
 
+## 0b. Wächter trennen (Pflicht vor dem Start)
+Beide Wächter nutzen denselben Kanal und dieselbe Live-API. Jeder darf nur Sendungen anfassen, deren boundStreamId seine eigene Stream-ID ist:
+- ensure-live.py: beim Suchen nach „der“ aktiven Sendung (liveBroadcasts.list mine/active) nur Sendungen mit der Stream-ID des Kugelrennens berücksichtigen. Beenden, Binden und Neuverbinden gilt nur für diese.
+- ensure-live-words.py: genauso, nur mit der Stream-ID von `words`.
+- Zur Sicherheit zusätzlich das Titelpräfix prüfen („Country Marble Race“ bzw. „Guess the Word“).
+- Abfragen sparsam halten (Uploads haben Vorrang beim Kontingent).
+
 ## 1. Installation
 `sudo bash /opt/marble/words/install-words.sh`
 Legt Benutzer `words`, /var/lib/marble-words, /etc/marble/words.env, die Dienste words-server (127.0.0.1:8090) und words-stream sowie den Befehl `words-key` an. Ohne Schlüssel sendet words-stream nichts. Chrome läuft trotzdem, damit man das Bild prüfen kann.
@@ -32,6 +39,7 @@ Kontingent: etwa 500 Einheiten mehr pro Tag.
 ## 4. Prüfen
 - Bild: `/var/lib/marble-words/log.txt`, ffmpeg.err (Schlüssel maskieren wie beim ersten Stream)
 - Kugelrennen darf keine Bilder verlieren: progress.txt (drop_frames) vor und nach dem Start vergleichen, GPU- und CPU-Last ansehen
+- Upload: Zwei Streams brauchen zusammen etwa 6 Mbit/s, um 02:15 Wien kommt das rclone-Backup mit 6 Mbit/s dazu. Im ersten Backup-Fenster drop_frames beider Streams ansehen.
 - Wenn das Kugelrennen leidet: `systemctl stop words-stream` (Pause) bzw. `touch /var/lib/marble-words/PAUSE`
 
 ## Aktualisierungen
