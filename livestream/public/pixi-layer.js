@@ -10,6 +10,11 @@ const softDot = (() => {   // weicher runder Lichtpunkt als Textur (für Lichter
   gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return c;
 })();
+const hardDot = (() => {   // harter runder Punkt (Neo-Brutalism: Schatten, Konfetti ohne Weichzeichnung)
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(32, 32, 31, 0, 7); g.fill(); return c;
+})();
+let BR = false;   // Neo-Brutalism (Niklas 09.10. 22:02Z): flach, harte Schatten, schwarze Konturen, kein Leuchten
 let app, root, bgSprite, bgKey = '', lights, col, world, glowC, trackC, dyn, trails, shadows, ballsC, sparksC, bloom;
 let dotTex, coneTex, trackFor = null, sparks = [], lightList = [], halos, fx, beams, beamList = [], spot, rings, seenDone = new WeakSet();
 let frameT = 0, slowN = 0;
@@ -25,10 +30,10 @@ const cone = (() => {   // Lichtkegel (oben schmal, unten breit, weich auslaufen
 })();
 
 PX.init = async (canvas, outW, outH, sc, geo) => {
-  Object.assign(PX, geo);
+  Object.assign(PX, geo); BR = !!geo.brutal;
   app = new PIXI.Application();
   await app.init({ canvas, width: outW, height: outH, antialias: true, autoStart: false, background: '#000000', preference: 'webgl', powerPreference: 'high-performance' });
-  dotTex = PIXI.Texture.from(softDot); coneTex = PIXI.Texture.from(cone);
+  dotTex = PIXI.Texture.from(softDot); PX.hardTex = PIXI.Texture.from(hardDot); coneTex = PIXI.Texture.from(cone);
   root = new PIXI.Container(); root.scale.set(sc); root.x = geo.OX || 0; app.stage.addChild(root);   // OX: Hochformat schiebt die Spalte nach links
   bgSprite = new PIXI.Sprite(); root.addChild(bgSprite);
   lights = new PIXI.Container(); root.addChild(lights);
@@ -44,7 +49,8 @@ PX.init = async (canvas, outW, outH, sc, geo) => {
   trails.blendMode = 'add'; sparksC.blendMode = 'add';
   glowC = new PIXI.Container(); glowC.addChild(trackC, dyn, trails, sparksC);   // nur Bahn, Spuren und Funken leuchten, Kugeln bleiben scharf
   world.addChild(spot, glowC, shadows, halos, ballsC, fx, rings);
-  if (PIXI.filters && PIXI.filters.AdvancedBloomFilter) {
+  if (BR) { lights.visible = false; beams.visible = false; spot.visible = false; halos.visible = false; trails.visible = false; fx.blendMode = 'normal'; sparksC.blendMode = 'normal' }
+  else if (PIXI.filters && PIXI.filters.AdvancedBloomFilter) {
     bloom = new PIXI.filters.AdvancedBloomFilter({ threshold: 0.6, bloomScale: 0.55, brightness: 1.0, blur: 4, quality: 4 });
     glowC.filters = [bloom];
   }
@@ -82,7 +88,7 @@ function setTrack(layer) {
 let fxRings = [];
 function burst(x, y, n, palette, ring) {
   for (let i = 0; i < n; i++) {
-    const s = new PIXI.Sprite(dotTex); s.anchor.set(0.5); s.tint = palette[i % palette.length]; const a = Math.random() * 6.3, v = 3 + Math.random() * (ring ? 11 : 6);
+    const s = new PIXI.Sprite(BR ? PX.hardTex : dotTex); s.anchor.set(0.5); s.tint = palette[i % palette.length]; const a = Math.random() * 6.3, v = 3 + Math.random() * (ring ? 11 : 6);
     fx.addChild(s); sparks.push({ s, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4, t: 0, life: 40 + Math.random() * 35, big: 1 });
   }
   if (ring) fxRings.push({ x, y, t: 0 });
@@ -90,7 +96,7 @@ function burst(x, y, n, palette, ring) {
 PX.spark = (x, y, col) => {   // Funken, wenn eine Kugel einen Stift trifft
   if (sparks.length > 160) return;
   for (let i = 0; i < 5; i++) {
-    const s = new PIXI.Sprite(dotTex); s.anchor.set(0.5); s.tint = hex(col); const a = Math.random() * 6.3, v = 1.5 + Math.random() * 3;
+    const s = new PIXI.Sprite(BR ? PX.hardTex : dotTex); s.anchor.set(0.5); s.tint = hex(col); const a = Math.random() * 6.3, v = 1.5 + Math.random() * 3;
     sparksC.addChild(s); sparks.push({ s, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1.5, t: 0, life: 18 + Math.random() * 14 });
   }
 };
@@ -110,13 +116,15 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
   // Paddel und Startgitter bewegen sich → jedes Bild neu
   dyn.clear();
   for (const s of st.spinners.concat(st.statics.filter(s => s.gate))) {
-    const v = s.vertices; dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col));
+    const v = s.vertices;
+    if (BR) { dyn.poly(v.flatMap(p => [p.x + 5, p.y + 5])).fill(0x000000); dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col)).stroke({ width: 3.5, color: 0x111111, join: 'round' }) }
+    else dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col));
   }
   // Kugeln, Schatten und Lichtspuren
   const vis = st.balls.filter(b => b.position.y > st.camY - 60 && b.position.y < st.camY + PX.H / Z + 60);
   const top = new Map(st.phase === 'race' ? st.rank.slice(0, 3).map((b, i) => [b, [0xffd700, 0xe5e7eb, 0xcd7f32][i]]) : []);
   while (ballsC.children.length < vis.length) { const s = new PIXI.Sprite(); s.anchor.set(0.5); ballsC.addChild(s) }
-  while (shadows.children.length < vis.length) { const s = new PIXI.Sprite(dotTex); s.anchor.set(0.5); s.tint = 0x000000; shadows.addChild(s) }
+  while (shadows.children.length < vis.length) { const s = new PIXI.Sprite(BR ? PX.hardTex : dotTex); s.anchor.set(0.5); s.tint = 0x000000; shadows.addChild(s) }
   // Spieler-Kugeln: weicher goldener Schein, der ruhig atmet (kein Blinken) – man findet seine Kugel sofort
   const mine = vis.filter(b => b.players.length);
   while (halos.children.length < mine.length) { const s = new PIXI.Sprite(dotTex); s.anchor.set(0.5); halos.addChild(s) }
@@ -129,7 +137,7 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
   st.balls.forEach(b => { if (!b.done || seenDone.has(b)) return; seenDone.add(b);
     const first = st.rank[0] === b && st.balls.filter(x => x.done).length === 1;
     if (first || b.players.length) burst(b.position.x, b.position.y, first ? 110 : 40, first ? [0xffd700, 0xffffff, cols[1], cols[2]] : [0xffd166, cols[1]], first) });
-  rings.clear(); fxRings = fxRings.filter(R => { R.t++; const k = R.t / 40; rings.circle(R.x, R.y, 20 + k * 260).stroke({ width: 10 * (1 - k), color: 0xfff1d0, alpha: 0.8 * (1 - k) }); return R.t < 40 });
+  rings.clear(); fxRings = fxRings.filter(R => { R.t++; const k = R.t / 40; rings.circle(R.x, R.y, 20 + k * 260).stroke({ width: 10 * (1 - k), color: BR ? 0x111111 : 0xfff1d0, alpha: 0.8 * (1 - k) }); return R.t < 40 });
   const nTrail = vis.reduce((n, b) => n + Math.min(b.trail.length, 14), 0);
   while (trails.children.length < nTrail) { const s = new PIXI.Sprite(dotTex); s.anchor.set(0.5); trails.addChild(s) }
   ballsC.children.forEach((s, i) => s.visible = i < vis.length);
@@ -139,9 +147,11 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
     const r = b.circleRadius, key = b.code;
     if (!ballTex.has(key)) ballTex.set(key, PIXI.Texture.from(st.ballSprite(b, st.R)));
     const s = ballsC.children[i]; s.texture = ballTex.get(key); s.x = b.position.x; s.y = b.position.y; s.rotation = b.angle; s.scale.set(r / st.R);
-    const sh = shadows.children[i]; sh.x = b.position.x + r * 0.25; sh.y = b.position.y + r * 0.45; sh.width = sh.height = r * 2.9; sh.alpha = 0.55;
+    const sh = shadows.children[i];
+    if (BR) { sh.x = b.position.x + r * 0.3; sh.y = b.position.y + r * 0.3; sh.width = sh.height = r * 2; sh.alpha = 1 }   // harter Versatz-Schatten
+    else { sh.x = b.position.x + r * 0.25; sh.y = b.position.y + r * 0.45; sh.width = sh.height = r * 2.9; sh.alpha = 0.55 }
     const tc = top.get(b), speed = Math.hypot(b.velocity.x, b.velocity.y);
-    if (tc || speed > 6 || b.turboT > 0) b.trail.forEach((p, j) => {   // Lichtspur: Top 3 in Gold/Silber/Bronze, schnelle Kugeln in der Bahnfarbe
+    if (!BR && (tc || speed > 6 || b.turboT > 0)) b.trail.forEach((p, j) => {   // Lichtspur: Top 3 in Gold/Silber/Bronze, schnelle Kugeln in der Bahnfarbe
       const t = trails.children[ti++], k = (j + 1) / b.trail.length;
       t.visible = true; t.x = p.x; t.y = p.y; t.width = t.height = r * (0.8 + 1.4 * k) * (tc ? 1.25 : 1);
       t.tint = b.turboT > 0 ? 0xfb923c : tc || cols[1]; t.alpha = (tc ? 0.38 : 0.2) * k;
@@ -150,7 +160,7 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
   for (let i = ti; i < trails.children.length; i++) trails.children[i].visible = false;
   sparks = sparks.filter(p => {
     p.t++; p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vx *= 0.96;
-    const k = 1 - p.t / p.life; p.s.x = p.x; p.s.y = p.y; p.s.width = p.s.height = (p.big ? 18 : 10) * k + 3; p.s.alpha = k;
+    const k = 1 - p.t / p.life; p.s.x = p.x; p.s.y = p.y; p.s.width = p.s.height = BR ? (p.big ? 12 : 7) : (p.big ? 18 : 10) * k + 3; p.s.alpha = BR ? Math.min(1, k * 3) : k;
     if (p.t >= p.life) { p.s.destroy(); return false } return true;
   });
   app.render();

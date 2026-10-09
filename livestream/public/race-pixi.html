@@ -57,9 +57,9 @@ if(GLASS) PALETTES.splice(0,3,   // Wortraten-Farben: Lila, Mint, Pink, Gold auf
   {peg:'#ff8fb1', ramp:'#2f9e8a', paddle:'#e0b45a', bump:'#ff8fb1', fun:'#9b82ff', bg:['#1a1433','#120d24']},
   {peg:'#ffd166', ramp:'#b8466b', paddle:'#7a63d9', bump:'#ffd166', fun:'#4fe0c0', bg:['#1a1433','#120d24']});
 if(BRUTAL) PALETTES.splice(0,3,   // flache Knallfarben auf dunkler Bahn
-  {peg:BY, ramp:BP, paddle:BC, bump:BY, fun:BL, bg:['#241c4f','#1b1440']},
-  {peg:BC, ramp:BL, paddle:BP, bump:BC, fun:BY, bg:['#241c4f','#1b1440']},
-  {peg:BL, ramp:BO, paddle:BC, bump:BL, fun:BP, bg:['#241c4f','#1b1440']});
+  {peg:BY, ramp:BP, paddle:BC, bump:BY, fun:BL, bg:['#231c47','#231c47']},
+  {peg:BC, ramp:BL, paddle:BP, bump:BC, fun:BY, bg:['#231c47','#231c47']},
+  {peg:BL, ramp:BO, paddle:BC, bump:BL, fun:BP, bg:['#231c47','#231c47']});
 let PAL = PALETTES[0];
 // Bausteine: jeder bekommt die Start-Höhe y und baut nach unten; Rückgabe = verbrauchte Höhe.
 // Regeln: Abstand zur Wand und zwischen Hindernissen ≥ 2 Kugeldurchmesser, sonst klemmen Kugeln.
@@ -211,16 +211,28 @@ function buildTrack(){
 function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenzeit pro Bild)
   trackLayer = document.createElement('canvas'); trackLayer.width = TW; trackLayer.height = WORLD_H;
   const g = trackLayer.getContext('2d');
-  g.strokeStyle='rgba(255,255,255,0.04)'; g.lineWidth=2;
-  for(let y=0;y<WORLD_H;y+=120){g.beginPath();g.moveTo(0,y);g.lineTo(TW,y);g.stroke()}
+  if(BRUTAL){ g.fillStyle='#3a3170'; for(let y=17;y<WORLD_H;y+=34) for(let x=17;x<TW;x+=34) g.fillRect(x-2,y-2,4,4) }   // Neo-Brutalism (Niklas 09.10. 22:02Z „cook richtig“): Punktraster wie Wortraten statt Linien
+  else { g.strokeStyle='rgba(255,255,255,0.04)'; g.lineWidth=2;
+  for(let y=0;y<WORLD_H;y+=120){g.beginPath();g.moveTo(0,y);g.lineTo(TW,y);g.stroke()} }
   for(let i=0;i<13;i++){g.fillStyle=i%2?'#fff':'#111'; g.fillRect(i*48,FINISH_Y,48,14)}
-  if(GLASS){ g.font=`900 34px ${FONT}`; g.letterSpacing='8px'; g.fillStyle='rgba(243,239,252,0.32)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-22); g.letterSpacing='0px' }
+  if(BRUTAL){ g.fillStyle='#000'; g.fillRect(6,FINISH_Y+6,TW-12,14); g.lineWidth=4; g.strokeStyle=BK; g.strokeRect(0,FINISH_Y,TW-6,14);
+    g.save(); g.translate(TW/2,FINISH_Y-40); g.rotate(-0.04); g.fillStyle='#000'; g.beginPath(); g.roundRect(-112,-26,232,58,10); g.fill(); g.fillStyle=BY; g.beginPath(); g.roundRect(-120,-34,232,58,10); g.fill();
+    g.lineWidth=5; g.strokeStyle=BK; g.stroke(); g.font=`900 34px ${FONT}`; g.letterSpacing='4px'; g.fillStyle=BK; g.textAlign='center'; g.textBaseline='middle'; g.fillText('🏁 FINISH',-4,-4); g.letterSpacing='0px'; g.textBaseline='alphabetic'; g.restore() }
+  else if(GLASS){ g.font=`900 34px ${FONT}`; g.letterSpacing='8px'; g.fillStyle='rgba(243,239,252,0.32)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-22); g.letterSpacing='0px' }
   else { g.font='700 36px "DejaVu Sans"'; g.fillStyle='rgba(255,255,255,0.25)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-20) }
-  for(const p of portals){ g.lineWidth=6; g.strokeStyle=PORTAL.col; g.globalAlpha=0.9;
+  for(const p of portals){ if(BRUTAL){ g.fillStyle='#000'; g.beginPath(); g.arc(p.x1+5,p.y1+5,p.r,0,7); g.fill(); g.fillStyle=PORTAL.col; g.beginPath(); g.arc(p.x1,p.y1,p.r,0,7); g.fill(); g.lineWidth=5; g.strokeStyle=BK; g.stroke();
+      g.setLineDash([10,7]); g.lineWidth=4; g.beginPath(); g.arc(p.x2,p.y2,p.r-6,0,7); g.stroke(); g.setLineDash([]); g.font='34px "Noto Color Emoji"'; g.textAlign='center'; g.fillText('🌀',p.x1,p.y1+12); continue }
+    g.lineWidth=6; g.strokeStyle=PORTAL.col; g.globalAlpha=0.9;
     g.beginPath(); g.arc(p.x1,p.y1,p.r,0,7); g.stroke(); g.globalAlpha=0.25; g.fillStyle=PORTAL.col; g.fill();
     g.globalAlpha=0.6; g.setLineDash([8,6]); g.beginPath(); g.arc(p.x2,p.y2,p.r-6,0,7); g.stroke(); g.setLineDash([]); g.globalAlpha=1;
     g.font='34px "Noto Color Emoji"'; g.textAlign='center'; g.fillText('🌀',p.x1,p.y1+12) }
   for(const z of zones){ const Z=ZONES[z.type];
+    if(BRUTAL){ g.fillStyle='#000'; g.fillRect(z.x+7,z.y+7,z.w,z.h); g.fillStyle=Z.col; g.fillRect(z.x,z.y,z.w,z.h); g.globalAlpha=0.5; g.fillStyle='#231c47'; g.fillRect(z.x+5,z.y+5,z.w-10,z.h-10); g.globalAlpha=1;
+      g.lineWidth=5; g.strokeStyle=BK; g.strokeRect(z.x,z.y,z.w,z.h);
+      g.font=`900 20px ${FONT}`; g.letterSpacing='2px'; const tw=g.measureText(Z.name).width+22, tx=z.x+z.w/2-tw/2, ty=z.y+z.h-44;
+      g.fillStyle='#000'; g.fillRect(tx+4,ty+4,tw,32); g.fillStyle='#fff'; g.fillRect(tx,ty,tw,32); g.lineWidth=3; g.strokeRect(tx,ty,tw,32);
+      g.fillStyle=BK; g.textAlign='center'; g.fillText(Z.name,z.x+z.w/2,ty+24); g.letterSpacing='0px';
+      g.font='40px "Noto Color Emoji"'; g.fillText(Z.icon,z.x+z.w/2,z.y+54); continue }
     g.globalAlpha=0.22; g.fillStyle=Z.col; g.fillRect(z.x,z.y,z.w,z.h); g.globalAlpha=0.9;
     g.strokeStyle=Z.col; g.lineWidth=3; g.setLineDash([10,7]); g.strokeRect(z.x,z.y,z.w,z.h); g.setLineDash([]);
     if(GLASS){ g.font=`800 19px ${FONT}`; g.letterSpacing='3px'; g.fillStyle='#f3effc'; g.textAlign='center'; g.fillText(Z.name,z.x+z.w/2,z.y+z.h-14); g.letterSpacing='0px' }
@@ -538,6 +550,8 @@ function flagBall(x,y,r,b,g=ctx){
   g.fillText(b.flag,x,y+r*0.12);
   const gr=g.createRadialGradient(x-r*0.4,y-r*0.45,r*0.1,x,y,r);
   gr.addColorStop(0,'rgba(255,255,255,0.75)'); gr.addColorStop(0.35,'rgba(255,255,255,0.05)'); gr.addColorStop(1,'rgba(0,0,0,0.35)');
+  if(BRUTAL){ g.fillStyle='rgba(255,255,255,0.8)'; g.beginPath(); g.ellipse(x-r*0.38,y-r*0.42,r*0.26,r*0.15,-0.6,0,7); g.fill(); g.restore();   // flacher Glanzpunkt + schwarzer Rand
+    g.lineWidth=Math.max(2.5,r/6); g.strokeStyle=BK; g.beginPath(); g.arc(x,y,r-g.lineWidth/2+0.5,0,7); g.stroke(); return }
   g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r); g.restore();
   g.lineWidth=Math.max(2,r/9); g.strokeStyle='rgba(255,255,255,0.85)'; g.beginPath(); g.arc(x,y,r,0,7); g.stroke();
 }
@@ -558,6 +572,8 @@ function emojiSprite(ch,size){   // Emoji einmal vorzeichnen (Feld-Symbol neben 
   emojiImg.set(k,c); return c;
 }
 function drawBody(g,b,flat){
+  if(BRUTAL){ const v=b.vertices, path=(dx,dy)=>{ g.beginPath(); if(b.circleRadius) g.arc(b.position.x+dx,b.position.y+dy,b.circleRadius,0,7); else { g.moveTo(v[0].x+dx,v[0].y+dy); for(const p of v) g.lineTo(p.x+dx,p.y+dy); g.closePath() } };
+    const o=b.circleRadius?3:5; g.fillStyle='#000'; path(o,o); g.fill(); g.fillStyle=b.col==='#1e293b'?PAPER:b.col;   /* Seitenwände in Papierfarbe wie der Rahmen */ path(0,0); g.fill(); g.lineWidth=b.circleRadius?2.5:3.5; g.strokeStyle=BK; g.lineJoin='round'; g.stroke(); return }
   g.fillStyle=b.col; g.shadowColor=b.col; g.shadowBlur=flat?0:12;
   g.beginPath(); const v=b.vertices;
   if(b.circleRadius){g.arc(b.position.x,b.position.y,b.circleRadius,0,7)}
@@ -615,7 +631,11 @@ function glassHeader(rank){
   else { box(MID-52,128,104,38,'#ff5d8d',19); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(MID-26,147,5,0,7); ctx.fill(); txt('LIVE',MID+10,156,21,'#fff','800','center');
   ctx.save(); ctx.letterSpacing='-1.5px'; txt('Country Marble Race',MID,214,50,'#f3effc','900','center',SW+40); ctx.restore() }
   // Info-Zeile wie „NATURE · 12 LETTERS“: Rennen, Top 3, Zeit
-  ctx.save(); ctx.letterSpacing='2px'; txt(`RACE #${raceNo}`,SL,250,20,'#a99fc6','800','left'); txt(phase==='race'?`⏱ ${(t/60).toFixed(0)} S`:phase==='countdown'?`START IN ${secs(START_WAIT-phaseT)} S`:'🏁 FINISH',SR,250,20,'#4fe0c0','800','right'); ctx.restore();
+  if(BRUTAL){ const tl=phase==='race'?`⏱ ${(t/60).toFixed(0)} S`:phase==='countdown'?`START IN ${secs(START_WAIT-phaseT)}`:'🏁 FINISH';
+    ctx.save(); ctx.letterSpacing='1.5px'; ctx.font=`900 19px ${FONT}`; const a=`RACE #${raceNo}`, aw=ctx.measureText(a).width+22, bw=ctx.measureText(tl).width+22;
+    hardBox(SL-24,229,aw,32,'#fff',7,3,4,BK); hardBox(SR+24-bw,229,bw,32,phase==='race'?BL:BY,7,3,4,BK); ctx.fillStyle=BK; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillText(a,SL-24+aw/2,252); ctx.fillText(tl,SR+24-bw/2,252); ctx.restore() }
+  else { ctx.save(); ctx.letterSpacing='2px'; txt(`RACE #${raceNo}`,SL,250,20,'#a99fc6','800','left'); txt(phase==='race'?`⏱ ${(t/60).toFixed(0)} S`:phase==='countdown'?`START IN ${secs(START_WAIT-phaseT)} S`:'🏁 FINISH',SR,250,20,'#4fe0c0','800','right'); ctx.restore() }
   rank.slice(0,3).forEach((b,i)=>{ const x=MID-62+i*48; ctx.drawImage(ballSprite(b,15),x,226) });
   // Mitmach-Knopf (lila, 3D-Kante wie „Type it in chat“)
   const F=266; if(BRUTAL) hardBox(SL-24,F-2,SW+48,70,BP,12,5,8,SHC); else { ctx.fillStyle='#5a3fd1'; ctx.beginPath(); ctx.roundRect(SL-24,F+6,SW+48,72,36); ctx.fill();
@@ -762,7 +782,7 @@ function draw(){
   camZ += (wantZ-camZ)*0.06;
   const VW=TW/camZ, VH=H/camZ;
   camX += (Math.min(Math.max(gx-VW/2,0),TW-VW)-camX)*0.1; camX=Math.min(Math.max(camX,0),TW-VW);
-  const target=Math.min(Math.max(lead.position.y+(camZ>1.05?lead.velocity.y*4:0)-H*0.54/camZ,-330/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
+  const target=Math.min(Math.max(lead.position.y+(camZ>1.05?lead.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-330/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*(0.12+0.3*Math.max(0,camZ-1));   // näher dran → Kamera folgt straffer, sonst rutscht der Erste unter den Chat
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   if(PX.ready){ ctx.clearRect(0,0,W,H); PX.draw({pal:PAL, camY, camX, camZ, trackLayer, statics, spinners, balls, rank, phase, R, ballSprite}) } else { ctx.fillStyle=bg; ctx.fillRect(0,0,W,H) }
@@ -782,8 +802,10 @@ function draw(){
         ctx.globalAlpha=k*(0.75-j*0.08); ctx.fillStyle=j<2?'#fde047':j<4?'#fb923c':'#ef4444';
         ctx.beginPath(); ctx.ellipse(b.position.x+ox,b.position.y-r*0.3-fl*0.5-j*r*0.5,r*(0.95-j*0.08),fl*0.55,0,0,7); ctx.fill() }
       ctx.globalAlpha=1 }
-    if(b.bot){ ctx.strokeStyle=BOT_COL; ctx.lineWidth=3; ctx.globalAlpha=0.8; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke(); ctx.globalAlpha=1 }
-    if(b.players.length){ ctx.strokeStyle=GLASS?'rgba(255,209,102,0.9)':'#fde047'; ctx.lineWidth=GLASS?3:4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke();
+    if(BRUTAL && (b.bot||b.players.length)){ const rr=r+5; ctx.lineWidth=8; ctx.strokeStyle=BK; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,rr,0,7); ctx.stroke();   // Neo-Brutalism: Ring mit schwarzer Kontur
+      ctx.lineWidth=4; ctx.strokeStyle=b.players.length?BY:BC; ctx.stroke() }
+    else if(b.bot){ ctx.strokeStyle=BOT_COL; ctx.lineWidth=3; ctx.globalAlpha=0.8; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke(); ctx.globalAlpha=1 }
+    if(b.players.length && !BRUTAL){ ctx.strokeStyle=GLASS?'rgba(255,209,102,0.9)':'#fde047'; ctx.lineWidth=GLASS?3:4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke();
       if(phase==='countdown'){ ctx.globalAlpha=0.45; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+14,0,7); ctx.stroke(); ctx.globalAlpha=1 } }   // Spieler am Start sofort finden
     if(GLASS && b.charge>0 && !b.done && (phase==='race'||phase==='countdown')) chargeRing(b.position.x,b.position.y,r+11,b.charge);
     else if(b.charge>0 && !b.done && (phase==='race'||phase==='countdown')){ const pu=0.55+0.45*Math.sin(performance.now()/160);
@@ -851,12 +873,14 @@ function drawProgress(rank){
 
 function glassProgress(rank){   // schlanke Schiene, Spieler als Kugel + Platz-Plakette (keine Namen, Gemini 09.10.)
   const yOf = b => PB_TOP + Math.min(1, Math.max(0, (b.position.y-100)/(FINISH_Y-100))) * (PB_BOT-PB_TOP);
-  ctx.fillStyle='rgba(18,14,33,0.7)'; ctx.beginPath(); ctx.roundRect(PB_X-7,PB_TOP-10,14,PB_BOT-PB_TOP+20,7); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.14)'; ctx.beginPath(); ctx.roundRect(PB_X-3,PB_TOP,6,PB_BOT-PB_TOP,3); ctx.fill();
-  const lead=rank.find(b=>!b.done); if(lead){ ctx.fillStyle='#4fe0c0'; ctx.beginPath(); ctx.roundRect(PB_X-3,PB_TOP,6,Math.max(6,yOf(lead)-PB_TOP),3); ctx.fill() }
+  const lead=rank.find(b=>!b.done);
+  if(BRUTAL){ hardBox(PB_X-8,PB_TOP-10,16,PB_BOT-PB_TOP+20,'#fff',8,3,4,BK); if(lead){ ctx.fillStyle=BL; ctx.beginPath(); ctx.roundRect(PB_X-5,PB_TOP-7,10,Math.max(10,yOf(lead)-PB_TOP+7),5); ctx.fill() } }
+  else { ctx.fillStyle='rgba(18,14,33,0.7)'; ctx.beginPath(); ctx.roundRect(PB_X-7,PB_TOP-10,14,PB_BOT-PB_TOP+20,7); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.14)'; ctx.beginPath(); ctx.roundRect(PB_X-3,PB_TOP,6,PB_BOT-PB_TOP,3); ctx.fill() }
+  if(lead && !BRUTAL){ ctx.fillStyle='#4fe0c0'; ctx.beginPath(); ctx.roundRect(PB_X-3,PB_TOP,6,Math.max(6,yOf(lead)-PB_TOP),3); ctx.fill() }
   for(const b of balls) if(!b.players.length){ ctx.fillStyle=b.bot?BOT_COL:b.done?'#6c6390':'#c9c0e3'; ctx.beginPath(); ctx.arc(PB_X, yOf(b), 3, 0, 7); ctx.fill() }
   const pl = rank.map((b,i)=>({b,i})).filter(x=>x.b.players.length).slice(0,6); let lastY=-99;
-  if(pl.length){ const ys=pl.map(x=>yOf(x.b)), y0=Math.min(...ys)-18, y1=Math.max(Math.max(...ys)+18, y0+(pl.length)*28+8);
+  if(pl.length && !BRUTAL){ const ys=pl.map(x=>yOf(x.b)), y0=Math.min(...ys)-18, y1=Math.max(Math.max(...ys)+18, y0+(pl.length)*28+8);
     ctx.fillStyle='rgba(18,14,33,0.72)'; ctx.beginPath(); ctx.roundRect(PB_X+14,y0,42,y1-y0,21); ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.stroke() }
   for(const {b,i} of pl.sort((a,c)=>yOf(a.b)-yOf(c.b))){ const y=yOf(b), ly=Math.max(y,lastY+28); lastY=ly;
     ctx.drawImage(ballSprite(b,10), PB_X-13, y-13); pill(String(i+1),PB_X+34,ly+8,18,'#ffd166','rgba(18,14,33,0.92)','rgba(255,209,102,0.7)') }
@@ -950,6 +974,8 @@ function drawColumn(rank){
 // Glas-Siegerehrung (Niklas 09.10.: alles im Apple-Stil): Licht-Ring statt Glühbirnen, Kugel federt herein, Ergebnisse als Glas-Karte
 function glassPodium(w){
   const top=(board.countries||[])[0], e=springB(phaseT/60,0.5,0.6);
+  // Hochformat mit Spieler-Ergebnissen: Siegerblock kleiner und höher, damit die Ergebnisse über dem Handy-Chat (y < ~615) stehen
+  const CP=PORT && results.length>0; if(CP){ ctx.save(); ctx.translate(MID,400); ctx.scale(0.7,0.7); ctx.translate(-MID,-400) }
   label(chaos?'🌀 Chaos win ×2':'🏆 Winner',MID,426,chaos?'#c4b5ff':'#ffd166','center');
   if(w){ const g=ctx.createRadialGradient(MID,480,24,MID,480,80); g.addColorStop(0,'rgba(255,209,102,0.32)'); g.addColorStop(1,'rgba(255,209,102,0)');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(MID,480,80,0,7); ctx.fill();
@@ -963,7 +989,8 @@ function glassPodium(w){
     ctx.drawImage(ballSprite(b,24),x-27,474-27); pill(String(k+1),x+24,456,16,'#22182e',k===1?'#d9dbe6':'#e9a873','rgba(255,255,255,0.4)',1);
     txt(b.name,x,526,20,'#f3effc','800','center',132);
     if(b.players.length) txt(short(b.players[0],12),x,550,18,'#ffd166','700','center',132); else if(b.bot) txt('🤖 '+b.bot,x,550,18,BOT_COL,'700','center',132) });
-  if(results.length){ const n=Math.min(3,results.length), more=results.length-n, y0=592, rh=34, h=n*rh+(more?30:0)+14;
+  if(CP) ctx.restore();
+  if(results.length){ const n=Math.min(CP?2:3,results.length), more=CP?0:results.length-n, y0=CP?530:592, rh=CP?32:34, h=n*rh+(more?30:0)+14;
     card(SL-16,y0,SW+32,h);
     results.slice(0,n).forEach((x,j)=>{ const ry=y0+30+j*rh, pts=`+${x.pts}${x.beat?' 🏆':''}`;
       txt(`#${x.place}`,SL+2,ry,20,x.place<=3?'#ffd166':'#a99fc6','900','left');
@@ -1063,7 +1090,7 @@ function loop(now){
 const origNew = newRace;
 newRace = async()=>{ phase='loading'; await origNew() };
 document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
-  try { await PX.init(document.getElementById('p'), OUT_W, OUT_H, SC, {W,H,CX,CW,OX}) } catch(e){ console.log('Pixi aus: '+e) }   // ohne WebGL: alles wie bisher auf Canvas 2D
+  try { await PX.init(document.getElementById('p'), OUT_W, OUT_H, SC, {W,H,CX,CW,OX,brutal:BRUTAL}) } catch(e){ console.log('Pixi aus: '+e) }   // ohne WebGL: alles wie bisher auf Canvas 2D
   await newRace(); setInterval(pollChat,500); setInterval(pollBoard,5000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
   if(!OFFLINE) fetch('/api/clipgeom',{method:'POST',body:JSON.stringify(PORT?{x:0, w:OUT_W, h:OUT_H}:{x:CX*SC, w:CW*SC, h:H*SC})}).catch(()=>{});   // wo die 9:16-Spalte für Clips liegt
   AC.resume(); DECK.calm.g.gain.value = MUSIC_VOL; playNext(DECK.calm); setInterval(()=>setMusic(musicWant()), 500); requestAnimationFrame(loop);
