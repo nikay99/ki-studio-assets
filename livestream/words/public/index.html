@@ -100,7 +100,7 @@ html.night .sol.first{background:linear-gradient(90deg,rgba(255,182,39,.22),rgba
 html.night .sol .p,html.night .ok{color:#4fe0c0}
 html.night .row .r{background:#2c2450;color:var(--ink2)}
 html.night .late{color:#ffb627}
-/* Neo-Brutalism = Standard seit 09.10., dunkle Fassung live (Niklas „dunkel live“); ?light=1 = helle Fassung, ?style=glass = alter Glas-Nachtmodus */
+/* Neo-Brutalism = Standard seit 09.10., 07–19 Uhr Wien hell, sonst dunkel; ?light=1 / ?dark=1 erzwingen, ?style=glass = alter Glas-Nachtmodus */
 html.brutal{--ink:#111;--ink2:#111;--ink3:#555;--bd:#111;--paper:#fff7e0;--y:#ffd23f;--p:#ff6fb5;--c:#3ee0ff;--l:#b6f36a;--o:#ff8a3d;--card:#fff}
 html.brutal #stage{background:var(--paper);background-image:radial-gradient(rgba(0,0,0,.13) 2px,transparent 2px);background-size:34px 34px}
 html.brutal .orb{display:none}
@@ -176,7 +176,10 @@ html.brutal .sol.first .p{color:#0a6b42!important}
 </div>
 <script>
 if(!/[?&]day=1/.test(location.search))document.documentElement.classList.add('night');
-if(!/[?&]style=glass/.test(location.search)){document.documentElement.classList.add('brutal');if(!/[?&]light=1/.test(location.search))document.documentElement.classList.add('bdark')}
+if(!/[?&]style=glass/.test(location.search)){document.documentElement.classList.add('brutal');// Tag/Nacht nach Wiener Zeit (Niklas 09.10.): 07–19 Uhr hell, sonst dunkel; ?light=1 / ?dark=1 erzwingen
+  const viennaHour=()=>+new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Vienna',hour:'2-digit',hour12:false}).format(new Date())%24;
+  const dayNight=()=>{const q=location.search,dark=/[?&]dark=1/.test(q)?true:/[?&]light=1/.test(q)?false:(viennaHour()<7||viennaHour()>=19);document.documentElement.classList.toggle('bdark',dark)};
+  dayNight();setInterval(dayNight,60000)}
 const fit=()=>{const s=Math.min(innerWidth/1920,innerHeight/1080);document.getElementById('stage').style.transform=`scale(${s})`};addEventListener('resize',fit);fit();
 const CAT_ICON={'Nature':'🌿','Animals':'🐾','Food & Drinks':'🍔','Everyday Things':'🏠','Places & Buildings':'🏙️','Sports & Games':'🏆','Transport':'🚗','People & Fantasy':'🧙','Feelings & Actions':'💭','Which country?':'🌍'};
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
