@@ -69,7 +69,7 @@ h1{font-size:74px;font-weight:900;letter-spacing:-.04em;line-height:1.02;margin-
 .row .n{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.row .p{font-weight:900;color:var(--violet)}
 .rec{font-size:24px;font-weight:600;color:var(--ink2);padding:5px 0}.rec b{color:var(--ink);font-weight:800}
 #feed .row{font-size:24px;padding:6px 0}
-.ok{color:var(--mint-d);font-weight:800}.no{color:var(--ink3);text-decoration:line-through;font-weight:600;letter-spacing:.04em}
+.ok{color:var(--mint-d);font-weight:800}.late{color:#c77800;font-weight:800}.no{color:var(--ink3);text-decoration:line-through;font-weight:600;letter-spacing:.04em}
 .how{font-size:24px;font-weight:600;color:var(--ink2);line-height:1.6}.how b{color:var(--ink)}
 canvas#fx{position:absolute;inset:0;pointer-events:none}
 </style></head>
@@ -196,7 +196,7 @@ async function pollFeed(){
   try{
     const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last; const box=$('feed');
     for(const e of f.feed){ const d=document.createElement('div'); d.className='row';
-      d.innerHTML=e.ok?`<span class="n">${esc(e.user)}</span><span class="ok">got it ✓</span>`:`<span class="n">${esc(e.user)}</span><span class="no">${esc(e.guess)}</span>`;
+      d.innerHTML=`<span class="n">${esc(e.user)}</span>`+(e.ok?`<span class="ok">got it ✓</span>`:e.flag?`<span class="ok">${e.flag} joined</span>`:e.late?`<span class="late">right, too late ⏱</span>`:`<span class="no">${esc(e.guess)}</span>`);
       box.prepend(d); pop(d,{transform:'translateY(-16px)',opacity:0},1,.35) }
     while(box.children.length>9) box.lastChild.remove();
   }catch{}

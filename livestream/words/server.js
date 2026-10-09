@@ -86,10 +86,9 @@ function isCorrect(text) {
 function onChat(user, text) {
   msgCount++;
   rollDay();
-  // Flagge fürs Leaderboard: wer ein Land schreibt und damit nicht gerade richtig rät, bekommt dessen Flagge
-  if (!round || round.phase !== 'guess') return;
-  if (round.solvers.some(s => s.user === user)) return;
-  if (isCorrect(text)) {
+  // Jede Nachricht bekommt eine sichtbare Rückmeldung (Niklas 09.10.: sonst wirkt der Chat „tot“)
+  const late = round && round.phase !== 'guess' && isCorrect(text);
+  if (round && round.phase === 'guess' && !round.solvers.some(s => s.user === user) && isCorrect(text)) {
     const place = round.solvers.length, ms = Date.now() - round.start;
     const pts = place < PTS.length ? PTS[place] : 3;
     round.solvers.push({ user, pts, ms, flag: st.flags[user] || '' });
@@ -97,11 +96,17 @@ function onChat(user, text) {
     if (place === 0) { st.wins[user] = (st.wins[user] || 0) + 1; if (!st.fastest || ms < st.fastest.ms) st.fastest = { user, ms, word: round.q.shown }; }
     feed.push({ id: ++feedId, user, ok: 1, pts, place }); save();
     if (place === 0) round.end = Math.min(round.end, Date.now() + 10000);   // nach dem ersten Treffer noch 10 s für alle anderen
-  } else {
-    const g = norm(text).replace(/ /g, '');
-    for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(norm(text))) { st.flags[user] = code; save(); break; }
-    // falsche Versuche in passender Länge zeigen (Mitmach-Gefühl), alles andere nicht
-    if (g.length === round.q.w.length && !BAD.test(g)) feed.push({ id: ++feedId, user, guess: g.toUpperCase() });
+  } else if (late) {
+    feed.push({ id: ++feedId, user, late: 1 });   // richtig, aber nach Rundenende (Bildverzögerung) – freundlich quittieren
+  } else if (!round || !round.solvers.some(s => s.user === user)) {
+    // Flagge fürs Leaderboard: wer ein Land schreibt (und nicht gerade richtig rät), bekommt sie sofort sichtbar
+    let flag = null;
+    for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(norm(text))) { flag = code; break; }
+    if (flag && st.flags[user] !== flag) { st.flags[user] = flag; save(); feed.push({ id: ++feedId, user, flag: flagOf(flag) }); }
+    else {
+      const g = norm(text).toUpperCase();
+      if (g && !BAD.test(g.replace(/ /g, ''))) feed.push({ id: ++feedId, user, guess: g.length > 14 ? g.slice(0, 13) + '…' : g });
+    }
   }
   if (feed.length > 200) feed = feed.slice(-100);
 }
@@ -147,8 +152,9 @@ if (process.env.DEMO === '1') {
   const ctry = ['brazil', 'germany', 'japan', 'france', 'india', 'poland', 'mexico', 'italy'];
   for (const n of names.slice(0, 8)) onChat(n, ctry[Math.floor(Math.random() * ctry.length)]);
   setInterval(() => {
-    if (!round || round.phase !== 'guess') return;
     const u = names[Math.floor(Math.random() * names.length)], el = Date.now() - round.start;
+    if (!round || round.phase !== 'guess') { if (round && Math.random() < 0.3) onChat(u, round.q.w); return; }
+    if (Math.random() < 0.12) return onChat(u, ['hello!', 'no idea lol', 'canada', 'is it a fish?'][Math.floor(Math.random() * 4)]);
     if (el > 9000 && Math.random() < Math.min(0.5, (el - 9000) / 20000)) onChat(u, round.q.w);
     else onChat(u, round.q.w.split('').sort(() => Math.random() - 0.5).join(''));
   }, 1300);
