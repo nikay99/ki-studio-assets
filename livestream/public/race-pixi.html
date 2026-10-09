@@ -193,7 +193,8 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
   g.strokeStyle='rgba(255,255,255,0.04)'; g.lineWidth=2;
   for(let y=0;y<WORLD_H;y+=120){g.beginPath();g.moveTo(0,y);g.lineTo(TW,y);g.stroke()}
   for(let i=0;i<13;i++){g.fillStyle=i%2?'#fff':'#111'; g.fillRect(i*48,FINISH_Y,48,14)}
-  g.font='700 36px "DejaVu Sans"'; g.fillStyle='rgba(255,255,255,0.25)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-20);
+  if(GLASS){ g.font=`900 34px ${FONT}`; g.letterSpacing='8px'; g.fillStyle='rgba(243,239,252,0.32)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-22); g.letterSpacing='0px' }
+  else { g.font='700 36px "DejaVu Sans"'; g.fillStyle='rgba(255,255,255,0.25)'; g.textAlign='center'; g.fillText('FINISH',TW/2,FINISH_Y-20) }
   for(const p of portals){ g.lineWidth=6; g.strokeStyle=PORTAL.col; g.globalAlpha=0.9;
     g.beginPath(); g.arc(p.x1,p.y1,p.r,0,7); g.stroke(); g.globalAlpha=0.25; g.fillStyle=PORTAL.col; g.fill();
     g.globalAlpha=0.6; g.setLineDash([8,6]); g.beginPath(); g.arc(p.x2,p.y2,p.r-6,0,7); g.stroke(); g.setLineDash([]); g.globalAlpha=1;
@@ -201,7 +202,8 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
   for(const z of zones){ const Z=ZONES[z.type];
     g.globalAlpha=0.22; g.fillStyle=Z.col; g.fillRect(z.x,z.y,z.w,z.h); g.globalAlpha=0.9;
     g.strokeStyle=Z.col; g.lineWidth=3; g.setLineDash([10,7]); g.strokeRect(z.x,z.y,z.w,z.h); g.setLineDash([]);
-    g.font='700 22px "DejaVu Sans"'; g.fillStyle='#fff'; g.textAlign='center'; g.fillText(Z.name,z.x+z.w/2,z.y+z.h-14);
+    if(GLASS){ g.font=`800 19px ${FONT}`; g.letterSpacing='3px'; g.fillStyle='#f3effc'; g.textAlign='center'; g.fillText(Z.name,z.x+z.w/2,z.y+z.h-14); g.letterSpacing='0px' }
+    else { g.font='700 22px "DejaVu Sans"'; g.fillStyle='#fff'; g.textAlign='center'; g.fillText(Z.name,z.x+z.w/2,z.y+z.h-14) }
     g.font='40px "Noto Color Emoji"'; g.fillText(Z.icon,z.x+z.w/2,z.y+54); g.globalAlpha=1 }
   for(const s of statics) if(!s.gate && !s.spin && !s.slide) drawBody(g,s);   // Paddel und Schranken bewegen sich, werden live gezeichnet
 }
@@ -234,7 +236,7 @@ async function newRace(){
   if(chaos){ if(chaos.id==='moon') engine.gravity.y=0.75; if(chaos.id==='bounce') for(const b of balls) b.restitution=0.92; sfx.chaos() }
   Events.on(engine,'collisionStart',onHit);
   if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
-  if(finalMin()) toast('🔥 FINAL RACES of the hour – type your country!','#f87171',300);
+  if(finalMin()) toast(GLASS?'🔥 Final races of the hour!':'🔥 FINAL RACES of the hour – type your country!','#f87171',300);
   t=0; finished=[]; results=[]; slowT=-1; slowDone=false; timeScale=1; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
   balls.forEach(b=>vload('win-'+b.code));
   if(chaos) say(['chaos',chaos.id,'double'],2);
@@ -294,9 +296,9 @@ function step(){
     if(chaos.id==='quake' && t%(60*4)===0){ for(const b of run) Body.setVelocity(b,{x:b.velocity.x+(Math.random()-0.5)*14, y:b.velocity.y-Math.random()*4}); sfx.quake(); say(['quake']); toast('🌋 EARTHQUAKE!','#c084fc',90) }
     if(chaos.id==='rocket' && t%(60*3)===0 && run.length){ const b=run[Math.floor(Math.random()*run.length)]; Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+8,17)}); b.boostT=45; b.boostBy=null; sfx.boost() } }
   if(phase==='race'){ const tb=assist(balls, t, finished.length);
-    if(tb){ sfx.turbo(); if(tb.players.length) toast(`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
+    if(tb){ sfx.turbo(); if(tb.players.length) toast(GLASS?`🔥 TURBO for ${tb.flag} ${short(tb.players[0])}!`:`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
     for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]||PORTAL; if(z.type==='speed') sfx.boost();
-      if(b.players.length) toast(`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
+      if(b.players.length) toast(GLASS?`${Z.icon} ${short(b.players[0])} hit ${Z.name.toLowerCase()}!`:`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
   if(phase==='race') for(const b of balls){ if(b.done || !(b.charge>0) || !b.players.length) continue;
     b.chargeCd=(b.chargeCd||0)-1; if(b.chargeCd>0) continue;
     const why = b.startPush && t>45 ? 'start' : b.still>30 ? 'stuck' : b.position.y>FINISH_Y-1400 ? 'final' : null;
@@ -318,14 +320,14 @@ function step(){
       b.done=true; b.ft=t; endFx(b); finished.push(b); const k=finished.length; if(k===1) winAt=t;
       if(k<=3) sfx.finish(k);
       if(b.players.length && phase==='race') { b.pts=ptsFor(k); if(balls.some(x=>x.bot) && !finished.some(x=>x.bot)){ b.beat=true; b.pts+=10 }
-        toast(b.beat?`🏆 ${b.players[0]} beat the bots! #${k}  +${b.pts} pts`:`🏁 ${b.flag} ${b.players[0]} #${k}/${balls.length}  +${b.pts} pts`, b.beat||k<=3?'#4ade80':'#e2e8f0', b.beat?240:undefined) }   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
+        toast(GLASS?(b.beat?`🏆 ${short(b.players[0])} beat the bots +${b.pts}`:`🏁 ${short(b.players[0])} #${k}  +${b.pts}`):b.beat?`🏆 ${b.players[0]} beat the bots! #${k}  +${b.pts} pts`:`🏁 ${b.flag} ${b.players[0]} #${k}/${balls.length}  +${b.pts} pts`, b.beat||k<=3?'#4ade80':'#e2e8f0', b.beat?240:undefined) }   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
     if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(3+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
     if(b.position.x<-20 || b.position.x>TW+20 || b.position.y<-400){ Body.setPosition(b,{x:Math.min(Math.max(b.position.x,R+30),TW-R-30), y:Math.max(b.position.y,40)}); Body.setVelocity(b,{x:0,y:2}) }   // aus der Bahn gesprungen (selten, Flummi) → zurück
   }
   if(phase==='race' && t>60*3 && t%15===0){ const l=ranking()[0];
-    if(l && l!==leader){ if(leader){ leadTimes.push(t); if(l.players.length||l.bot) toast(`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:` (🤖 ${l.bot})`), l.bot?BOT_COL:'#fde047', 150); sfx.lead();   // Flummi: viele Wechsel → Meldung höchstens alle 4 s (außer Spieler-Kugeln)
+    if(l && l!==leader){ if(leader){ leadTimes.push(t); if(l.players.length||l.bot) toast(GLASS?`${l.flag} ${l.players.length?short(l.players[0]):'🤖 '+l.bot} takes the lead!`:`${l.flag} ${l.name} takes the lead!`+(l.players.length?` (${l.players[0]})`:` (🤖 ${l.bot})`), l.bot?BOT_COL:'#fde047', 150); sfx.lead();   // Flummi: viele Wechsel → Meldung höchstens alle 4 s (außer Spieler-Kugeln)
         say([(comebackRank[l.id]||0)>=6 ? 'comeback' : Math.random()<0.5 ? 'new-leader' : 'change-top']) } leader=l } }
   // Sprecher: Ränge von vor ein paar Sekunden (für „What a comeback!“), Zielgerade, Sieger
   if(phase==='race' && t%240===0){ comebackRank={}; ranking().forEach((b,i)=>comebackRank[b.id]=i) }
@@ -353,12 +355,14 @@ function boost(b, user, why, k=1){
   b.boosts=(b.boosts||0)+1; const dv=Math.max(2, 10.5*Math.pow(0.8, b.boosts-1))*(chaos&&chaos.id==='rocket'?1.5:1)*k;
   Body.setVelocity(b,{x:b.velocity.x*0.6, y:Math.min(Math.max(b.velocity.y,0)+dv,17)});
   b.boostT=60; b.pushT=Math.round(40*k); b.boostBy=user;   // Niklas 08.10.: Boost soll mehr bringen und klar sichtbar sein
-  toast(why==='start'?`🚀 ${user}'s saved boost: START PUSH!`:why==='stuck'?`⚡ ${user}'s boost frees ${b.flag} ${b.name}!`:`⚡ ${user}'s boost fires on the final stretch!`, '#22d3ee', 120); sfx.boost();
+  toast(GLASS?(why==='start'?`🚀 ${short(user)} start boost!`:why==='stuck'?`⚡ ${short(user)} boost: unstuck!`:`⚡ ${short(user)} BOOST!`):why==='start'?`🚀 ${user}'s saved boost: START PUSH!`:why==='stuck'?`⚡ ${user}'s boost frees ${b.flag} ${b.name}!`:`⚡ ${user}'s boost fires on the final stretch!`, '#22d3ee', 120); sfx.boost();
 }
 // Kommentator sagt den Boost an („Israel got a boost!“, Niklas 08.10.): höchstens alle 6 s, je Land alle 20 s
 let lastBoostSay=0; const boostSaid={};
 function sayBoost(code){ const now=Date.now(); if(!code || now-lastBoostSay<6000 || now-(boostSaid[code]||0)<20000) return;
   lastBoostSay=now; boostSaid[code]=now; vload('boost-'+code).then(b=>{ if(b) say(['boost-'+code],2) }) }   // ohne Clip still bleiben
+const short=(u,n=12)=>{ u=String(u||''); return [...u].length>n?[...u].slice(0,n-1).join('')+'…':u };   // lange Namen kürzen statt abschneiden (Niklas 09.10.)
+function fitTxt(s,size,maxW,w='800'){ ctx.font=`${w} ${size}px ${FONT}`; if(ctx.measureText(s).width<=maxW) return s; let a=[...s]; while(a.length>4 && ctx.measureText(a.join('')+'…').width>maxW) a.pop(); return a.join('').trimEnd()+'…' }
 function toast(s, col='#fde047', life=240){ toasts.push({s,col,t:0,life}); if(toasts.length>2) toasts.shift() }
 async function pollChat(){
   if(OFFLINE) return;
@@ -374,8 +378,8 @@ async function pollChat(){
       // Boost-Ladung (Niklas 06.10.): Chat kommt ~25 s verzögert an, deshalb lädt jede Nachricht die eigene Kugel auf (max 3).
       // Die Ladung zündet von selbst, wenn die Kugel hängt oder auf der Zielgeraden ist; was übrig bleibt, wird Startschub im nächsten Rennen.
       if(e.cheer){ const tgt = mine && !(mine.done && phase==='race') && phase!=='podium' ? mine : null;
-        if(tgt){ tgt.charge=Math.min(3,(tgt.charge||0)+1); toast(`⚡ ${e.user} charged ${tgt.flag} ${tgt.name} (${tgt.charge}/3)`, '#22d3ee', 120) }
-        else { carry[e.user]=Math.min(3,(carry[e.user]||0)+1); toast(`⚡ ${e.user}: boost saved for the next race (${carry[e.user]}/3)`, '#22d3ee', 120) }
+        if(tgt){ tgt.charge=Math.min(3,(tgt.charge||0)+1); toast(GLASS?`⚡ ${short(e.user)} boosted ${tgt.flag}  ${tgt.charge}/3`:`⚡ ${e.user} charged ${tgt.flag} ${tgt.name} (${tgt.charge}/3)`, '#22d3ee', 120) }
+        else { carry[e.user]=Math.min(3,(carry[e.user]||0)+1); toast(GLASS?`⚡ ${short(e.user)}: boost saved  ${carry[e.user]}/3`:`⚡ ${e.user}: boost saved for the next race (${carry[e.user]}/3)`, '#22d3ee', 120) }
         sfx.charge(tgt?tgt.charge:carry[e.user]); sayBoost(tgt?tgt.code:e.code); continue }
       // Eigene Kugel pro Spieler (Niklas 06.10.): im Countdown sofort – freie Haus-Kugel des Landes übernehmen oder neue Kugel
       // (höchstens 6 pro Nation, 48 insgesamt); im Rennen erst ab dem nächsten (kein Aufspringen auf den Führenden)
@@ -389,10 +393,10 @@ async function pollChat(){
       if(b){
         if(mine) mine.players = [];                        // Länderwechsel: alte Kugel fährt als Haus-Kugel weiter
         b.players = [e.user];
-        toast(e.back?`👋 welcome back ${e.user}! ${flag} racing again`:`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'racing now'});
+        toast(GLASS?(e.back?`👋 ${short(e.user)} is back!`:`${flag} ${short(e.user)} joined the race!`):e.back?`👋 welcome back ${e.user}! ${flag} racing again`:`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'racing now'});
       } else {
         nextUp = nextUp.filter(x=>x.user!==e.user); nextUp.push({user:e.user, code:e.code});
-        toast(e.back?`👋 welcome back ${e.user}! ${flag} in the next race`:`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
+        toast(GLASS?(e.back?`👋 ${short(e.user)} is back!`:`${flag} ${short(e.user)} is in the next race!`):e.back?`👋 welcome back ${e.user}! ${flag} in the next race`:`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
       }
       sfx.join(); if(Date.now()-lastWelcome>30000){ lastWelcome=Date.now(); say(['welcome']) }
     }
@@ -450,7 +454,7 @@ const musicBus = AC.createGain(); musicBus.connect(master); const MUSIC_VOL = 0.
 function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, dnb, gen:0}; d.g.gain.value = 0;
   AC.createMediaElementSource(d.a).connect(d.g); d.g.connect(musicBus);
   d.a.onended = ()=>playNext(d); d.a.onerror = ()=>{ lastFetch = 0; const g=d.gen; setTimeout(()=>{ if(g===d.gen) playNext(d) }, 1000) };   // Datei fehlt (Musiktausch) → Liste sofort neu holen
-  d.a.onplaying = ()=>{ const n = songTitle(decodeURIComponent(d.a.src.split('/').pop())); if(n!==nowPlaying){ nowPlaying = n; nowAt = Date.now(); if(phase && phase!=='loading') toast(`🎵 Now playing: ${n}`,'#f9a8d4',200) } }; return d }
+  d.a.onplaying = ()=>{ const n = songTitle(decodeURIComponent(d.a.src.split('/').pop())); if(n!==nowPlaying){ nowPlaying = n; nowAt = Date.now(); if(phase && phase!=='loading') toast(GLASS?`🎵 ${n}`:`🎵 Now playing: ${n}`,'#f9a8d4',200) } }; return d }
 let nowPlaying = '', nowAt = 0;
 const songTitle = f => f.replace(/\.(mp3|ogg)$/,'').replace(/^summer-\d+-/,'').split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
 const DECK = {calm:deck(false), dnb:deck(true)}; let musicMode = 'calm', lastFetch = 0;
@@ -585,10 +589,13 @@ function glassHeader(rank){
   txt('🎯 GET YOUR OWN BALL!',MID,F+33,30,'#fff','800','center',SW+20); txt('type your COUNTRY in the chat',MID,F+60,22,'#e6e0ff','700','center',SW);
   // Stunden-Wertung bzw. Chaos-Ansage als ruhige Zeile
   const cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS RACE: ${chaos.name} · WIN = x2` : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT!':'in '+cl+' races'} · WIN = x2` : null;
-  if(chaosLine) txt(chaosLine,MID,372,22,'#c4b5ff','800','center',SW);
+  if(timeScale<0.9) pill('📸 Photo finish · slow motion',MID,373,22,'#22182e','#ffd166','rgba(255,255,255,0.45)',1.5,0.9+0.1*springB(Math.min(1,(1-timeScale)/0.5),0.4,0.55));
+  else if(chaosLine) txt(chaosLine,MID,372,22,'#c4b5ff','800','center',SW);
   else { const fin=finalMin(), hl=(board.hour||[]).slice(0,2);
-    txt(fin?`🔥 LAST MINUTES! ${hourLeft()}`:`👑 HOUR CHAMP in ${hourLeft()}`,SL,372,22,fin?'#ff5d8d':'#ffd166','800','left',SW-150);
-    hl.forEach(([c,n],i)=>{ const x=SR-130+i*68; ctx.drawImage(flagSprite(c,12),x,350); txt(String(n),x+32,372,22,i?'#e6e0f7':'#ffd166','800') }) }
+    ctx.fillStyle='rgba(40,32,70,0.62)'; ctx.beginPath(); ctx.roundRect(SL-24,342,SW+48,44,22); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=fin?'rgba(255,93,141,0.55)':'rgba(255,255,255,0.08)'; ctx.stroke();
+    ctx.save(); ctx.letterSpacing='1.5px'; const lab=fin?'🔥 LAST MINUTES':'👑 HOUR CHAMP IN'; txt(lab,SL-6,371,18,fin?'#ff8fb1':'#a99fc6','800','left'); const tl=ctx.measureText(lab).width; ctx.restore();
+    txt(hourLeft(),SL-6+tl+12,372,22,fin?'#ff5d8d':'#f3effc','900','left');
+    hl.forEach(([c,n],i)=>{ const x=SR-112+i*64; ctx.drawImage(flagSprite(c,12),x,350); txt(String(n),x+34,372,20,i?'#e6e0f7':'#ffd166','900') }) }
 }
 // Glas-Pille mit Text (Namen, Boost, Ansagen) statt Text mit schwarzem Rand (Gemini-Kritik 09.10.)
 function pill(s,x,y,size,col,fill='rgba(18,14,33,0.86)',stroke='rgba(255,255,255,0.14)',lw=1.5,sc=1){
@@ -610,13 +617,14 @@ function glassToast(o){
   const m=o.s.match(/^([\u{1F1E6}-\u{1F1FF}]{2}|\p{Extended_Pictographic}\uFE0F?)\s*(.*)$/u), icon=m?m[1]:'💬', rest=m?m[2]:o.s, col=gc(o.col);
   const sc=0.92+0.08*spring(o.t/60,0.35), y=452, H2=58, size=26;
   ctx.save(); ctx.translate(MID,y); ctx.scale(sc,sc); ctx.translate(-MID,-y);
-  ctx.font=`700 ${size}px ${FONT}`; let s=rest; const maxW=SW-40; while(ctx.measureText(s).width>maxW && s.length>8) s=s.slice(0,-2); if(s!==rest) s=s.slice(0,-1)+'…';
+  const maxW=SW-H2-24; let size2=size; ctx.font=`700 ${size2}px ${FONT}`; while(size2>20 && ctx.measureText(rest).width>maxW){ size2--; ctx.font=`700 ${size2}px ${FONT}` }
+  const s=fitTxt(rest,size2,maxW,'700');
   const tw=ctx.measureText(s).width, w=tw+H2+30, x0=MID-w/2, y0=y-H2/2;
   ctx.shadowColor='rgba(0,0,0,0.4)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6; ctx.fillStyle='rgba(28,22,52,0.94)'; ctx.beginPath(); ctx.roundRect(x0,y0,w,H2,H2/2); ctx.fill(); ctx.shadowColor='transparent';
   ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.stroke();
   ctx.globalAlpha*=0.22; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x0+H2/2,y,H2/2-7,0,7); ctx.fill(); ctx.globalAlpha/=0.22;
   ctx.font=`24px "Noto Color Emoji"`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(icon,x0+H2/2,y+1);
-  ctx.font=`700 ${size}px ${FONT}`; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle='#f3effc'; ctx.fillText(s,x0+H2+6,y+1);
+  ctx.font=`700 ${size2}px ${FONT}`; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle='#f3effc'; ctx.fillText(s,x0+H2+6,y+1);
   ctx.restore() }
 const hit=(a,l)=>l.some(b=>a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h);
 // Kopfleiste über die ganze Breite (Niklas 09.10.: oben war es leer): Glas-Streifen mit Laufband der Tagessieger
@@ -752,17 +760,18 @@ function draw(){
       ctx.globalAlpha=1 }
     if(!PX.ready){ const sp=ballSprite(b,R); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); if(r!==R) ctx.scale(r/R,r/R); ctx.drawImage(sp,-R-3,-R-3); ctx.restore() }
     if(b.crown && !b.done && phase==='race') txt('👑',b.position.x,b.position.y-r+4,Math.round(r*1.5),'#fff','400','center');
-    if(b.turboT>0){ if(GLASS) pill('🔥 TURBO',b.position.x,b.position.y+r+30,20,'#ffb08a','rgba(40,20,20,0.85)','rgba(255,143,107,0.6)'); else txt('TURBO',b.position.x,b.position.y+r+24,20,'#fb923c','700','center',0,true) }
+    if(b.turboT>0){ if(GLASS) pill('🔥 TURBO',b.position.x,b.position.y+r+30,18,'#ffd2bd','rgba(18,14,33,0.88)','rgba(255,143,107,0.75)',1.5); else txt('TURBO',b.position.x,b.position.y+r+24,20,'#fb923c','700','center',0,true) }
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   const nx = x => Math.min(Math.max(x,camX+115/camZ),camX+(TW-115)/camZ);   // Schild bis 220 px breit: an der Wand nicht abschneiden
   if(GLASS){ if(phase!=='countdown'){   // Glas-Pillen, am Start keine (Gemini: Startgitter entrümpeln); überlappende Schilder weglassen, Bessere zuerst
     const taken=[], up=b=>b.position.y-b.circleRadius-14-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0);
     for(const b of rank) if((b.players.length||b.bot) && b.position.y>camY-40 && b.position.y<camY+H/camZ+40 && !(b.bot&&b.done)){
-      const me=b.players.length, s=me ? who(b)+(b.done&&b.pts?`  +${b.pts}`:'') : '🤖 '+b.bot;
-      ctx.font=`800 24px ${FONT}`; const w=ctx.measureText(b.boostT>0&&me&&!b.done?'⚡ '+s+'  BOOST':s).width+27, x=Math.min(Math.max(b.position.x,camX+(w/2+8)/camZ),camX+(TW-w/2-8)/camZ), box={x:x-w/2,y:up(b)-27,w,h:37};
+      const me=b.players.length, boo=me&&b.boostT>0&&!b.done, room=(TW-152)/camZ-27, pts=me&&b.done&&b.pts?`  +${b.pts}`:'';
+      const s=boo ? '⚡ '+fitTxt(short(b.players[0],10),24,room-textW('⚡   BOOST',24,'800'))+'  BOOST' : me ? fitTxt(who(b),24,room-textW(pts,24,'800'))+pts : fitTxt('🤖 '+b.bot,24,room);
+      ctx.font=`800 24px ${FONT}`; const w=ctx.measureText(s).width+27, x=Math.min(Math.max(b.position.x,camX+w/2+128/camZ),camX+TW/camZ-w/2-24/camZ)   /* links Platz für die Fortschrittsleiste */, box={x:x-w/2,y:up(b)-27,w,h:37};
       if(hit(box,taken)) continue; taken.push(box);
-      if(me && b.boostT>0 && !b.done){ const tt=(60-b.boostT)/60; pill('⚡ '+s+'  BOOST',x,up(b),24,'#0f2a26','#4fe0c0','rgba(255,255,255,0.45)',1.5,0.85+0.15*springB(tt,0.35,0.55)) }
+      if(boo){ const tt=(60-b.boostT)/60; pill(s,x,up(b),24,'#0f2a26','#4fe0c0','rgba(255,255,255,0.45)',1.5,0.85+0.15*springB(tt,0.35,0.55)) }
       else pill(s,x,up(b),24,me?'#fff':BOT_COL,'rgba(18,14,33,0.86)',me?'rgba(255,209,102,0.85)':'rgba(103,232,249,0.45)',me?2.5:1.5) } } }
   else {
   for(const b of balls) if(b.bot && !b.done && b.position.y>camY-40 && b.position.y<camY+H/camZ+40)
@@ -773,7 +782,8 @@ function draw(){
   ctx.restore();
   if(timeScale<0.9){ const k=Math.min(1,(1-timeScale)/0.5);   // Zeitlupe: heller Schleier + Schriftzug
     ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
-    txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true); ctx.globalAlpha=1 }
+    if(GLASS){ /* Glas: „Photo finish“ steht im Kopf statt der Stundenzeile, nicht über den Kugeln */ }
+    else { txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true) } ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
   drawColumn(rank); if(GLASS){ glassLeft(); glassRight(rank); glassTop() } else { drawLeft(); drawRight(rank) }
 }
@@ -840,7 +850,7 @@ function drawColumn(rank){
   (board.hour||[]).slice(0,2).forEach(([c,n],i)=>{ const x=SR-150+i*78; ctx.drawImage(flagSprite(c,16),x,F+112); txt(String(n),x+42,F+140,30,i?'#e2e8f0':'#fde047','700') }); } }
   }
   // Ansagen mit Benutzernamen
-  if(GLASS){ const o=phase==='podium'||phase==='loading'?null:toasts[toasts.length-1]; if(o){ ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);   // nur eine Ansage gleichzeitig, ruhige Glas-Pille
+  if(GLASS){ const o=phase==='podium'||phase==='loading'||timeScale<0.9?null:toasts[toasts.length-1];   /* Zeitlupe: Platz für „Photo finish“ */ if(o){ ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);   // nur eine Ansage gleichzeitig, ruhige Glas-Pille
       glassToast(o); ctx.globalAlpha=1 } }
   else toasts.forEach((o,i)=>{ const y=386+i*70; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
     box(SL-16,y,SW+32,64,'rgba(5,6,18,0.85)',14); txt(o.s,MID,y+44,34,o.col,'700','center',SW+10); ctx.globalAlpha=1 });
@@ -864,7 +874,8 @@ function drawColumn(rank){
   }
   if(phase==='podium'||phase==='loading'){
     const a=Math.min(phaseT/30,1), w=finished[0]; if(GLASS){ ctx.fillStyle=`rgba(21,16,38,${0.96*a})`; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=`rgba(255,255,255,${0.12*a})`; ctx.stroke() } else { ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378) }
-    ctx.globalAlpha=a; txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,420,36,chaos?'#c084fc':'#ffd700','700','center');
+    ctx.globalAlpha=a; if(GLASS) glassPodium(w); else {
+    txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,420,36,chaos?'#c084fc':'#ffd700','700','center');
     // Handy-Layout (Niklas 06.10.): alles Wichtige zwischen Stundenleiste und Chat (y 290–615), innerhalb der mittleren ~490 px
     if(w){ bulbRing(MID,478,56,14); ctx.drawImage(ballSprite(w,40),MID-43,478-43); txt(w.name,MID,560,38,'#fff','700','center',SW);
       if(w.players.length && !results.length) txt(`🎉 ${w.players[0]} WINS!`,MID,596,28,'#fde047','700','center',SW);
@@ -877,17 +888,55 @@ function drawColumn(rank){
     // Ergebnis jedes Spielers (Platz, Punkte) statt „Most wins today“, sobald Spieler mitgefahren sind
     if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user} #${x.place}/${balls.length}  +${x.pts} pts${x.beat?' 🏆':''}`,MID,ry+j*30,24,x.place<=3?'#4ade80':'#e2e8f0','700','center',SW));
       if(results.length>3) txt(`+${results.length-3} more players`,MID,ry+3*34,22,'#94a3b8','700','center') }
-    else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,640,22,'#94a3b8','700','center',SW);
+    else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,640,22,'#94a3b8','700','center',SW); }
     ctx.globalAlpha=1;
   }
   drawConfetti();
   // Stundensieger-Ehrung (12 s nach dem Stundenwechsel)
   if(champShow && Date.now()-champShow.at<12000){ const c=champShow, a=Math.min(1,(Date.now()-c.at)/400,(12000-(Date.now()-c.at))/600);
-    ctx.globalAlpha=a; box(SL-10,384,SW+20,236,'rgba(30,20,4,0.95)',20,'#ffd700');
+    ctx.globalAlpha=a; if(GLASS) glassChamp(c,(Date.now()-c.at)/1000); else {
+    box(SL-10,384,SW+20,236,'rgba(30,20,4,0.95)',20,'#ffd700');
     txt('👑 NATION OF THE HOUR 👑',MID,418,28,'#ffd700','700','center',SW-20);
     ctx.drawImage(flagSprite(c.code,34),MID-37,430); txt(NAME[c.code]||c.code,MID,544,36,'#fff','700','center',SW-20);
     txt(`${c.wins} ${c.wins===1?'win':'wins'} this hour`,MID,578,24,'#fde047','700','center');
-    txt('New hour – new chance! Type your country',MID,606,18,'#cbd5e1','400','center',SW-20); ctx.globalAlpha=1 }
+    txt('New hour – new chance! Type your country',MID,606,18,'#cbd5e1','400','center',SW-20); } ctx.globalAlpha=1 }
+}
+
+// Glas-Siegerehrung (Niklas 09.10.: alles im Apple-Stil): Licht-Ring statt Glühbirnen, Kugel federt herein, Ergebnisse als Glas-Karte
+function glassPodium(w){
+  const top=(board.countries||[])[0], e=springB(phaseT/60,0.5,0.6);
+  label(chaos?'🌀 Chaos win ×2':'🏆 Winner',MID,426,chaos?'#c4b5ff':'#ffd166','center');
+  if(w){ const g=ctx.createRadialGradient(MID,480,24,MID,480,80); g.addColorStop(0,'rgba(255,209,102,0.32)'); g.addColorStop(1,'rgba(255,209,102,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(MID,480,80,0,7); ctx.fill();
+    const rot=Date.now()/900; ctx.save(); ctx.lineCap='round'; ctx.lineWidth=3; ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.arc(MID,480,56,0,7); ctx.stroke();
+    ctx.strokeStyle='#ffd166'; ctx.beginPath(); ctx.arc(MID,480,56,rot,rot+Math.PI*0.9); ctx.stroke(); ctx.restore();
+    const sc=0.55+0.45*e; ctx.save(); ctx.translate(MID,480); ctx.scale(sc,sc); ctx.drawImage(ballSprite(w,40),-43,-43); ctx.restore();
+    ctx.save(); ctx.letterSpacing='-1px'; txt(w.name,MID,572,44,'#f3effc','900','center',SW); ctx.restore();
+    const sub = results.length ? null : w.players.length ? [`🎉 ${short(w.players[0],14)} wins!`,'#ffd166'] : w.bot ? [`🤖 ${w.bot} wins · beat the bots!`,'#67e8f9'] : [`Type ${w.name} to claim it!`,'#c4b5ff'];
+    if(sub){ ctx.font=`800 24px ${FONT}`; pill(sub[0],MID,616,Math.min(24,Math.floor(24*(SW-10)/ctx.measureText(sub[0]).width)),sub[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)') } }
+  [1,2].forEach(k=>{ const b=finished[k]; if(!b) return; const x=MID+(k===1?-172:172);
+    ctx.drawImage(ballSprite(b,24),x-27,474-27); pill(String(k+1),x+24,456,16,'#22182e',k===1?'#d9dbe6':'#e9a873','rgba(255,255,255,0.4)',1);
+    txt(b.name,x,526,20,'#f3effc','800','center',132);
+    if(b.players.length) txt(short(b.players[0],12),x,550,18,'#ffd166','700','center',132); else if(b.bot) txt('🤖 '+b.bot,x,550,18,BOT_COL,'700','center',132) });
+  if(results.length){ const n=Math.min(3,results.length), more=results.length-n, y0=592, rh=34, h=n*rh+(more?30:0)+14;
+    card(SL-16,y0,SW+32,h);
+    results.slice(0,n).forEach((x,j)=>{ const ry=y0+30+j*rh, pts=`+${x.pts}${x.beat?' 🏆':''}`;
+      txt(`#${x.place}`,SL+2,ry,20,x.place<=3?'#ffd166':'#a99fc6','900','left');
+      txt(`${x.flag} ${x.user}`,SL+54,ry,22,'#f3effc','700','left',SW-54-textW(pts,22,'800')-16);
+      txt(pts,SR-2,ry,22,'#4fe0c0','800','right') });
+    if(more) txt(`+${more} more ${more===1?'player':'players'}`,MID,y0+30+n*rh,18,'#a99fc6','700','center') }
+  else if(top && !w?.players.length){ const s=`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} · ${top[1]}`; txt(s,MID,662,20,'#a99fc6','700','center',SW) }
+}
+// Glas-Ehrung „Nation of the Hour“: goldene Glas-Karte, Flagge federt herein
+function glassChamp(c,sec){
+  const e=springB(sec,0.55,0.6), x0=SL-24, y0=392, w=SW+48, h=230;
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=24; ctx.shadowOffsetY=8; ctx.fillStyle='rgba(28,22,52,0.96)'; ctx.beginPath(); ctx.roundRect(x0,y0,w,h,30); ctx.fill(); ctx.restore();
+  const g=ctx.createLinearGradient(x0,y0,x0+w,y0+h); g.addColorStop(0,'rgba(255,209,102,0.85)'); g.addColorStop(0.5,'rgba(255,209,102,0.25)'); g.addColorStop(1,'rgba(255,209,102,0.85)');
+  ctx.lineWidth=2; ctx.strokeStyle=g; ctx.beginPath(); ctx.roundRect(x0,y0,w,h,30); ctx.stroke();
+  label('👑 Nation of the hour',MID,432,'#ffd166','center');
+  const sc=0.6+0.4*e; ctx.save(); ctx.translate(MID,478); ctx.scale(sc,sc); ctx.drawImage(flagSprite(c.code,30),-33,-33); ctx.restore();
+  ctx.save(); ctx.letterSpacing='-1px'; txt(NAME[c.code]||c.code,MID,550,40,'#f3effc','900','center',SW); ctx.restore();
+  pill(`${c.wins} ${c.wins===1?'win':'wins'} this hour`,MID,594,20,'#22182e','#ffd166','rgba(255,255,255,0.4)',1);
 }
 
 // links: Siege pro Land heute + Länder-Battle (nur im 16:9-Bild)
@@ -948,7 +997,7 @@ function bulbRing(cx,cy,r,n){ const k=Math.floor(Date.now()/220); for(let i=0;i<
 // sanftes Glimmen statt hartem Blinken (Schlussminuten, Chaos)
 const glow=(a,b)=>{ const k=(1+Math.sin(Date.now()/450))/2; return `rgba(${a.map((v,i)=>Math.round(v+(b[i]-v)*k)).join(',')},0.95)` };
 let conf=[];
-function confetti(n){ const cols=PAL===PALETTES[1]?['#ffc8dd','#7fd1e8','#ffd166','#fff']:['#ffd166','#ef476f','#2ec4b6','#fff1d0','#ff8c61'];
+function confetti(n){ const cols=GLASS?['#9b82ff','#4fe0c0','#ffd166','#ff5d8d','#f3effc']:PAL===PALETTES[1]?['#ffc8dd','#7fd1e8','#ffd166','#fff']:['#ffd166','#ef476f','#2ec4b6','#fff1d0','#ff8c61'];
   for(let i=0;i<n;i++) conf.push({x:CX+Math.random()*CW, y:280-Math.random()*300, vx:(Math.random()-0.5)*2, vy:1.5+Math.random()*2.5, a:Math.random()*6, va:(Math.random()-0.5)*0.3, s:6+Math.random()*6, c:cols[i%cols.length]}) }
 function drawConfetti(){ if(!conf.length) return; ctx.save(); ctx.beginPath(); ctx.rect(CX,378,CW,H-378); ctx.clip();
   for(const p of conf){ p.x+=p.vx+Math.sin(p.a)*0.6; p.y+=p.vy; p.a+=p.va; ctx.fillStyle=p.c; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); ctx.restore() }
