@@ -51,7 +51,7 @@ function nextFlag() {
 function startRound() {
   rollDay();
   const n = st.rounds + 1, isFlag = n % 3 === 0;
-  const q = isFlag ? nextFlag() : (() => { const x = nextWord(); return { w: x.w, shown: x.w.toUpperCase(), c: x.c, e: x.e }; })();
+  const q = isFlag ? nextFlag() : (() => { const x = nextWord(); return { w: x.w, shown: x.w.toUpperCase(), c: x.c, e: x.e, r: x.r }; })();   // r = Emoji-Rebus (Niklas 09.10.: Einzel-Emojis zu leicht)
   recent = [...recent, q.flag || q.w].slice(-40);
   const letters = [...q.shown];
   // Reihenfolge des Aufdeckens: nie mehr als gut die Hälfte, Leerzeichen sind immer sichtbar
@@ -123,7 +123,7 @@ function board() {
 function view() {
   const r = round, show = r.phase === 'show';
   return {
-    v: VERSION, now: Date.now(), n: r.n, phase: r.phase, cat: r.q.c, emoji: r.q.e, flagRound: !!r.q.flag,
+    v: VERSION, now: Date.now(), n: r.n, phase: r.phase, cat: r.q.c, emoji: r.q.e, rebus: r.q.r || null, flagRound: !!r.q.flag,
     tiles: r.letters.map((ch, i) => ch === ' ' ? ' ' : (show || r.revealed.includes(i)) ? ch : ''),
     end: r.end, start: r.start, showEnd: r.showEnd || 0,
     solvers: r.solvers.map(s => ({ ...s, flag: s.flag ? flagOf(s.flag) : '' })),

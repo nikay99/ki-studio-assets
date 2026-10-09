@@ -41,6 +41,8 @@ h1{font-size:74px;font-weight:900;letter-spacing:-.04em;line-height:1.02;margin-
 #emoji{position:relative;font-size:132px;line-height:1.15;margin:6px 0 12px;filter:drop-shadow(0 14px 18px rgba(90,63,209,.18))}
 #emoji::before{content:"";position:absolute;inset:-30px;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.9),transparent)}
 #emoji.flag{font-size:156px}
+#emoji.rebus{font-size:112px;display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
+#emoji .plus{font-size:64px;font-weight:900;color:var(--violet);opacity:.85;margin:0 6px}
 #tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:600px}
 .word{display:flex;gap:10px}
 /* 3D-Kacheln wie in der ersten Fassung: weiß mit lila Kante unten */
@@ -192,7 +194,7 @@ async function poll(){
   try{
     const s=await (await fetch('/api/state',{cache:'no-store'})).json();
     if(ver && s.v!==ver) return location.reload(); ver=s.v; S=s;
-    if(s.n!==lastN){ lastN=s.n; delete $('tiles').dataset.solved; $('cat').textContent=s.cat+' · '+s.tiles.filter(c=>c!==' ').length+' letters'; $('emoji').textContent=s.emoji; $('emoji').className=s.flagRound?'flag':'';
+    if(s.n!==lastN){ lastN=s.n; delete $('tiles').dataset.solved; $('cat').textContent=s.cat+' · '+s.tiles.filter(c=>c!==' ').length+' letters'; if(s.rebus){ $('emoji').innerHTML=s.rebus.map(p=>`<span class="rp">${esc(p)}</span>`).join('<span class="plus">+</span>'); $('emoji').className='rebus' } else { $('emoji').textContent=s.emoji; $('emoji').className=s.flagRound?'flag':'' }
       pop($('emoji'),{transform:'scale(.6)',opacity:0},.7,.45); buildTiles(); sfx.start() }
     updateTiles(); renderSolvers();
     if(s.phase==='show' && shownN!==s.n){ shownN=s.n; if(s.solvers.length){ sfx.end(); confetti(960,520,80) } else sfx.miss() }
