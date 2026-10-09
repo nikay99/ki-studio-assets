@@ -167,7 +167,7 @@ if (process.env.DEMO === '1') {
 }
 // Selbst-Update: Das Repo wird auf dem N95 alle 3 Min. gezogen. Ändert sich eine Datei des Wortratens, beendet sich der Server,
 // systemd startet ihn neu, und die Seite lädt bei neuer Version selbst neu.
-const WATCH = ['server.js', 'words.json', 'public/index.html', '../chat.js'].map(f => path.join(__dirname, f));
+const WATCH = ['server.js', 'words.json', 'public/index.html', 'public/vertical.html', '../chat.js'].map(f => path.join(__dirname, f));
 const mtimes = () => WATCH.map(f => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } }).join();
 const M0 = mtimes(); setInterval(() => { if (mtimes() !== M0) { console.log('Dateien geändert, Neustart'); save(); setTimeout(() => process.exit(0), 2000); } }, 60000);
 console.log('Wortraten auf http://127.0.0.1:' + PORT);

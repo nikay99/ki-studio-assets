@@ -5,7 +5,7 @@
 set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-words}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/words.env ] && . /etc/marble/words.env
-VBIT="${VBIT:-2500k}"; FPS="${FPS:-24}"; RW=1280; RH=720  # 24 fps seit 09.10. (Niklas: alle Streams 24, Platz für dritten Stream)
+VBIT="${VBIT:-2500k}"; FPS="${FPS:-24}"; RW=720; RH=1280; PAGE="${PAGE:-vertical.html}"  # 24 fps (Niklas 09.10.); hochkant 9:16 seit 09.10. (Niklas), PAGE=index.html = alte Querfassung (dann RW/RH tauschen)
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:98 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
@@ -48,7 +48,7 @@ start_chrome(){
   "$CHROME" --no-first-run --no-default-browser-check --disable-infobars --kiosk --window-position=0,0 --window-size=${RW},${RH} \
     --autoplay-policy=no-user-gesture-required --disable-background-timer-throttling --disable-renderer-backgrounding \
     --disable-backgrounding-occluded-windows --disable-features=Translate,MediaRouter --password-store=basic \
-    --user-data-dir="$DATA_DIR/chrome" ${CHROME_EXTRA:-} "http://127.0.0.1:8090/" >/dev/null 2>&1 &
+    --user-data-dir="$DATA_DIR/chrome" ${CHROME_EXTRA:-} "http://127.0.0.1:8090/$PAGE" >/dev/null 2>&1 &
   CHROME_PID=$!
 }
 for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8090/api/state && break; sleep 2; done
