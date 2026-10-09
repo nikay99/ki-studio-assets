@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Chat Colony LIVE</title>
+<style>
+/* Chat Colony – Stream-Fassung (720×1280, 9:16). Entsteht aus der Vorschau ideen/interaktiver-stream/vorschau/chat-colony.html.
+   Spiel-Logik läuft in der Seite; Chat und gespeicherter Zustand kommen vom Server (server.js, 127.0.0.1:8100). */
+@font-face{font-family:"Pixelify Sans";src:url(fonts/PixelifySans-latin.woff2) format("woff2");font-weight:400 700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Pixelify Sans";src:url(fonts/PixelifySans-latinext.woff2) format("woff2");font-weight:400 700;font-display:block;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+A720-A7FF}
+</style>
+<style>
+/* Layout: 9:16 stream screen on the left, test chat on the right; stacks on phones. Single dark look (stream at dusk). */
+:root{
+  --ink:#1d1a2b; --night:#151325; --panel:#22203a; --line:#3a3658;
+  --paper:#fbf3e4; --muted:#b9b3d6; --gold:#ffc65c; --coral:#ff7a59; --sea:#3fb6b2; --leaf:#8fd16a;
+  --display:"Lilita One","Arial Black",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--night);color:var(--paper);font-family:var(--body)}
+.wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;align-items:flex-start;padding-inline:16px;padding-block:16px}
+.screen{position:relative;width:min(100%,calc((100vh - 32px) * 9 / 16),460px);aspect-ratio:9/16;max-width:100%;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#stage{position:absolute;left:0;top:0;width:720px;height:1280px;transform-origin:0 0}
+#scene{position:absolute;inset:0;width:720px;height:1280px}
+.hud{position:absolute;left:24px;right:24px;font-family:var(--body);color:var(--paper)}
+/* header */
+#hdr{top:22px;display:grid;gap:10px}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.logo{font-family:var(--display);font-size:46px;line-height:1;letter-spacing:.5px;color:var(--gold);text-shadow:0 3px 0 #7a3b12,0 6px 14px rgba(0,0,0,.45)}
+.daybox{font-weight:900;font-size:24px;text-align:right;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+.daybox small{display:block;font-size:18px;color:var(--muted);font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.chips{display:flex;gap:8px}
+.chip{flex:1;background:rgba(21,19,37,.72);border:2px solid rgba(255,255,255,.12);border-radius:12px;padding:5px 8px;font-weight:900;font-size:22px;display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums;justify-content:center}
+.chip i{font-style:normal;font-size:15px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.chip.low{border-color:var(--coral);color:#ffb3a0}
+.goal{display:flex;align-items:center;gap:10px;font-weight:900;font-size:19px;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+.gbar{flex:1;height:16px;border-radius:8px;background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.18);overflow:hidden}
+.gbar b{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#ffe29a);width:0;transition:width .8s}
+/* decision card */
+#card{top:210px;background:rgba(251,243,228,.96);color:var(--ink);border-radius:22px;padding:18px 20px 16px;box-shadow:0 8px 0 #c9a97a,0 16px 30px rgba(0,0,0,.35);min-height:236px}
+.ctop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.badge{font-weight:900;font-size:18px;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;background:var(--ink);color:var(--gold)}
+.badge.solo{background:var(--coral);color:#fff}
+.badge.auto{background:#6d6890;color:#fff}
+.timer{font-family:var(--display);font-size:40px;line-height:1;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+.q{font-family:var(--display);font-size:35px;line-height:1.08;text-wrap:balance;margin-bottom:12px}
+.opts{display:grid;gap:8px}
+.opt{position:relative;display:flex;align-items:center;gap:12px;border-radius:14px;background:#efe2c8;padding:6px 12px;overflow:hidden;font-weight:800;font-size:22px}
+.opt .fill{position:absolute;left:0;top:0;bottom:0;background:#ffd68a;width:0;transition:width .4s}
+.opt>*:not(.fill){position:relative}
+.opt .n{flex:none;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--gold);font-family:var(--display);font-size:24px;display:grid;place-items:center}
+.opt .t{flex:1;min-width:0}
+.opt .c{font-variant-numeric:tabular-nums;font-weight:900;color:#6b5a3a}
+.opt.win{background:#bfe8a0}.opt.win .fill{background:#9bdc72}
+.hint{margin-top:10px;font-weight:800;font-size:18px;color:#7a6a4c;text-align:center}
+.headline{font-family:var(--display);font-size:46px;line-height:1.02;text-wrap:balance;color:#b8401f;margin-bottom:10px}
+.sub{font-weight:800;font-size:22px;line-height:1.25;margin-bottom:12px}
+.deltas{display:flex;gap:8px;flex-wrap:wrap}
+.d{font-weight:900;font-size:22px;padding:4px 12px;border-radius:999px;background:#e3f4d6;color:#2f6a12}
+.d.neg{background:#fde0d6;color:#a3361a}
+.hud[hidden],#spot[hidden],#ticker[hidden]{display:none}
+#spot{top:508px;display:flex;justify-content:center}
+.spotbox{background:var(--gold);color:var(--ink);border-radius:20px;padding:12px 24px;text-align:center;box-shadow:0 6px 0 #a8641c,0 14px 26px rgba(0,0,0,.45);max-width:100%}
+.spotbox b{display:block;font-family:var(--display);font-weight:400;font-size:40px;line-height:1.05}
+.spotbox span{font-weight:900;font-size:21px}
+.next{font-weight:900;font-size:18px;color:#ffe2b0;text-shadow:0 2px 6px rgba(0,0,0,.75);letter-spacing:.03em}
+.next.hot{color:#ffb3a0}
+#ticker span.rule{background:rgba(255,198,92,.96);color:var(--ink);font-weight:900}
+.badge.dragon{background:#b8401f;color:#fff}
+#ticker{top:508px;display:flex;justify-content:center}
+#ticker span{background:rgba(21,19,37,.78);border-radius:999px;padding:6px 16px;font-weight:800;font-size:20px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* desktop/TV-only lower board (covered by YouTube chat on phones) */
+#board{top:930px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bx{background:rgba(21,19,37,.8);border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 14px}
+.bx h3{margin:0 0 6px;font-family:var(--display);font-weight:400;font-size:24px;color:var(--gold)}
+.bx ol,.bx ul{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-weight:800;font-size:19px}
+.bx li{display:flex;justify-content:space-between;gap:8px;white-space:nowrap;overflow:hidden}
+.bx li span:first-child{overflow:hidden;text-overflow:ellipsis}
+.bx li em{font-style:normal;color:var(--muted);font-size:16px}
+#chatzone[hidden]{display:none}
+#chatzone{position:absolute;left:0;right:0;top:820px;bottom:0;border-top:3px dashed rgba(255,255,255,.7);background:rgba(0,0,0,.35);display:grid;place-items:center;font-weight:900;font-size:26px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.85);pointer-events:none}
+
+/* ---- 16-bit look (v3): pixel font + SNES-style dialog boxes ---- */
+#stage{--px:"Pixelify Sans","Courier New",monospace}
+#stage .hud,#stage .logo,#stage .q,#stage .headline,#stage .timer,#stage .spotbox b,#stage .bx h3,#stage .opt .n{font-family:var(--px)}
+.logo{font-weight:700;font-size:50px;color:#ffd75e;text-shadow:4px 4px 0 #8a3b12,8px 8px 0 rgba(0,0,0,.35);letter-spacing:1px}
+.daybox{font-weight:700;text-shadow:3px 3px 0 #000}
+.daybox small{font-weight:600;color:#cfd8ff;text-shadow:2px 2px 0 #000}
+.chip,.bx,#card,#ticker span{border-radius:4px;background:#1c2147;border:4px solid #f3e7c9;box-shadow:0 0 0 4px #0b0e24,6px 6px 0 4px rgba(0,0,0,.35)}
+.chip{font-weight:700;padding:3px 6px}
+.chip i{color:#9fb0ff;font-weight:600}
+.chip.low{border-color:#ff7a59}
+.goal,.next{font-family:var(--px);font-weight:700;text-shadow:3px 3px 0 #000}
+.gbar{border-radius:0;border:3px solid #f3e7c9;background:#0b0e24;height:18px}
+.gbar b{background:repeating-linear-gradient(90deg,#ffd75e 0 12px,#f0a832 12px 16px)}
+#card{color:#fff;padding:16px 18px 14px}
+.badge{border-radius:0;background:#ffd75e;color:#1c2147;font-weight:700;font-family:var(--px)}
+.badge.solo{background:#ff7a59;color:#1c2147}.badge.auto{background:#7b86c8;color:#0b0e24}.badge.dragon{background:#e0402a;color:#fff}
+.timer{color:#ffd75e;font-weight:700}
+.q{font-weight:700;font-size:34px;color:#fff}
+.opt{border-radius:0;background:#2b3270;font-weight:600;font-size:23px;color:#fff;font-family:var(--px)}
+.opt .fill{background:rgba(255,215,94,.42)}
+.opt .n{border-radius:0;background:#ffd75e;color:#1c2147;font-weight:700}
+.opt .c{color:#ffd75e;font-weight:700}
+.headline{color:#ffd75e;font-weight:700;font-size:44px;text-shadow:3px 3px 0 #8a3b12}
+.sub{color:#e6e9ff;font-weight:600;font-family:var(--px)}
+.d{border-radius:0;background:#2e6b2a;color:#d9ffc8;font-family:var(--px);font-weight:700}.d.neg{background:#7a2420;color:#ffd5cc}
+#ticker span{color:#fff;font-weight:600;font-family:var(--px);border-width:3px}
+#ticker span.rule{background:#ffd75e;color:#1c2147;font-weight:700}
+.spotbox{border-radius:0;background:#ffd75e;border:4px solid #1c2147;box-shadow:0 0 0 4px #ffd75e,8px 8px 0 4px rgba(0,0,0,.4);font-family:var(--px)}
+.spotbox b{font-weight:700}.spotbox span{font-weight:700}
+.bx h3{color:#ffd75e;font-weight:700}
+.bx ol,.bx ul{font-family:var(--px);font-weight:600}
+#scene{image-rendering:pixelated}
+#hdr{top:14px;left:14px;right:14px;padding:10px 12px;background:#1c2147;border:4px solid #f3e7c9;box-shadow:0 0 0 4px #0b0e24,6px 6px 0 4px rgba(0,0,0,.35);border-radius:4px;gap:8px}
+#hdr .chip{box-shadow:none;border-width:3px;background:#2b3270}
+#card{top:214px;padding:12px 16px 12px}
+.q{font-size:30px;margin-bottom:10px}
+.opt{font-size:21px;padding:5px 10px}.opts{gap:6px}
+.opt .n{width:32px;height:32px;font-size:21px}
+.headline{font-size:40px}
+
+/* test panel */
+.panel{flex:1 1 320px;max-width:440px;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
+.panel h1{margin:0;font-family:var(--display);font-weight:400;font-size:28px;color:var(--gold);letter-spacing:.3px}
+.panel p{margin:0;color:var(--muted);line-height:1.45;font-weight:600}
+.lbl{font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.field{display:grid;gap:6px}
+input[type=text],select{font:inherit;font-weight:700;background:var(--night);color:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;box-sizing:border-box}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>input{flex:1;min-width:0}
+button{font:inherit;font-weight:900;border:0;border-radius:10px;padding:9px 13px;background:var(--gold);color:var(--ink);cursor:pointer}
+button.alt{background:#34304f;color:var(--paper)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--sea);outline-offset:2px}
+#log{height:220px;overflow:auto;background:var(--night);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;align-content:start;gap:3px;font-size:14px}
+#log div b{color:var(--sea)}
+#log div.me b{color:var(--gold)}
+.check{display:flex;gap:8px;align-items:center;font-weight:700}
+@media (prefers-reduced-motion:reduce){.gbar b,.opt .fill{transition:none}}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden}
+.wrap{display:block;padding:0}
+.screen{width:720px;height:1280px;border-radius:0;box-shadow:none}
+</style>
+</head><body>
+<div class="wrap">
+  <div class="screen" id="screen" aria-label="Stream preview, 720 by 1280">
+    <div id="stage">
+      <canvas id="scene" width="720" height="1280"></canvas>
+      <div class="hud" id="hdr">
+        <div class="hrow">
+          <div class="logo">CHAT COLONY</div>
+          <div class="daybox"><span id="day">Day 1</span><small id="tod">Morning</small></div>
+        </div>
+        <div class="chips">
+          <div class="chip" id="cFood"><i>Food</i><span>0</span></div>
+          <div class="chip" id="cWood"><i>Wood</i><span>0</span></div>
+          <div class="chip" id="cMood"><i>Mood</i><span>0</span></div>
+          <div class="chip" id="cPop"><i>Pop</i><span>0</span></div>
+        </div>
+        <div class="goal"><span id="goalName">Week goal: Lighthouse</span><div class="gbar"><b id="goalBar"></b></div><span id="goalPct">0%</span></div>
+        <div class="next" id="next"></div>
+      </div>
+      <div class="hud" id="card"></div>
+      <div class="hud" id="ticker"><span id="tick">Type anything in chat to move in.</span></div>
+      <div class="hud" id="spot" hidden></div>
+      <div class="hud" id="board">
+        <div class="bx"><h3>Top settlers today</h3><ol id="top"></ol></div>
+        <div class="bx"><h3>Village log</h3><ul id="vlog"></ul></div>
+      </div>
+          </div>
+  </div>
+
+</div>
+
+<script>
+(()=>{
+const W=720,H=1280;
+const cv=document.getElementById('scene'),g=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const reduce=false; // Stream-Browser: immer volle Animation
+const QS=new URLSearchParams(location.search),FAST=QS.has('fast'),DEMO_BOTS=+QS.get('bots')||0;
+
+/* ---------- scaling ---------- */
+function fit(){const s=$('screen').clientWidth/W;$('stage').style.transform=`scale(${s})`}
+addEventListener('resize',fit);new ResizeObserver(fit).observe($('screen'));fit();
+
+/* ---------- events ---------- */
+const E=[
+ {q:"A storm is rolling in from the sea.",v:'storm',o:[
+  {t:"Reinforce the roofs",fx:{wood:-6,mood:2},h:"Roofs hold. Nobody gets wet."},
+  {t:"Gather in the great hall",fx:{mood:6},risk:{p:.5,fx:{food:-6},h:"Storm floods the food store"},h:"A cozy night of stories"},
+  {t:"Keep working outside",fx:{food:4},risk:{p:.6,fx:{mood:-8,wood:-4},h:"Storm tears off two roofs"},h:"Brave work pays off"}]},
+ {q:"A trader's cart rolls in at dawn.",v:'trader',o:[
+  {t:"Trade wood for food",fx:{wood:-5,food:10},h:"Fresh bread for everyone"},
+  {t:"Buy a bell for the tower",fx:{food:-5,light:6},h:"A shiny new tower bell"},
+  {t:"Send him away",fx:{mood:-2},h:"The trader leaves grumbling"}]},
+ {q:"Wolves howl at the forest edge.",v:'wolves',o:[
+  {t:"Build a fence",fx:{wood:-8,mood:3},build:'wall',h:"A strong fence goes up"},
+  {t:"Hunt them",fx:{food:6},risk:{p:.4,fx:{mood:-6},h:"A hunter comes back hurt"},h:"The hunters return with meat"},
+  {t:"Keep fires burning all night",fx:{wood:-3,mood:1},h:"The wolves keep their distance"}]},
+ {q:"The well water tastes strange.",v:'build',o:[
+  {t:"Dig a new well",fx:{wood:-4,mood:4},build:'well',h:"A brand new well!"},
+  {t:"Boil all the water",fx:{wood:-2},h:"Safe water, tired arms"},
+  {t:"Ignore it",fx:{},risk:{p:.5,fx:{mood:-8},h:"Half the village feels sick"},h:"Turns out it was just mud"}]},
+ {q:"A ship appears on the horizon.",v:'ship',o:[
+  {t:"Signal it with fire",fx:{wood:-2},risk:{p:.5,fx:{mood:6,pop:1},h:"A sailor family moves in!",good:true},h:"The ship sails on"},
+  {t:"Hide and wait",fx:{},h:"The ship passes quietly"},
+  {t:"Row out and trade",fx:{food:5,wood:-2},h:"Spices and salt from the ship"}]},
+ {q:"Harvest season. The fields are golden.",v:'harvest',o:[
+  {t:"Harvest everything now",fx:{food:12,mood:-2},h:"Barns full to the roof"},
+  {t:"Throw a harvest festival",fx:{food:5,mood:8},fest:true,h:"Harvest festival!"},
+  {t:"Save seeds for next year",fx:{food:4},build:'farm',h:"The farm grows bigger"}]},
+ {q:"Fish are jumping in the bay.",v:'fish',o:[
+  {t:"Everyone goes fishing",fx:{food:9},h:"Baskets full of fish"},
+  {t:"Build a dock first",fx:{wood:-6,food:3},build:'dock',h:"A wooden dock is finished"},
+  {t:"Let them be",fx:{mood:1},h:"The fish say thanks"}]},
+ {q:"Fire in the bakery!",v:'fire',o:[
+  {t:"Bucket chain from the well",fx:{wood:-2,mood:3},h:"Fire out in 3 minutes"},
+  {t:"Tear down the walls",fx:{wood:-6},h:"Fire stopped, bakery gone"},
+  {t:"Let it burn out",fx:{food:-8,mood:-5},h:"The bakery burns down"}]},
+ {q:"The tower builders need help.",v:'lighthouse',o:[
+  {t:"Send the builders",fx:{wood:-6,light:10},h:"The tower grows a floor"},
+  {t:"Send them food",fx:{food:-5,light:5},h:"Happy crew, steady progress"},
+  {t:"Not today",fx:{mood:-1},h:"The crew takes a nap"}]},
+ {q:"Kids found a cave in the cliffs.",v:'cave',o:[
+  {t:"Explore it",fx:{},risk:{p:.5,fx:{food:10,mood:4},h:"TREASURE! Old coins bought food",good:true},h:"Rockfall! Explorers return empty"},
+  {t:"Seal it up",fx:{wood:-2,mood:1},h:"The cave is closed for good"},
+  {t:"Turn it into a cellar",fx:{wood:-4,food:4},h:"A cool cellar for the food"}]},
+ {q:"Heavy rain for three days.",v:'rain',o:[
+  {t:"Collect the rainwater",fx:{mood:2},h:"Barrels full of water"},
+  {t:"Dig ditches for the fields",fx:{wood:-2,food:3},h:"The fields drink happily"},
+  {t:"Stay in and tell stories",fx:{mood:5,food:-3},h:"Best story night ever"}]},
+ {q:"Two families argue over a fence.",v:'none',o:[
+  {t:"Let the elders decide",fx:{mood:2},h:"The elders make peace"},
+  {t:"Pillow duel at noon",fx:{mood:6},fest:true,h:"Feathers everywhere!"},
+  {t:"Move one family",fx:{wood:-4,mood:-2},h:"A new house, an old grudge"}]},
+ {q:"A traveling musician wants to stay.",v:'none',o:[
+  {t:"Welcome her",fx:{food:-3,mood:8},fest:true,h:"Music fills the village"},
+  {t:"Pay her to leave",fx:{food:-2},h:"Silence returns"},
+  {t:"Ask her to teach the kids",fx:{mood:4},h:"Kids learn the fiddle"}]},
+ {q:"The forest is getting thin.",v:'chop',o:[
+  {t:"Plant new trees",fx:{wood:-1,mood:3},h:"Saplings for the future"},
+  {t:"Chop deeper in the woods",fx:{wood:10},risk:{p:.3,fx:{mood:-5},h:"Choppers lost in the woods all night"},h:"Wood piles up"},
+  {t:"Give the forest a rest",fx:{mood:1},h:"Birds return to the trees"}]},
+ {q:"Strange lights over the sea tonight.",v:'lighthouse',o:[
+  {t:"Light the tower beacon",fx:{wood:-2,light:3},h:"The beacon answers the lights"},
+  {t:"Send a small boat",fx:{},risk:{p:.5,fx:{food:6,light:4},h:"Glowing fish! A feast",good:true},h:"Just fog. Boat comes back"},
+  {t:"Lock all doors",fx:{mood:-2},h:"Nobody sleeps well"}]},
+ {q:"Sunday market day!",v:'trader',o:[
+  {t:"Sell wood",fx:{wood:-5,food:7},h:"Good prices at the market"},
+  {t:"Buy new tools",fx:{food:-4,wood:8},h:"Sharp new axes"},
+  {t:"Build a market square",fx:{wood:-8,mood:5},build:'market',h:"A market square opens"}]},
+ {q:"A cold snap is coming.",v:'chop',o:[
+  {t:"Stock up firewood",fx:{wood:6,food:-2},h:"Woodpiles to the roof"},
+  {t:"Knit blankets",fx:{mood:4,food:-2},h:"Warm and fuzzy"},
+  {t:"Hope for the best",fx:{},risk:{p:.5,fx:{mood:-7},h:"Frozen pipes everywhere"},h:"Lucky! It stays mild"}]},
+ {q:"Seagulls are stealing the fish.",v:'fish',o:[
+  {t:"Build a scarecrow",fx:{wood:-2,mood:3},h:"Mr. Straw guards the dock"},
+  {t:"Feed them",fx:{food:-3,mood:4},h:"Best friends with the gulls"},
+  {t:"Chase them away",fx:{food:2},h:"Gulls 0, village 1"}]},
+];
+const GOALS=['Watchtower','Great Hall','Clock Tower','Castle Gate'];
+const TOD=['Dawn','Morning','Noon','Afternoon','Evening','Night'];
+const NPC=['Old Moss','Ada','Bram','Wren','Tilly','Hob'];
+const BOTS=['maple_fox','jaxon22','LunaPlays','grandpa_ted','sk8rkid','mila.b','Owen_UK','tacoTuesday','ellie_draws','ryn','BigDaveTX','nora_reads'];
+const ROOFS=['#d9623f','#4f7cc4','#e0a43a','#8a5bb0','#3f9e8f','#c94f6d','#6b8e3a','#d07c2c'];
+const RANKS=[[0,'Settler'],[15,'Farmer'],[40,'Builder'],[100,'Elder']];
+
+/* ---------- slots: 3x3-tile plots, center-first, top band visible on phones ---------- */
+const TS=48;const SLOTS=[];
+[[12,[4,8,1,11]],[16,[4,8,1,11]],[20,[4,8,1,11]],[24,[4,8,1,11]]].forEach(([r,cols])=>cols.forEach(c=>SLOTS.push({c,r,x:(c+1.5)*TS,y:(r+3)*TS})));
+/* ---------- state ---------- */
+const KEY='chatColony.v1';
+function fresh(){return{day:1,tod:1,food:30,wood:25,mood:60,light:0,goal:0,build:{well:false,farm:1,wall:false,dock:false,market:false},
+  people:NPC.map((n,i)=>({name:n,npc:true,pts:0,slot:i,roof:ROOFS[i%ROOFS.length],seen:0})),log:[],deck:[],nextDragon:nextDragonTime()}}
+function nextDragonTime(){const d=new Date();d.setUTCHours(19,0,0,0);if(d.getTime()<=Date.now())d.setUTCDate(d.getUTCDate()+1);return d.getTime()}
+let S=fresh();
+// gespeichert wird auf dem Server (DATA_DIR/state.json), damit Häuser Neustarts überleben
+let saveT=0;
+function saveNow(){clearTimeout(saveT);saveT=0;return fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)}).catch(()=>{})}
+function save(){if(!saveT)saveT=setTimeout(saveNow,2000)}
+async function load(){try{const o=await (await fetch('/api/load',{cache:'no-store'})).json();if(o&&o.people)S=Object.assign(fresh(),o)}catch(e){}}
+
+/* walkers (runtime only) */
+const walkers=new Map();
+function walker(p){let w=walkers.get(p.name);if(!w){const s=SLOTS[p.slot]||SLOTS[0];w={x:s.x+rnd(-40,40),y:s.y+24,tx:s.x,ty:s.y+24,task:null,tag:0,bob:rnd(0,6)};walkers.set(p.name,w)}return w}
+
+/* ---------- round flow ---------- */
+let R=null, phase='vote', tEnd=0, lastRes=null;
+const now=()=>performance.now()/1000;
+const voteLen=()=>FAST?12:30, resLen=()=>FAST?5:8;
+function nextEvent(){if(!S.deck.length)S.deck=E.map((_,i)=>i).sort(()=>Math.random()-.5);return E[S.deck.pop()]}
+const DRAGON={q:"The dragon is here!",v:'dragon',o:[
+  {t:"Shields up on the roofs",fx:{wood:-4},h:""},{t:"Water from the well",fx:{mood:2},h:""},{t:"Throw it a feast",fx:{food:-6},h:""}]};
+function newRound(force){
+  if(force||Date.now()>=S.nextDragon){if(!force)S.nextDragon=nextDragonTime();R={ev:DRAGON,votes:new Map(),dragon:true};phase='vote';tEnd=now()+voteLen()+(FAST?6:15);FX.dragon=now();renderCard();return}
+  R={ev:nextEvent(),votes:new Map()};phase='vote';tEnd=now()+voteLen();renderCard()}
+function activeHumans(){const t=Date.now();return S.people.filter(p=>!p.npc&&t-p.seen<180000)}
+
+function person(name){
+  let p=S.people.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(!p){
+    const used=new Set(S.people.map(x=>x.slot));let slot=SLOTS.findIndex((_,i)=>!used.has(i));
+    if(slot<0){const old=S.people.filter(x=>x.npc)[0]||S.people.filter(x=>!x.npc).sort((a,b)=>a.seen-b.seen)[0];
+      slot=old.slot;S.people=S.people.filter(x=>x!==old);walkers.delete(old.name);
+      if(!old.npc){S.away=S.away||{};S.away[old.name.toLowerCase()]={name:old.name,pts:old.pts,streak:old.streak,lastDay:old.lastDay};
+        const ks=Object.keys(S.away);if(ks.length>5000)delete S.away[ks[0]]}}
+    const back=S.away&&S.away[name.toLowerCase()];if(back)delete S.away[name.toLowerCase()];
+    p={name,npc:false,pts:back?back.pts:0,slot,roof:ROOFS[Math.floor(Math.random()*ROOFS.length)],seen:Date.now(),streak:back?back.streak:1,lastDay:back?back.lastDay:new Date().toDateString()};
+    S.people.push(p);const w=walker(p);w.tag=now()+6;
+    sparkle(SLOTS[slot].x,SLOTS[slot].y-80);float(SLOTS[slot].x,SLOTS[slot].y-150,'NEW HOME','#ffd75e');
+    vlog(`@${name} ${back?'moved back in':'moved in'}`);spotlight(back?`Welcome back, @${name}!`:`Welcome home, @${name}!`,`House #${slot+1} · ${rank(p)} · type !house anytime`,slot);
+  }
+  const today=new Date().toDateString();if(p.lastDay!==today){const y=new Date(Date.now()-864e5).toDateString();p.streak=p.lastDay===y?(p.streak||0)+1:1;p.lastDay=today}
+  p.seen=Date.now();return p;
+}
+function rank(p){let r=RANKS[0][1];for(const[a,n]of RANKS)if(p.pts>=a)r=n;return r}
+function lvl(p){return p.npc?1:1+RANKS.filter(([a])=>p.pts>=a).length-1}
+
+function onChat(name,text,me){
+  logLine(name,text,me);
+  const p=person(name);const m=text.trim().toLowerCase();
+  if(/^[123]$/.test(m)&&phase==='vote'){
+    const first=!R.votes.has(p.name);R.votes.set(p.name,+m-1);
+    if(first){const w=walker(p);w.tag=now()+3}
+    const hum=activeHumans();
+    if(hum.length===1&&tEnd-now()>5)tEnd=now()+5; // solo: your vote decides fast
+    renderCard();
+  }else if(m==='!house'){
+    if(p.hcd&&Date.now()<p.hcd)return;p.hcd=Date.now()+15000;
+    spotlight(`@${p.name}'s house`,`${rank(p)} · ${p.pts} pts · Day ${p.streak||1} streak`,p.slot);
+  }else if(m==='!fish'||m==='!chop'||m==='!build'){
+    if(p.cd&&Date.now()<p.cd){return}
+    p.cd=Date.now()+20000;doAction(p,m.slice(1));
+  }
+}
+function doAction(p,a){
+  const w=walker(p);w.tag=now()+6;
+  const spot={fish:{x:rnd(560,680),y:566},chop:{x:rnd(110,280),y:rnd(548,566)},build:{x:rnd(60,110),y:566}}[a];
+  w.task={a,x:spot.x,y:spot.y,until:now()+7};w.tx=spot.x;w.ty=spot.y;
+  if(a==='fish'){S.food+=1}else if(a==='chop'){S.wood+=1}else{if(S.wood>0){S.wood-=1;S.light=Math.min(100,S.light+1)}}
+  p.pts+=1;
+  const label={fish:'+1 food',chop:'+1 wood',build:'+1% goal'}[a];
+  setTimeout(()=>float(spot.x,spot.y-40,`@${p.name} ${label}`,'#fbf3e4'),1200);
+  vlog(`@${p.name} ${{fish:'caught a fish',chop:'chopped wood',build:'worked on the '+GOALS[S.goal%GOALS.length].toLowerCase()}[a]}`);
+  updateHud();
+}
+
+function endVote(){
+  const ev=R.ev,counts=[0,0,0];R.votes.forEach(v=>counts[v]++);
+  const total=counts[0]+counts[1]+counts[2];let win,mode;
+  if(!total){win=Math.floor(Math.random()*3);mode='auto'}
+  else{const mx=Math.max(...counts);const tied=[0,1,2].filter(i=>counts[i]===mx);win=pick(tied);mode=activeHumans().length===1?'solo':'vote'}
+  const o=ev.o[win];let fx={...o.fx},head=o.h,good=true;
+  if(o.risk&&Math.random()<o.risk.p){fx=Object.assign({},fx);for(const k in o.risk.fx)fx[k]=(fx[k]||0)+o.risk.fx[k];head=o.risk.h;good=!!o.risk.good}
+  else if(o.risk&&o.risk.good){good=true}
+  if(R.dragon){if(!total){fx={food:-8,mood:-10};head='Nobody came. The dragon burned the barn.';good=false}else{head=`${total} defender${total>1?'s':''} drove the dragon away!`;fx.mood=(fx.mood||0)+6}FX.dragon=0}
+  // apply
+  const before={food:S.food,wood:S.wood,mood:S.mood,light:S.light};
+  S.food=Math.max(0,S.food+(fx.food||0));S.wood=Math.max(0,S.wood+(fx.wood||0));S.mood=clamp(S.mood+(fx.mood||0),0,100);
+  S.light=clamp(S.light+(fx.light||0),0,100);
+  if(o.build){if(o.build==='farm')S.build.farm=Math.min(4,S.build.farm+1);else S.build[o.build]=true}
+  if(fx.pop){const n=pick(['Captain Rook','Marla','Finn']);if(!S.people.find(p=>p.name===n)){const used=new Set(S.people.map(x=>x.slot));const slot=SLOTS.findIndex((_,i)=>!used.has(i));if(slot>=0)S.people.push({name:n,npc:true,pts:0,slot,roof:pick(ROOFS),seen:0})}}
+  // hunger: an NPC family leaves, players never do
+  let extra='';
+  if(S.food===0){const npcs=S.people.filter(p=>p.npc);if(npcs.length>3){const gone=npcs[npcs.length-1];S.people=S.people.filter(p=>p!==gone);walkers.delete(gone.name);extra=`Hunger! ${gone.name}'s family left for the mainland.`}S.mood=clamp(S.mood-5,0,100)}
+  // goal complete
+  let goalDone=false;if(S.light>=100){goalDone=true;S.light=0;S.goal++;}
+  // points + tags
+  const winners=[];R.votes.forEach((v,n)=>{const p=S.people.find(x=>x.name===n);if(!p)return;p.pts+=3+(v===win?2:0)+(R.dragon?10:0);if(v===win){winners.push(n);walker(p).tag=now()+resLen()+1}});
+  // time passes
+  S.tod++;if(S.tod>=TOD.length){S.tod=0;S.day++}
+  const deltas=[];for(const k of['food','wood','mood','light']){const d=(k==='light'?S.light+(goalDone?100:0):S[k])-before[k];if(d)deltas.push([k==='light'?'goal':k,d])}
+  lastRes={head:goalDone?`${GOALS[(S.goal-1)%GOALS.length]} complete!`:head,sub:'',deltas,mode,choice:o.t,winners,extra};
+  const who=winners.length?`@${winners.slice(0,2).join(', @')}${winners.length>2?` + ${winners.length-2} more`:''}`:'';
+  lastRes.sub=R.dragon?(total?`Every defender gets +10 points. ${who?who+' fought for “'+o.t+'”.':''}`:'Come back tomorrow at 8 PM UK and defend your house.'):mode==='auto'?`Autopilot chose “${o.t}”. Type 1, 2 or 3 to decide next time.`:mode==='solo'?`${who} decided: “${o.t}”`:`${who} chose “${o.t}” (${counts[win]} of ${total} votes)`;
+  vlog(lastRes.head);if(extra)vlog(extra);
+  playVisual(goalDone||(R.dragon&&total)?'party':(o.fest?'party':(R.dragon?'fire':ev.v)),good,o.build);
+  for(const[k,d]of deltas)float(k==='food'?120:k==='wood'?90:k==='goal'?90:360,k==='goal'?460:600,`${d>0?'+':''}${d}${k==='goal'?'%':''} ${k}`,d>0?'#bff59a':'#ffb3a0');
+  phase='result';tEnd=now()+resLen();renderCard();updateHud();save();
+}
+
+/* ---------- HUD ---------- */
+function updateHud(){
+  $('day').textContent=`Day ${S.day}`;$('tod').textContent=TOD[S.tod];
+  const set=(id,v,low)=>{const c=$(id);c.querySelector('span').textContent=v;c.classList.toggle('low',!!low)};
+  set('cFood',S.food,S.food<8);set('cWood',S.wood,S.wood<6);set('cMood',S.mood+'%',S.mood<25);set('cPop',S.people.length);
+  {const ms=S.nextDragon-Date.now(),h=Math.floor(ms/36e5),mi=Math.floor(ms%36e5/6e4);const n=$('next');n.textContent=R&&R.dragon&&phase==='vote'?'The dragon is attacking right now!':`Daily dragon attack 8 PM UK · in ${h}h ${mi}m`;n.classList.toggle('hot',(R&&R.dragon)||ms<36e5)}
+  $('goalName').textContent=`Week goal: ${GOALS[S.goal%GOALS.length]}`;$('goalBar').style.width=S.light+'%';$('goalPct').textContent=S.light+'%';
+  const top=S.people.filter(p=>!p.npc).sort((a,b)=>b.pts-a.pts).slice(0,6);
+  $('top').innerHTML=top.length?top.map(p=>`<li><span>@${esc(p.name)}</span><em>${rank(p)} · ${p.pts}</em></li>`).join(''):'<li><span>Write in chat to move in</span></li>';
+  $('vlog').innerHTML=S.log.slice(-6).reverse().map(l=>`<li><span>${esc(l)}</span></li>`).join('');
+}
+function renderCard(){
+  const c=$('card');
+  if(phase==='vote'){
+    const counts=[0,0,0];R.votes.forEach(v=>counts[v]++);const total=counts.reduce((a,b)=>a+b,0);
+    const hum=activeHumans();
+    let badge='<span class="badge">Vote now</span>';
+    if(R.dragon)badge='<span class="badge dragon">Dragon attack · everyone vote!</span>';
+    else if(hum.length===1)badge=`<span class="badge solo">Solo · @${esc(hum[0].name)} decides</span>`;
+    else if(!hum.length)badge='<span class="badge auto">Autopilot · type 1, 2 or 3</span>';
+    c.innerHTML=`<div class="ctop">${badge}<span class="timer" id="tmr"></span></div><div class="q">${esc(R.ev.q)}</div><div class="opts">${R.ev.o.map((o,i)=>`<div class="opt"><span class="fill" style="width:${total?counts[i]/total*100:0}%"></span><span class="n">${i+1}</span><span class="t">${esc(o.t)}</span><span class="c">${counts[i]||''}</span></div>`).join('')}</div>`;
+  }else{
+    const r=lastRes;
+    c.innerHTML=`<div class="ctop"><span class="badge${r.mode==='solo'?' solo':r.mode==='auto'?' auto':''}">${r.mode==='auto'?'Autopilot':r.mode==='solo'?'Your call':'Chat decided'}</span><span class="timer" id="tmr"></span></div><div class="headline">${esc(r.head)}</div><div class="sub">${esc(r.sub)}</div><div class="deltas">${r.deltas.map(([k,d])=>`<span class="d${d<0?' neg':''}">${d>0?'+':''}${d}${k==='goal'?'%':''} ${k}</span>`).join('')}</div>${r.extra?`<div class="sub" style="margin-top:10px;color:#a3361a">${esc(r.extra)}</div>`:''}`;
+  }
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+let tickT=0,ruleI=0;const RULES=['YOU decide. Type 1, 2 or 3','Type anything to get your own house','!fish  !chop  !build  =  your own action','!house  =  see your home and streak','Come back daily. Dragon attack 8 PM UK'];
+function tick(t,rule){const e=$('tick');e.textContent=t;e.classList.toggle('rule',!!rule);tickT=now()}
+let spotT=0;function spotlight(title,sub,slot){const sp=$('spot');sp.innerHTML=`<div class="spotbox"><b>${esc(title)}</b><span>${esc(sub)}</span></div>`;sp.hidden=false;$('ticker').hidden=true;FX.glow={slot,until:now()+6};clearTimeout(spotT);spotT=setTimeout(()=>{sp.hidden=true;$('ticker').hidden=false},4500)}
+function vlog(t){S.log.push(t);if(S.log.length>40)S.log.shift();updateHud()}
+function logLine(n,t,me){if(!$('log'))return;const d=document.createElement('div');if(me)d.className='me';d.innerHTML=`<b>${esc(n)}</b> ${esc(t)}`;const L=$('log');L.appendChild(d);while(L.children.length>80)L.firstChild.remove();L.scrollTop=L.scrollHeight}
+
+/* ---------- visual effects ---------- */
+const FX={glow:null,dragon:0,rain:0,flash:0,fire:null,cart:null,conf:[],wolves:0,spark:[],float:[],fish:[],ship:null,gold:0};
+function float(x,y,t,c){FX.float.push({x,y,t,c,b:now()})}
+function sparkle(x,y){for(let i=0;i<24;i++)FX.spark.push({x,y,vx:rnd(-90,90),vy:rnd(-160,-40),b:now()})}
+function playVisual(v,good,build){
+  const t=now();
+  if(v==='storm'){FX.rain=t+7;FX.flash=t+.25}
+  if(v==='rain')FX.rain=t+7;
+  if(v==='fire'){const p=pick(S.people);FX.fire={slot:p.slot,until:t+7}}
+  if(v==='trader')FX.cart={b:t};
+  if(v==='party'){for(let i=0;i<120;i++)FX.conf.push({x:rnd(0,W),y:rnd(-200,0),vy:rnd(80,180),vx:rnd(-30,30),c:pick(['#ffd75e','#ff7a59','#7bd1ff','#9be36b','#e58bff']),b:t})}
+  if(v==='wolves')FX.wolves=t+7;
+  if(v==='fish')for(let i=0;i<8;i++)FX.fish.push({x:rnd(550,690),b:t+rnd(0,4)});
+  if(v==='ship')FX.ship={b:t};
+  if(v==='harvest')FX.gold=t+7;
+  if(v==='lighthouse')sparkle(48,470);
+  if(build){const pos={well:[360,540],wall:[200,540],dock:[620,580],market:[360,740],farm:[360,1000]}[build];if(pos)sparkle(pos[0],pos[1])}
+  const spot={storm:[360,740],trader:[360,740],fish:[620,566],wolves:[170,566],lighthouse:[96,744],harvest:[300,1000],chop:[180,560]}[v];
+  if(spot){let k=0;for(const p of S.people){if(k++>8)break;const w=walker(p);w.task={a:'react',x:spot[0]+rnd(-40,40),y:spot[1]+rnd(-6,16),until:t+6};w.tx=w.task.x;w.ty=w.task.y}}
+}
+
+/* ---------- drawing (Kenney Tiny Town + Tiny Dungeon, CC0) ---------- */
+const SHEET={tt:new Image(),td:new Image()};SHEET.tt.src='img/tiny-town.png';SHEET.td.src='img/tiny-dungeon.png';
+function ti(sh,i,x,y,s=3){const im=SHEET[sh];if(!im.complete)return;g.drawImage(im,(i%12)*16,Math.floor(i/12)*16,16,16,Math.round(x),Math.round(y),16*s,16*s)}
+function hash(str){let h=7;for(const c of str)h=(h*31+c.charCodeAt(0))>>>0;return h}
+const CHARS=[84,85,86,87,88,96,97,98,99,100,109,111,112];
+// static ground layer, drawn once into an offscreen canvas
+const ground=document.createElement('canvas');ground.width=W;ground.height=H;let groundOk=false;
+function buildGround(){
+  if(!SHEET.tt.complete||!SHEET.tt.naturalWidth)return;const gg=g;const G=ground.getContext('2d');G.imageSmoothingEnabled=false;
+  const T=(i,c,r)=>G.drawImage(SHEET.tt,(i%12)*16,Math.floor(i/12)*16,16,16,c*TS,r*TS,TS,TS);
+  let seed=11;const R=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let r=0;r<27;r++)for(let c=0;c<15;c++){const q=R();T(q<.86?0:q<.95?1:2,c,r)}
+  // forest band behind the header and card
+  for(let r=0;r<10;r++)for(let c=0;c<15;c++){const q=R();if(q<.7)T(q<.45?4:q<.6?3:5,c,r)}
+  for(let c=2;c<6;c++)T(c%2?4:3,c,10);
+  // dirt paths: vertical main street + cross streets
+  for(let r=10;r<27;r++)T(25,7,r);
+  for(const r of[15,19,23])for(let c=0;c<15;c++)T(25,c,r);
+  // fences along the north edge
+  for(let c=8;c<11;c++)T(69,c,10);
+  groundOk=true;
+}
+function lerp(a,b,t){return a+(b-a)*t}
+function scene(t){
+  g.imageSmoothingEnabled=false;
+  if(!groundOk)buildGround();
+  if(groundOk)g.drawImage(ground,0,0);else{g.fillStyle='#6fb24a';g.fillRect(0,0,W,H)}
+  const dark=[.45,0,0,.05,.35,.75][S.tod];
+  // pond with pixel waves
+  g.fillStyle='#24467a';g.fillRect(528,480,192,96);g.fillStyle='#3b8fd6';g.fillRect(534,486,186,84);
+  g.fillStyle='#8fd0ff';for(let i=0;i<6;i++){const x=540+((i*37+Math.floor(t*20))%170);g.fillRect(x,500+(i%3)*22,12,3)}
+  if(S.build.dock){g.fillStyle='#8a5a32';g.fillRect(560,560,24,40);g.fillStyle='#5b3a22';for(let y=564;y<600;y+=9)g.fillRect(560,y,24,2)}
+  // week-goal tower: one stone tile per 25 %
+  const fl=1+Math.floor(S.light/25);for(let k=0;k<fl;k++){ti('tt',k===fl-1?101:100,0,528-k*TS);ti('tt',k===fl-1?101:100,TS,528-k*TS)}
+  if(fl<4){g.strokeStyle='#ffd75e';g.setLineDash([6,6]);g.lineWidth=3;g.strokeRect(2,576-4*TS,92,(4-fl)*TS);g.setLineDash([]);g.lineWidth=2}
+  if((S.tod>=4||S.tod===0)){g.fillStyle='#ffd75e';g.fillRect(40,540-fl*TS,16,10)}
+  // well, fence, market
+  if(S.build.well)ti('tt',104,7*TS,11*TS);
+  if(S.build.wall)for(let c=2;c<6;c++)ti('tt',69,c*TS,11*TS);
+  if(S.build.market){ti('tt',94,6*TS,14*TS);ti('tt',107,8*TS,14*TS)}
+  // plots: empty plots are fields, owned plots are houses
+  const owned=new Map(S.people.map(p=>[p.slot,p]));
+  const items=[];
+  SLOTS.forEach((s,i)=>{const p=owned.get(i);if(p)items.push({y:s.y,draw:()=>house(p,s,dark,t)});else items.push({y:s.y-200,draw:()=>field(s,t)})});
+  for(const p of S.people){const w=walker(p);items.push({y:w.y+1,draw:()=>drawPerson(p,w,dark,t)})}
+  items.sort((a,b)=>a.y-b.y).forEach(i=>i.draw());
+  // effects
+  if(FX.cart){const k=(t-FX.cart.b)/6;if(k>1)FX.cart=null;else{const x=-60+k*(W+120);ti('tt',57,x,15*TS-6);ti('td',86,x-44,15*TS-8)}}
+  if(FX.ship){const k=(t-FX.ship.b)/7;if(k>1)FX.ship=null;else{const x=W-k*200;g.fillStyle='#8a5a32';g.fillRect(x,530,40,12);g.fillStyle='#f3e7c9';g.fillRect(x+18,504,4,26);g.fillRect(x+22,506,14,18)}}
+  if(FX.wolves>t){for(let i=0;i<3;i++){ti('td',124,120+i*44+Math.sin(t*3+i)*6,520)}}
+  FX.fish=FX.fish.filter(f=>t-f.b<1.2);for(const f of FX.fish){const k=t-f.b;if(k<0)continue;g.fillStyle='#f3e7c9';g.fillRect(Math.round(f.x+k*30),Math.round(540-Math.sin(k/1.2*Math.PI)*36),12,6)}
+  if(FX.fire&&FX.fire.until>t){const s=SLOTS[FX.fire.slot];if(s)for(let i=0;i<14;i++){g.fillStyle=i%2?'#ff7a3d':'#ffd25a';const q=((t*60+i*13)%60);g.fillRect(Math.round(s.x-40+((i*29)%80)),Math.round(s.y-110-q),8,8)}}
+  if(FX.glow&&FX.glow.until>t){const s=SLOTS[FX.glow.slot];if(s){const on=Math.floor(t*4)%2;g.strokeStyle=on?'#ffd75e':'#fff';g.lineWidth=6;g.strokeRect(s.x-78,s.y-156,156,160);g.lineWidth=2;g.fillStyle='#ffd75e';const ay=s.y-200-on*8;g.fillRect(s.x-12,ay,24,12);g.fillRect(s.x-6,ay+12,12,10)}}
+  if(R&&R.dragon&&phase==='vote'){const k=((t-FX.dragon)/9)%1,x=W+150-k*(W+300),y=640+Math.sin(t*2)*14;
+    g.fillStyle='rgba(140,20,10,.2)';g.fillRect(0,0,W,H);ti('td',110,x,y-72,9);
+    for(let i=0;i<16;i++){const q=(t*3+i/16)%1;g.fillStyle=i%2?'#ff7a3d':'#ffd25a';const sz=Math.round(14*(1-q)+4);g.fillRect(Math.round(x-q*160),Math.round(y+q*90+Math.sin(i)*10),sz,sz)}}
+  if(FX.rain>t){g.fillStyle='rgba(180,210,255,.7)';for(let i=0;i<160;i++){const x=Math.round((i*53+t*240)%W),y=Math.round((i*97+t*900)%H);g.fillRect(x,y,3,12)}g.fillStyle='rgba(20,24,60,.28)';g.fillRect(0,0,W,H)}
+  if(FX.flash>t){g.fillStyle='rgba(255,255,255,.75)';g.fillRect(0,0,W,H)}
+  if(dark>0){g.fillStyle=`rgba(16,14,60,${dark*.55})`;g.fillRect(0,0,W,H)}
+  // lit windows at night on top of the tint
+  if(dark>.3)for(const p of S.people){const s=SLOTS[p.slot];if(!s)continue;g.fillStyle='rgba(255,215,94,.85)';g.fillRect(s.x-60,s.y-36,12,12)}
+  FX.conf=FX.conf.filter(c=>t-c.b<6);for(const c of FX.conf){const k=t-c.b;g.fillStyle=c.c;g.fillRect(Math.round(c.x+c.vx*k+Math.sin(k*4+c.x)*10),Math.round(c.y+c.vy*k),8,8)}
+  FX.spark=FX.spark.filter(s=>t-s.b<1.2);for(const s of FX.spark){const k=t-s.b;g.fillStyle=`rgba(255,226,140,${1-k})`;g.fillRect(Math.round(s.x+s.vx*k),Math.round(s.y+s.vy*k+200*k*k),6,6)}
+  FX.float=FX.float.filter(f=>t-f.b<2.4);g.textAlign='center';g.font='700 28px "Pixelify Sans", monospace';
+  for(const f of FX.float){const k=(t-f.b)/2.4;const y=Math.round(f.y-k*60);g.globalAlpha=1-k*k;g.fillStyle='#0b0e24';g.fillText(f.t,f.x+3,y+3);g.fillStyle=f.c;g.fillText(f.t,f.x,y);g.globalAlpha=1}
+}
+function field(s,t){const x0=s.x-72,y0=s.y-144;
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++)ti('tt',[[12,13,14],[24,25,26],[36,37,38]][r][c],x0+c*TS,y0+r*TS);
+  if(FX.gold>t){g.fillStyle='#ffd75e';for(let i=0;i<9;i++)g.fillRect(x0+18+(i%3)*42,y0+22+Math.floor(i/3)*40,8,14)}
+  else for(let i=0;i<3;i++)ti('tt',17,x0+i*TS,y0+TS);
+}
+function house(p,s,dark,t){
+  const L=lvl(p),x0=s.x-72,y0=s.y-144,stale=!p.npc&&Date.now()-p.seen>300000;
+  const blue=hash(p.name)%2===0;
+  const roof=blue?[48,49,50,60,61,62]:[52,53,54,64,65,66];const wall=L>=3?[88,89,90]:[84,85,84];
+  for(let c=0;c<3;c++){ti('tt',roof[c],x0+c*TS,y0);ti('tt',roof[3+c],x0+c*TS,y0+TS);ti('tt',wall[c],x0+c*TS,y0+2*TS)}
+  if(L>=2){ti('tt',2,x0-20,y0+2*TS+12,2);ti('tt',2,x0+132,y0+2*TS+12,2)}
+  if(L>=4)ti('tt',blue?51:55,x0+2*TS,y0-TS+8);
+  if(stale){g.fillStyle='rgba(120,110,100,.45)';g.fillRect(x0,y0,144,144)}
+  if(!p.npc){g.font='700 20px "Pixelify Sans", monospace';g.textAlign='center';const tw=Math.round(g.measureText(p.name).width+12);
+    g.fillStyle='#0b0e24';g.fillRect(Math.round(s.x-tw/2),s.y+2,tw,24);g.fillStyle='#fff';g.fillText(p.name,s.x,s.y+20)}
+}
+function drawPerson(p,w,dark,t){
+  const dx=w.tx-w.x,dy=w.ty-w.y,d=Math.hypot(dx,dy);
+  if(d>2){const sp=reduce?d:Math.min(d,1.6);w.x+=dx/d*sp;w.y+=dy/d*sp}
+  else if(!w.task||w.task.until<t){w.task=null;const s=SLOTS[p.slot]||SLOTS[0];if(Math.random()<.01){w.tx=s.x+rnd(-60,60);w.ty=s.y+rnd(10,38)}}
+  const hop=d>2?(Math.floor(t*8+w.bob)%2)*4:0;
+  ti('td',CHARS[hash(p.name)%CHARS.length],w.x-24,w.y-46-hop);
+  if(w.task&&d<=2){const tool={fish:115,chop:129,build:128}[w.task.a];if(tool)ti('tt',tool,w.x+10,w.y-50-(Math.floor(t*6)%2)*6,2)}
+  if(w.tag>t&&!p.npc){g.font='700 22px "Pixelify Sans", monospace';g.textAlign='center';const tw=Math.round(g.measureText('@'+p.name).width+16);const y=Math.round(w.y-78-hop);
+    g.fillStyle='#0b0e24';g.fillRect(Math.round(w.x-tw/2)-3,y-23,tw+6,34);g.fillStyle='#ffd75e';g.fillRect(Math.round(w.x-tw/2),y-20,tw,28);g.fillRect(Math.round(w.x)-5,y+8,10,6);
+    g.fillStyle='#1c2147';g.fillText('@'+p.name,w.x,y+1)}
+}
+
+/* ---------- bots ---------- */
+let botsVoted=new Set();
+function botTick(){
+  const n=DEMO_BOTS;const bots=BOTS.slice(0,n);
+  for(const b of bots){
+    if(phase==='vote'&&!R.votes.has(b)&&Math.random()<.06&&tEnd-now()>2){onChat(b,String(1+Math.floor(Math.random()*3)),false)}
+    else if(Math.random()<.004){onChat(b,pick(['!fish','!chop','!build']),false)}
+    else if(Math.random()<.003){onChat(b,pick(['lol the wolves again','go lighthouse!!','first time here, this is cool','we need food fr','my house is so small haha','gg chat']),false)}
+  }
+}
+
+/* ---------- loop ---------- */
+function frame(){const t=now();g.clearRect(0,0,W,H);scene(t);
+  const el=$('tmr');if(el)el.textContent=Math.max(0,Math.ceil(tEnd-t));
+  requestAnimationFrame(frame)}
+setInterval(()=>{const t=now();botTick();
+  if(t>=tEnd){if(phase==='vote')endVote();else newRound()}
+  if(t-tickT>5&&$('spot').hidden){const hum=activeHumans();ruleI=(ruleI+1)%RULES.length;const r=ruleI===0&&hum.length===1?`@${hum[0].name}, the colony is in your hands.`:RULES[ruleI];tick(r,true)}
+  if(Math.floor(t)%20===0)updateHud();
+},250);
+
+
+/* ---------- music: own chiptune tracks (stable-audio), picked by time of day and events ---------- */
+const TRACKS={village:'music/00-village-cozy.mp3',morning:'music/01-morning-farm.mp3',town:'music/02-town-upbeat.mp3',evening:'music/03-evening-lake.mp3',night:'music/04-night-quiet.mp3',festival:'music/05-festival.mp3',rain:'music/06-rain-cozy.mp3',dragon:'music/07-dragon-battle.mp3'};
+let musicOn=true,cur=null,curKey='';
+function wantTrack(){const t=now();if(R&&R.dragon&&phase==='vote')return'dragon';if(FX.rain>t)return'rain';if(FX.conf.length)return'festival';return['morning','morning','village','town','evening','night'][S.tod]}
+function fade(a,to,ms,done){const from=a.volume,st=performance.now();const step=()=>{const k=Math.min(1,(performance.now()-st)/ms);a.volume=from+(to-from)*k;if(k<1)requestAnimationFrame(step);else done&&done()};step()}
+function musicTick(){if(!musicOn)return;const k=wantTrack();if(k===curKey)return;curKey=k;const old=cur;const a=new Audio(TRACKS[k]);a.loop=true;a.volume=0;a.play().then(()=>fade(a,.7,1200)).catch(()=>{});cur=a;if(old)fade(old,0,1200,()=>old.pause())}
+setInterval(musicTick,1000);
+/* ---------- YouTube-Chat vom Server ---------- */
+let since=-1,ver='',reloadPending=false;
+async function pollChat(){
+  try{const r=await (await fetch('/api/chat?since='+since,{cache:'no-store'})).json();
+    if(ver&&r.v!==ver)reloadPending=true;ver=r.v;
+    if(since>=0)for(const m of r.msgs)onChat(m.user,m.text,false);
+    since=r.last}catch(e){}
+  setTimeout(pollChat,1000)}
+// neue Seitenversion erst zwischen zwei Runden laden, damit keine Abstimmung verloren geht
+const _newRound=newRound;newRound=function(force){if(reloadPending){saveNow().then(()=>location.reload());return}_newRound(force)};
+setInterval(()=>fetch('/api/alive',{cache:'no-store'}).catch(()=>{}),30000);
+load().then(()=>{updateHud();newRound(QS.has('dragon'));requestAnimationFrame(frame);pollChat()});
+})();
+</script>
