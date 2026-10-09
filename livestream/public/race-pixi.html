@@ -11,6 +11,12 @@
 const {Engine, Bodies, Body, Composite, Events} = Matter;
 const W = 1920, H = 1080, CW = 608, CX = (W-CW)/2, TW = CW, R = 17, FINISH_Y = 7900, WORLD_H = 8200, START_WAIT = 60*8, MAX_BALLS = 48;
 const Q = new URLSearchParams(location.search), OFFLINE = Q.has('offline'), ZOOM_OFF = Q.get('zoom')==='0';
+// Glas-Look wie Wortraten (Niklas 09.10.): dunkel-lila, kompakte Glas-Kästen mittig, Inter. Standard seit 09.10. (Niklas „passt geh live“), alte Fassung per ?style=classic
+const GLASS = Q.get('style')!=='classic', FONT = GLASS ? 'Inter, "DejaVu Sans"' : '"DejaVu Sans"';
+if(GLASS){ const ff=new FontFace('Inter','url(/fonts/InterVariable.woff2)',{weight:'100 900'}); ff.load().then(f=>document.fonts.add(f)).catch(()=>{}) }
+// Farben der klassischen Fassung → Wortraten-Palette (Bahn unverändert)
+const GMAP = {'#94a3b8':'#a99fc6','#64748b':'#6c6390','#cbd5e1':'#c9c0e3','#e2e8f0':'#e6e0f7','#e5e7eb':'#e6e0f7','#22d3ee':'#4fe0c0','#fde047':'#ffd166','#ffd700':'#ffd166','#ef4444':'#ff5d8d','#4ade80':'#4fe0c0','#f9a8d4':'#ff8fb1'};
+const gc = c => GLASS && GMAP[c] || c;
 const OUT_W = +(Q.get('w')||1280), SC = OUT_W/W;     // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 cv.width = OUT_W; cv.height = Math.round(H*SC);
@@ -29,6 +35,10 @@ const PALETTES = [
   {peg:'#ffc8dd', ramp:'#7fd1e8', paddle:'#ffd166', bump:'#ffc8dd', fun:'#7fd1e8', bg:['#151634','#1c1032']},   // Zuckerwatte: Rosa, Himmelblau, Gold
   {peg:'#ffd166', ramp:'#2ec4b6', paddle:'#ff8c61', bump:'#ffd166', fun:'#2ec4b6', bg:['#0d1b2a','#0f1630']},   // Riesenrad: Gold, Türkis, Koralle
 ];
+if(GLASS) PALETTES.splice(0,3,   // Wortraten-Farben: Lila, Mint, Pink, Gold auf dunklem Lila
+  {peg:'#b6a4ff', ramp:'#5b48c9', paddle:'#38b59c', bump:'#ffd166', fun:'#ff5d8d', bg:['#1a1433','#120d24']},
+  {peg:'#ff8fb1', ramp:'#2f9e8a', paddle:'#e0b45a', bump:'#ff8fb1', fun:'#9b82ff', bg:['#1a1433','#120d24']},
+  {peg:'#ffd166', ramp:'#b8466b', paddle:'#7a63d9', bump:'#ffd166', fun:'#4fe0c0', bg:['#1a1433','#120d24']});
 let PAL = PALETTES[0];
 // Bausteine: jeder bekommt die Start-Höhe y und baut nach unten; Rückgabe = verbrauchte Höhe.
 // Regeln: Abstand zur Wand und zwischen Hindernissen ≥ 2 Kugeldurchmesser, sonst klemmen Kugeln.
@@ -534,14 +544,155 @@ function ranking(){
   return [...finished,...rest];
 }
 // Text; maxW > 0 verkleinert die Schrift, bis er hineinpasst. outline = dunkler Rand (lesbar über der Bahn)
-function textW(s,size,w='700'){ ctx.font=`${w} ${size}px "DejaVu Sans"`; return ctx.measureText(s).width }
+function textW(s,size,w='700'){ ctx.font=`${GLASS&&w==='700'?'800':w} ${size}px ${FONT}`; return ctx.measureText(s).width }
 function txt(s,x,y,size,col='#fff',w='700',al='left',maxW=0,outline=false){
-  ctx.font=`${w} ${size}px "DejaVu Sans"`;
-  if(maxW){ const m=ctx.measureText(s).width; if(m>maxW) ctx.font=`${w} ${Math.floor(size*maxW/m)}px "DejaVu Sans"` }
+  if(GLASS && w==='700') w='800'; col=gc(col);
+  ctx.font=`${w} ${size}px ${FONT}`;
+  if(maxW){ const m=ctx.measureText(s).width; if(m>maxW) ctx.font=`${w} ${Math.floor(size*maxW/m)}px ${FONT}` }
   ctx.textAlign=al; ctx.textBaseline='alphabetic';
   if(outline){ ctx.lineWidth=5; ctx.strokeStyle='rgba(0,0,0,0.85)'; ctx.lineJoin='round'; ctx.strokeText(s,x,y) }
   ctx.fillStyle=col; ctx.fillText(s,x,y)}
-function box(x,y,w,h,fill,r=12,stroke){ ctx.fillStyle=fill; ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); if(stroke){ctx.lineWidth=3; ctx.strokeStyle=stroke; ctx.stroke()} }
+function box(x,y,w,h,fill,r=12,stroke){ if(GLASS){ fill=GBOX[fill]||fill; r=Math.max(r,18) } ctx.fillStyle=fill; ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); if(stroke){ctx.lineWidth=3; ctx.strokeStyle=stroke; ctx.stroke()} }
+const GBOX = {'#ffd70030':'rgba(255,182,39,0.16)','#ffd70033':'rgba(255,182,39,0.16)','rgba(253,224,71,0.10)':'rgba(255,209,102,0.10)','#ef4444':'#ff5d8d','rgba(5,6,18,0.85)':'rgba(29,22,54,0.92)'};
+// ---------- Glas-Seitenleisten wie Wortraten: kompakte Kästen (552 px), 48 px vom Rand, oben bündig ab y 150 ----------
+let sideBg=null;
+function glassSide(x,w){ if(!sideBg){ sideBg=document.createElement('canvas'); sideBg.width=W; sideBg.height=H; const g=sideBg.getContext('2d');   // einmal vorzeichnen, kein Live-Blur (GPU schonen)
+    const gr=g.createLinearGradient(0,0,W,H); gr.addColorStop(0,'#151026'); gr.addColorStop(1,'#1d1636'); g.fillStyle=gr; g.fillRect(0,0,W,H);
+    for(const [cx,cy,r,c] of [[120,980,560,'rgba(255,93,141,0.16)'],[1820,80,600,'rgba(155,130,255,0.18)'],[960,1080,520,'rgba(46,196,166,0.10)']]){
+      const rg=g.createRadialGradient(cx,cy,0,cx,cy,r); rg.addColorStop(0,c); rg.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=rg; g.fillRect(0,0,W,H) } }
+  ctx.drawImage(sideBg,x,0,w,H,x,0,w,H) }
+function card(x,y,w,h){ ctx.fillStyle='rgba(40,32,70,0.62)'; ctx.beginPath(); ctx.roundRect(x,y,w,h,28); ctx.fill();
+  ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.stroke() }
+function label(s,x,y,col='#9b82ff',al='left'){ ctx.save(); ctx.letterSpacing='2px'; txt(s.toUpperCase(),x,y,21,col,'800',al); ctx.restore() }
+function chip(x,y,s,i){ ctx.fillStyle=['#ffb627','#d9dbe6','#e9a873'][i]||'#2c2450'; ctx.beginPath(); ctx.roundRect(x,y-29,38,38,12); ctx.fill();
+  txt(s,x+19,y-3,20,i<3?'#22182e':'#a99fc6','900','center') }
+// Mitte wie Wortraten: Kopf ohne dunklen Balken (gleicher Hintergrund wie die Seiten), alles zentriert,
+// darunter die Bahn als abgerundete Glas-Karte. Handy: Kopf bleibt in y 128–378, Bahn ab 386.
+const TRK_Y=386;
+function glassFrame(){ ctx.save(); ctx.beginPath(); ctx.rect(CX,0,CW,H); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.clip('evenodd');
+  glassSide(CX,CW); ctx.restore();
+  ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.stroke() }
+function glassHeader(rank){
+  glassFrame();
+  box(MID-52,128,104,38,'#ff5d8d',19); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(MID-26,147,5,0,7); ctx.fill(); txt('LIVE',MID+10,156,21,'#fff','800','center');
+  ctx.save(); ctx.letterSpacing='-1.5px'; txt('Country Marble Race',MID,214,50,'#f3effc','900','center',SW+40); ctx.restore();
+  // Info-Zeile wie „NATURE · 12 LETTERS“: Rennen, Top 3, Zeit
+  ctx.save(); ctx.letterSpacing='2px'; txt(`RACE #${raceNo}`,SL,250,20,'#a99fc6','800','left'); txt(phase==='race'?`⏱ ${(t/60).toFixed(0)} S`:phase==='countdown'?`START IN ${secs(START_WAIT-phaseT)} S`:'🏁 FINISH',SR,250,20,'#4fe0c0','800','right'); ctx.restore();
+  rank.slice(0,3).forEach((b,i)=>{ const x=MID-62+i*48; ctx.drawImage(ballSprite(b,15),x,226) });
+  // Mitmach-Knopf (lila, 3D-Kante wie „Type it in chat“)
+  const F=266; ctx.fillStyle='#5a3fd1'; ctx.beginPath(); ctx.roundRect(SL-24,F+6,SW+48,72,36); ctx.fill();
+  ctx.fillStyle='#7c5cff'; ctx.beginPath(); ctx.roundRect(SL-24,F,SW+48,72,36); ctx.fill();
+  txt('🎯 GET YOUR OWN BALL!',MID,F+33,30,'#fff','800','center',SW+20); txt('type your COUNTRY in the chat',MID,F+60,22,'#e6e0ff','700','center',SW);
+  // Stunden-Wertung bzw. Chaos-Ansage als ruhige Zeile
+  const cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS RACE: ${chaos.name} · WIN = x2` : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT!':'in '+cl+' races'} · WIN = x2` : null;
+  if(chaosLine) txt(chaosLine,MID,372,22,'#c4b5ff','800','center',SW);
+  else { const fin=finalMin(), hl=(board.hour||[]).slice(0,2);
+    txt(fin?`🔥 LAST MINUTES! ${hourLeft()}`:`👑 HOUR CHAMP in ${hourLeft()}`,SL,372,22,fin?'#ff5d8d':'#ffd166','800','left',SW-150);
+    hl.forEach(([c,n],i)=>{ const x=SR-130+i*68; ctx.drawImage(flagSprite(c,12),x,350); txt(String(n),x+32,372,22,i?'#e6e0f7':'#ffd166','800') }) }
+}
+// Glas-Pille mit Text (Namen, Boost, Ansagen) statt Text mit schwarzem Rand (Gemini-Kritik 09.10.)
+function pill(s,x,y,size,col,fill='rgba(18,14,33,0.86)',stroke='rgba(255,255,255,0.14)',lw=1.5,sc=1){
+  ctx.save(); if(sc!==1){ ctx.translate(x,y-size*0.35); ctx.scale(sc,sc); ctx.translate(-x,-(y-size*0.35)) }
+  ctx.font=`800 ${size}px ${FONT}`; ctx.letterSpacing=size>=26?'-0.3px':'0.2px'; const w=ctx.measureText(s).width+size*1.1, h=size*1.55, y0=y-h*0.72;
+  ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=14; ctx.shadowOffsetY=4;   // Material: schwebt über der Bahn
+  ctx.fillStyle=fill; ctx.beginPath(); ctx.roundRect(x-w/2,y0,w,h,h/2); ctx.fill(); ctx.shadowColor='transparent';
+  ctx.lineWidth=lw; ctx.strokeStyle=stroke; ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.16)'; ctx.lineWidth=1; ctx.beginPath(); ctx.roundRect(x-w/2+h*0.3,y0+1,w-h*0.6,0.5,0.25); ctx.stroke();   // heller Oberrand = Licht auf Glas
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillStyle=col; ctx.fillText(s,x,y); ctx.restore(); return {x:x-w/2,y:y0,w,h} }
+// Feder (kritisch gedämpft, Apple „response“ in s): 0 → 1 ohne Überschwingen; bounce nur bei Schwung
+const spring=(t,resp=0.35)=>{ const w=2*Math.PI/resp; return t<=0?0:1-(1+w*t)*Math.exp(-w*t) };
+const springB=(t,resp=0.4,d=0.7)=>{ if(t<=0) return 0; const w=2*Math.PI/resp, wd=w*Math.sqrt(1-d*d); return 1-Math.exp(-d*w*t)*(Math.cos(wd*t)+d*w/wd*Math.sin(wd*t)) };
+// Ladung als Apple-Ring: drei Segmente um die Kugel, geladene in Mint
+function chargeRing(x,y,r,n){ for(let j=0;j<3;j++){ const a0=-Math.PI/2+j*2*Math.PI/3+0.14, a1=a0+2*Math.PI/3-0.28;
+  ctx.lineCap='round'; ctx.lineWidth=5; ctx.strokeStyle=j<n?'#4fe0c0':'rgba(255,255,255,0.16)'; ctx.beginPath(); ctx.arc(x,y,r,a0,a1); ctx.stroke() } ctx.lineCap='butt' }
+// Ansage wie eine iOS-Mitteilung: Symbol im getönten Kreis, Text hell, Name hervorgehoben; erscheint mit Feder
+function glassToast(o){
+  const m=o.s.match(/^([\u{1F1E6}-\u{1F1FF}]{2}|\p{Extended_Pictographic}\uFE0F?)\s*(.*)$/u), icon=m?m[1]:'💬', rest=m?m[2]:o.s, col=gc(o.col);
+  const sc=0.92+0.08*spring(o.t/60,0.35), y=452, H2=58, size=26;
+  ctx.save(); ctx.translate(MID,y); ctx.scale(sc,sc); ctx.translate(-MID,-y);
+  ctx.font=`700 ${size}px ${FONT}`; let s=rest; const maxW=SW-40; while(ctx.measureText(s).width>maxW && s.length>8) s=s.slice(0,-2); if(s!==rest) s=s.slice(0,-1)+'…';
+  const tw=ctx.measureText(s).width, w=tw+H2+30, x0=MID-w/2, y0=y-H2/2;
+  ctx.shadowColor='rgba(0,0,0,0.4)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6; ctx.fillStyle='rgba(28,22,52,0.94)'; ctx.beginPath(); ctx.roundRect(x0,y0,w,H2,H2/2); ctx.fill(); ctx.shadowColor='transparent';
+  ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.stroke();
+  ctx.globalAlpha*=0.22; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x0+H2/2,y,H2/2-7,0,7); ctx.fill(); ctx.globalAlpha/=0.22;
+  ctx.font=`24px "Noto Color Emoji"`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(icon,x0+H2/2,y+1);
+  ctx.font=`700 ${size}px ${FONT}`; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle='#f3effc'; ctx.fillText(s,x0+H2+6,y+1);
+  ctx.restore() }
+const hit=(a,l)=>l.some(b=>a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h);
+// Kopfleiste über die ganze Breite (Niklas 09.10.: oben war es leer): Glas-Streifen mit Laufband der Tagessieger
+// und einer feinen Farblinie (Lila → Pink → Mint), die langsam wandert. Liegt am Handy unter der Statusleiste, nur Schmuck fürs 16:9-Bild.
+let tickX=0, tickLast=0;
+function glassTop(){
+  const x0=48, x1=W-48, y0=30, h=76, now=performance.now(); const dt=tickLast?Math.min(100,now-tickLast):16; tickLast=now;
+  card(x0,y0,x1-x0,h);
+  // Farblinie unten an der Leiste
+  const sh=(now/40)%(x1-x0), g=ctx.createLinearGradient(x0-sh,0,x0-sh+2*(x1-x0),0);
+  ['#9b82ff','#ff5d8d','#4fe0c0','#9b82ff','#ff5d8d','#4fe0c0','#9b82ff'].forEach((c,i,a)=>g.addColorStop(i/(a.length-1),c));
+  ctx.save(); ctx.beginPath(); ctx.roundRect(x0,y0,x1-x0,h,28); ctx.clip(); ctx.globalAlpha=0.9; ctx.fillStyle=g; ctx.fillRect(x0,y0+h-3,x1-x0,3); ctx.restore();
+  // links: Etikett
+  const lab='🏆 TODAY'; ctx.save(); ctx.letterSpacing='2px'; ctx.font=`800 21px ${FONT}`; const lw=ctx.measureText(lab).width+36; ctx.restore();
+  ctx.fillStyle='rgba(124,92,255,0.28)'; ctx.beginPath(); ctx.roundRect(x0+18,y0+18,lw,38,19); ctx.fill(); ctx.strokeStyle='rgba(155,130,255,0.55)'; ctx.lineWidth=1.5; ctx.stroke();
+  label(lab,x0+18+lw/2,y0+44,'#e6e0ff','center');
+  // rechts: Rennen heute
+  const rs=`${board.races||0} races today`; ctx.font=`700 22px ${FONT}`; const rw=ctx.measureText(rs).width;
+  txt(rs,x1-26,y0+46,22,'#a99fc6','700','right');
+  // Mitte: Laufband (Länder mit den meisten Siegen heute)
+  const L0=x0+18+lw+24, L1=x1-26-rw-30, list=(board.countries||[]).slice(0,10);
+  const items=list.length? list.map(([c,n],i)=>`${i===0?'👑 ':''}${flagOf(c)} ${NAME[c]||c}  ${n} ${n===1?'win':'wins'}`) : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
+  const sep='     ·     ', line=items.join(sep)+sep; ctx.font=`700 24px ${FONT}`; const lwid=ctx.measureText(line).width;
+  tickX=(tickX+dt*0.045)%lwid;
+  ctx.save(); ctx.beginPath(); ctx.rect(L0,y0+4,L1-L0,h-8); ctx.clip();
+  const fade=(a,b,c0,c1)=>{ const gg=ctx.createLinearGradient(a,0,b,0); gg.addColorStop(0,c0); gg.addColorStop(1,c1); return gg };
+  ctx.fillStyle='#f3effc'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  for(let x=L0-tickX; x<L1; x+=lwid) ctx.fillText(line,x,y0+47);
+  ctx.restore();
+  // weiche Ränder des Laufbands (Text läuft unter Glas aus statt hart abgeschnitten)
+  ctx.fillStyle=fade(L0,L0+40,'rgba(30,24,56,1)','rgba(30,24,56,0)'); ctx.fillRect(L0,y0+4,40,h-10);
+  ctx.fillStyle=fade(L1-40,L1,'rgba(30,24,56,0)','rgba(30,24,56,1)'); ctx.fillRect(L1-40,y0+4,40,h-10);
+}
+const GX0=48, GW=552, GX1=W-48-552, GTOP=150, PADX=30;
+function glassLeft(){
+  glassSide(0,CX); const x=GX0+PADX, x1=GX0+GW-PADX; let y=GTOP;
+  // Nation of the Hour
+  const hl=(board.hour||[]).slice(0,3), h1=26+34+Math.max(1,hl.length)*52+16;
+  card(GX0,y,GW,h1); label('👑 Nation of the hour',x,y+50,'#ffd166'); txt(hourLeft(),x1,y+52,26,finalMin()?'#ff5d8d':'#4fe0c0','800','right');
+  if(!hl.length) txt('next win takes the lead!',x,y+102,26,'#a99fc6','600');
+  hl.forEach(([c,n],i)=>{ const ry=y+104+i*52; chip(x,ry,String(i+1),i); ctx.drawImage(flagSprite(c,15),x+52,ry-30);
+    const ws=`${n} ${n===1?'win':'wins'}`; txt(NAME[c]||c,x+98,ry,28,'#f3effc','700','left',x1-x-98-textW(ws,28)-20); txt(ws,x1,ry,28,'#ffd166','800','right') });
+  y+=h1+24;
+  // Players now
+  const teams=(board.teams||[]).slice(0,5), h2=128; card(GX0,y,GW,h2); label('Players now',x,y+50);
+  if(teams.length) teams.forEach(([c,n],i)=>{ const fx=x+i*98; ctx.drawImage(flagSprite(c,17),fx,y+66); txt(String(n),fx+44,y+100,28,i?'#f3effc':'#ffd166','800') });
+  else txt('be the first – type your country!',x,y+98,26,'#a99fc6','600');
+  y+=h2+24;
+  // Top players today
+  const pl=(board.points||[]).slice(0,5), h3=26+34+Math.max(1,pl.length)*52+16; card(GX0,y,GW,h3); label('Top players today',x,y+50);
+  if(!pl.length) txt('every race scores points!',x,y+102,26,'#a99fc6','600');
+  pl.forEach(([u,n],i)=>{ const ry=y+104+i*52, ps=`${n}`; chip(x,ry,String(i+1),i); txt(u,x+54,ry,28,'#f3effc','700','left',x1-x-54-textW(ps,28)-20); txt(ps,x1,ry,28,'#9b82ff','900','right') });
+  y+=h3+24;
+  if(nowPlaying && y+108<H-24){ card(GX0,y,GW,108); label('🎵 Summer radio 24/7',x,y+44,'#ff8fb1'); txt(nowPlaying,x,y+86,28,'#f3effc','700','left',GW-2*PADX) }
+}
+function glassRight(rank){
+  glassSide(CX+CW,W-CX-CW); const x=GX1+PADX, x1=GX1+GW-PADX; let y=GTOP;
+  const N=5, extra=rank.map((b,i)=>({b,i})).filter(o=>o.i>=N && o.b.players.length).slice(0,2);
+  const rows=[...rank.slice(0,N-extra.length).map((b,i)=>({b,i})), ...extra], RH=62, h1=26+34+rows.length*RH+18;
+  card(GX1,y,GW,h1); label('Live ranking',x,y+50); txt(phase==='race'?`${(t/60).toFixed(0)} s`:phase==='countdown'?'start…':'🏁',x1,y+52,26,'#4fe0c0','800','right');
+  rows.forEach(({b,i},r)=>{ const ry=y+70+r*RH;
+    if(b.players.length){ ctx.fillStyle='rgba(255,209,102,0.10)'; ctx.beginPath(); ctx.roundRect(x-12,ry,x1-x+24,RH-6,16); ctx.fill() }
+    chip(x,ry+44,String(i+1),i); ctx.drawImage(ballSprite(b,19),x+50,ry+6);
+    const sub=b.players.length?who(b):b.bot?'🤖 '+b.bot:'';
+    if(sub){ txt(b.name,x+100,ry+26,24,'#f3effc','700','left',x1-x-100); txt(sub,x+100,ry+52,22,b.bot&&!b.players.length?BOT_COL:'#ffd166','700','left',x1-x-100) }
+    else txt(b.name,x+100,ry+40,28,'#f3effc','700','left',x1-x-100) });
+  y+=h1+24;
+  const jl=chatLog.slice(0,5), h2=26+34+Math.max(1,jl.length)*48+16; card(GX1,y,GW,h2); label('Just joined',x,y+50);
+  if(!jl.length) txt('be the first – type your country!',x,y+100,26,'#a99fc6','600');
+  jl.forEach((c,i)=>{ const ry=y+100+i*48; txt(`${c.flag} ${c.user}`,x,ry,26,'#f3effc','700','left',x1-x-110);
+    if(!c.ts) txt(c.txt==='next race'?'next':'racing',x1,ry,24,c.txt==='next race'?'#ffd166':'#4fe0c0','800','right') });
+  y+=h2+24;
+  if(y+150<H-24){ card(GX1,y,GW,150); label('How to play',x,y+50);
+    ctx.font=`600 24px ${FONT}`; const lines=[['Type your country','to get a ball'],['Chat in the race','to boost it ⚡']];
+    lines.forEach(([a,bb],i)=>{ const ly=y+90+i*36; txt(a,x,ly,24,'#f3effc','800'); txt(bb,x+textW(a+' ',24,'800'),ly,24,'#a99fc6','600') }) }
+}
 const BOT_COL = '#67e8f9';   // Bots: Türkis statt Spieler-Gelb
 const who = b => b.players.length ? b.players[0] + (b.players.length>1?` +${b.players.length-1}`:'') : '';
 const SL = CX+64, SR = CX+CW-64, SW = CW-128;   // sicherer Bereich im Handy-Ausschnitt (Niklas 06.10.)
@@ -580,42 +731,57 @@ function draw(){
         ctx.beginPath(); ctx.ellipse(b.position.x+ox,b.position.y-r*0.3-fl*0.5-j*r*0.5,r*(0.95-j*0.08),fl*0.55,0,0,7); ctx.fill() }
       ctx.globalAlpha=1 }
     if(b.bot){ ctx.strokeStyle=BOT_COL; ctx.lineWidth=3; ctx.globalAlpha=0.8; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke(); ctx.globalAlpha=1 }
-    if(b.players.length){ ctx.strokeStyle='#fde047'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke();
+    if(b.players.length){ ctx.strokeStyle=GLASS?'rgba(255,209,102,0.9)':'#fde047'; ctx.lineWidth=GLASS?3:4; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+4,0,7); ctx.stroke();
       if(phase==='countdown'){ ctx.globalAlpha=0.45; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+14,0,7); ctx.stroke(); ctx.globalAlpha=1 } }   // Spieler am Start sofort finden
-    if(b.charge>0 && !b.done && (phase==='race'||phase==='countdown')){ const pu=0.55+0.45*Math.sin(performance.now()/160);
+    if(GLASS && b.charge>0 && !b.done && (phase==='race'||phase==='countdown')) chargeRing(b.position.x,b.position.y,r+11,b.charge);
+    else if(b.charge>0 && !b.done && (phase==='race'||phase==='countdown')){ const pu=0.55+0.45*Math.sin(performance.now()/160);
       ctx.strokeStyle='#22d3ee'; ctx.lineWidth=4; for(let j=0;j<b.charge;j++){ ctx.globalAlpha=pu*(0.9-j*0.2); ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+9+j*8,0,7); ctx.stroke() }
       ctx.globalAlpha=1 }   // ⚡ je Ladung steht schon im Namensschild
     if(b.boostT>0){ const k=Math.min(1,b.boostT/25);   // blauer Boost-Schweif nach oben
       for(let j=0;j<7;j++){ const fl=r*(2.6+Math.random()*1.8)*(1-j/9), ox=(Math.random()-0.5)*r*0.8;
-        ctx.globalAlpha=k*(0.8-j*0.09); ctx.fillStyle=j<2?'#ffffff':j<4?'#67e8f9':'#2563eb';
+        ctx.globalAlpha=k*(0.8-j*0.09); ctx.fillStyle=j<2?'#ffffff':j<4?(GLASS?'#4fe0c0':'#67e8f9'):(GLASS?'#7c5cff':'#2563eb');
         ctx.beginPath(); ctx.ellipse(b.position.x+ox,b.position.y-r*0.3-fl*0.5-j*r*0.5,r*(0.95-j*0.08),fl*0.55,0,0,7); ctx.fill() }
       ctx.globalAlpha=1;
-      if(b.boostT>20) txt('⚡ BOOST!',Math.min(Math.max(b.position.x,camX+90/camZ),camX+(TW-90)/camZ),b.position.y+r+30,28,'#67e8f9','700','center',0,true) }
-    if(b.boostT>0){ b.boostT--; const k=b.boostT/60; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=6; ctx.globalAlpha=k;
+      if(b.boostT>20){ const bx=Math.min(Math.max(b.position.x,camX+90/camZ),camX+(TW-90)/camZ);
+        if(GLASS){ /* Glas: Boost zeigt das Namensschild selbst (wird mint und federt) */ } else txt('⚡ BOOST!',bx,b.position.y+r+30,28,'#67e8f9','700','center',0,true) } }
+    if(GLASS && b.boostT>0){ b.boostT--; const k=b.boostT/60, e=spring((60-b.boostT)/60,0.5); ctx.strokeStyle='#4fe0c0'; ctx.lineWidth=3; ctx.globalAlpha=k*0.8;
+      ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+8+e*36,0,7); ctx.stroke(); ctx.globalAlpha=1 }
+    else if(b.boostT>0){ b.boostT--; const k=b.boostT/60; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=6; ctx.globalAlpha=k;
       ctx.beginPath(); ctx.arc(b.position.x,b.position.y,r+8+(1-k)*40,0,7); ctx.stroke();
       for(let j=0;j<6;j++){ const a=j*1.047+b.boostT*0.3, rr=R+10+(1-k)*30; ctx.fillStyle=j%2?'#fde047':'#22d3ee'; ctx.fillRect(b.position.x+Math.cos(a)*rr-3,b.position.y-Math.sin(a)*rr*0.6-rr*0.5-3,6,6) }
       ctx.globalAlpha=1 }
     if(!PX.ready){ const sp=ballSprite(b,R); ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle); if(r!==R) ctx.scale(r/R,r/R); ctx.drawImage(sp,-R-3,-R-3); ctx.restore() }
     if(b.crown && !b.done && phase==='race') txt('👑',b.position.x,b.position.y-r+4,Math.round(r*1.5),'#fff','400','center');
-    if(b.turboT>0) txt('TURBO',b.position.x,b.position.y+r+24,20,'#fb923c','700','center',0,true);
+    if(b.turboT>0){ if(GLASS) pill('🔥 TURBO',b.position.x,b.position.y+r+30,20,'#ffb08a','rgba(40,20,20,0.85)','rgba(255,143,107,0.6)'); else txt('TURBO',b.position.x,b.position.y+r+24,20,'#fb923c','700','center',0,true) }
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   const nx = x => Math.min(Math.max(x,camX+115/camZ),camX+(TW-115)/camZ);   // Schild bis 220 px breit: an der Wand nicht abschneiden
+  if(GLASS){ if(phase!=='countdown'){   // Glas-Pillen, am Start keine (Gemini: Startgitter entrümpeln); überlappende Schilder weglassen, Bessere zuerst
+    const taken=[], up=b=>b.position.y-b.circleRadius-14-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0);
+    for(const b of rank) if((b.players.length||b.bot) && b.position.y>camY-40 && b.position.y<camY+H/camZ+40 && !(b.bot&&b.done)){
+      const me=b.players.length, s=me ? who(b)+(b.done&&b.pts?`  +${b.pts}`:'') : '🤖 '+b.bot;
+      ctx.font=`800 24px ${FONT}`; const w=ctx.measureText(b.boostT>0&&me&&!b.done?'⚡ '+s+'  BOOST':s).width+27, x=Math.min(Math.max(b.position.x,camX+(w/2+8)/camZ),camX+(TW-w/2-8)/camZ), box={x:x-w/2,y:up(b)-27,w,h:37};
+      if(hit(box,taken)) continue; taken.push(box);
+      if(me && b.boostT>0 && !b.done){ const tt=(60-b.boostT)/60; pill('⚡ '+s+'  BOOST',x,up(b),24,'#0f2a26','#4fe0c0','rgba(255,255,255,0.45)',1.5,0.85+0.15*springB(tt,0.35,0.55)) }
+      else pill(s,x,up(b),24,me?'#fff':BOT_COL,'rgba(18,14,33,0.86)',me?'rgba(255,209,102,0.85)':'rgba(103,232,249,0.45)',me?2.5:1.5) } } }
+  else {
   for(const b of balls) if(b.bot && !b.done && b.position.y>camY-40 && b.position.y<camY+H/camZ+40)
     txt('🤖 '+b.bot,Math.min(Math.max(b.position.x,camX+120/camZ),camX+(TW-120)/camZ),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),26,BOT_COL,'700','center',200,true);
   for(const b of balls) if(b.players.length && b.position.y>camY-40 && b.position.y<camY+H/camZ+40)
     txt((phase==='countdown' && Date.now()-(joinedAt[b.players[0]]||0)<180000 ? 'NEW ' : '')+who(b)+(b.charge>0?' '+'⚡'.repeat(b.charge):'')+(b.done&&b.pts?` +${b.pts}`:''),nx(b.position.x),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),30,'#fde047','700','center',220,true);
+  }
   ctx.restore();
   if(timeScale<0.9){ const k=Math.min(1,(1-timeScale)/0.5);   // Zeitlupe: heller Schleier + Schriftzug
     ctx.globalAlpha=k*0.12; ctx.fillStyle='#fff'; ctx.fillRect(CX,0,CW,H); ctx.globalAlpha=k;
     txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true); ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
-  drawColumn(rank); drawLeft(); drawRight(rank);
+  drawColumn(rank); if(GLASS){ glassLeft(); glassRight(rank); glassTop() } else { drawLeft(); drawRight(rank) }
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
 // Liegt über der linken Bahnwand, also auch im Hochformat sichtbar, und verdeckt keine Kugel.
 const PB_X = CX+64, PB_TOP = 396, PB_BOT = 600;   // Handy zeigt nur die mittleren ~490 px der Spalte, Chat verdeckt unten
 function drawProgress(rank){
+  if(GLASS) return glassProgress(rank);
   const yOf = b => PB_TOP + Math.min(1, Math.max(0, (b.position.y-100)/(FINISH_Y-100))) * (PB_BOT-PB_TOP);
   ctx.fillStyle='rgba(5,6,18,0.75)'; ctx.beginPath(); ctx.roundRect(PB_X-9,PB_TOP-14,18,PB_BOT-PB_TOP+28,9); ctx.fill();
   ctx.fillStyle='#fff'; for(let i=0;i<4;i++) ctx.fillRect(PB_X-9+(i%2)*9,PB_BOT+4+Math.floor(i/2)*5,9,5);   // Ziel-Flagge unten
@@ -629,20 +795,36 @@ function drawProgress(rank){
     txt(`${i+1}. ${b.players[0]}`, PB_X+16, ly+9, 26, '#fde047', '700', 'left', 200, true) }
 }
 
+function glassProgress(rank){   // schlanke Schiene, Spieler als Kugel + Platz-Plakette (keine Namen, Gemini 09.10.)
+  const yOf = b => PB_TOP + Math.min(1, Math.max(0, (b.position.y-100)/(FINISH_Y-100))) * (PB_BOT-PB_TOP);
+  ctx.fillStyle='rgba(18,14,33,0.7)'; ctx.beginPath(); ctx.roundRect(PB_X-7,PB_TOP-10,14,PB_BOT-PB_TOP+20,7); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.14)'; ctx.beginPath(); ctx.roundRect(PB_X-3,PB_TOP,6,PB_BOT-PB_TOP,3); ctx.fill();
+  const lead=rank.find(b=>!b.done); if(lead){ ctx.fillStyle='#4fe0c0'; ctx.beginPath(); ctx.roundRect(PB_X-3,PB_TOP,6,Math.max(6,yOf(lead)-PB_TOP),3); ctx.fill() }
+  for(const b of balls) if(!b.players.length){ ctx.fillStyle=b.bot?BOT_COL:b.done?'#6c6390':'#c9c0e3'; ctx.beginPath(); ctx.arc(PB_X, yOf(b), 3, 0, 7); ctx.fill() }
+  const pl = rank.map((b,i)=>({b,i})).filter(x=>x.b.players.length).slice(0,6); let lastY=-99;
+  if(pl.length){ const ys=pl.map(x=>yOf(x.b)), y0=Math.min(...ys)-18, y1=Math.max(Math.max(...ys)+18, y0+(pl.length)*28+8);
+    ctx.fillStyle='rgba(18,14,33,0.72)'; ctx.beginPath(); ctx.roundRect(PB_X+14,y0,42,y1-y0,21); ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.stroke() }
+  for(const {b,i} of pl.sort((a,c)=>yOf(a.b)-yOf(c.b))){ const y=yOf(b), ly=Math.max(y,lastY+28); lastY=ly;
+    ctx.drawImage(ballSprite(b,10), PB_X-13, y-13); pill(String(i+1),PB_X+34,ly+8,18,'#ffd166','rgba(18,14,33,0.92)','rgba(255,209,102,0.7)') }
+}
 // Mittelspalte = 9:16-Bild: Kopf, Ansagen, Countdown/Sieger, Fuß mit Mitmach-Aufruf
 function drawColumn(rank){
   const L=CX+20, Rt=CX+CW-20;
-  ctx.fillStyle='rgba(8,10,24,0.86)'; ctx.fillRect(CX,0,CW,226);   // Handy (Niklas 06.10.): y 0–125 liegt unter Uhr/Kanalzeile → nur Titel dort
-  box(SL,134,84,38,'#ef4444',8); txt('LIVE',SL+42,162,24,'#fff','700','center');   // y 0–125 liegt am Handy unter Uhr/Kanalzeile → bleibt leer
-  txt('COUNTRY MARBLE RACE',SL+98,164,32,'#fff','700','left',SW-98);
+  if(GLASS) glassHeader(rank); else {
+  ctx.fillStyle=GLASS?'rgba(21,16,38,0.94)':'rgba(8,10,24,0.86)'; ctx.fillRect(CX,0,CW,226);   // Handy (Niklas 06.10.): y 0–125 liegt unter Uhr/Kanalzeile → nur Titel dort
+  if(GLASS){ box(SL,132,96,40,'#ff5d8d',20); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(SL+20,152,5,0,7); ctx.fill(); txt('LIVE',SL+56,162,22,'#fff','800','center') }
+  else { box(SL,134,84,38,'#ef4444',8); txt('LIVE',SL+42,162,24,'#fff','700','center') }   // y 0–125 liegt am Handy unter Uhr/Kanalzeile → bleibt leer
+  txt('COUNTRY MARBLE RACE',SL+(GLASS?110:98),164,32,'#fff','700','left',SW-(GLASS?110:98));
   txt(`#${raceNo}`,SL,214,34,'#cbd5e1');
   txt(phase==='race'?`⏱ ${(t/60).toFixed(0)}s`:phase==='countdown'?`⏳ ${secs(START_WAIT-phaseT)}s`:'🏁',SR,214,36,'#22d3ee','700','right');
   rank.slice(0,3).forEach((b,i)=>{ const x=MID-96+i*72; txt(['1','2','3'][i],x,214,28,['#ffd700','#d1d5db','#cd7f32'][i],'700','center'); ctx.drawImage(ballSprite(b,18),x+14,184) });
   // Mitmach-Aufruf oben (unten und rechts verdeckt am Handy die YouTube-Oberfläche/der Chat), im Wechsel mit „Next race: …“
   const F=226;   // fester Text, kein Wechsel/Blinken (Niklas 06.10. Ruhe-Durchgang)
-  ctx.fillStyle='rgba(40,12,30,0.95)'; ctx.fillRect(CX,F,CW,104); ctx.fillStyle='rgba(253,224,71,0.6)'; ctx.fillRect(CX,F+102,CW,2);   // Lauflichter am Aufruf entfernt (Niklas 06.10. „augenschmerzend“)
-  txt('🎯 GET YOUR OWN BALL!',MID,F+46,46,'#fde047','700','center',SW);
-  txt('type your COUNTRY in the chat',MID,F+90,40,'#fff','700','center',SW);
+  if(GLASS){ ctx.fillStyle='rgba(21,16,38,0.94)'; ctx.fillRect(CX,F,CW,104); ctx.fillStyle='#5a3fd1'; ctx.beginPath(); ctx.roundRect(SL-20,F+10,SW+40,92,30); ctx.fill();
+    ctx.fillStyle='#7c5cff'; ctx.beginPath(); ctx.roundRect(SL-20,F+6,SW+40,88,30); ctx.fill() }
+  else { ctx.fillStyle='rgba(40,12,30,0.95)'; ctx.fillRect(CX,F,CW,104); ctx.fillStyle='rgba(253,224,71,0.6)'; ctx.fillRect(CX,F+102,CW,2) }   // Lauflichter am Aufruf entfernt (Niklas 06.10. „augenschmerzend“)
+  txt('🎯 GET YOUR OWN BALL!',MID,F+46,GLASS?42:46,GLASS?'#fff':'#fde047','700','center',SW);
+  txt('type your COUNTRY in the chat',MID,F+84,GLASS?34:40,GLASS?'#e6e0ff':'#fff','700','center',SW);
   // Stunden-Wertung: Countdown bis zur Nation of the Hour
   const cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS RACE: ${chaos.name} · WIN = x2`
     : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT!':'in '+cl+' races'} · WIN = x2` : null;
@@ -653,24 +835,35 @@ function drawColumn(rank){
     txt(`👥 ${np} ${np===1?'PLAYER':'PLAYERS'} NOW`,L,F+143,24,'#4ade80','700','left',230);
     teams.slice(0,4).forEach(([c,n],i)=>{ const x=L+250+i*80; ctx.drawImage(flagSprite(c,16),x,F+112); txt(String(n),x+42,F+140,30,'#fff','700') });
   } else {
-  const fin=finalMin(); ctx.fillStyle=fin?glow([127,29,29],[185,28,28]):'rgba(8,10,24,0.88)'; ctx.fillRect(CX,F+104,CW,48);
+  const fin=finalMin(); ctx.fillStyle=fin?glow([127,29,29],[185,28,28]):GLASS?'rgba(21,16,38,0.9)':'rgba(8,10,24,0.88)'; ctx.fillRect(CX,F+104,CW,48);
   txt(fin?`🔥 LAST MINUTES! ${hourLeft()}`:`👑 HOUR CHAMP in ${hourLeft()}`,SL,F+140,32,'#fff','700','left',SW-170);
   (board.hour||[]).slice(0,2).forEach(([c,n],i)=>{ const x=SR-150+i*78; ctx.drawImage(flagSprite(c,16),x,F+112); txt(String(n),x+42,F+140,30,i?'#e2e8f0':'#fde047','700') }); } }
+  }
   // Ansagen mit Benutzernamen
-  toasts.forEach((o,i)=>{ const y=386+i*70; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
+  if(GLASS){ const o=phase==='podium'||phase==='loading'?null:toasts[toasts.length-1]; if(o){ ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);   // nur eine Ansage gleichzeitig, ruhige Glas-Pille
+      glassToast(o); ctx.globalAlpha=1 } }
+  else toasts.forEach((o,i)=>{ const y=386+i*70; ctx.globalAlpha=Math.min(1,o.t/8,(o.life-o.t)/20);
     box(SL-16,y,SW+32,64,'rgba(5,6,18,0.85)',14); txt(o.s,MID,y+44,34,o.col,'700','center',SW+10); ctx.globalAlpha=1 });
   if(phase==='countdown'){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
-    const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle='rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
+    const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle=GLASS?'rgba(21,16,38,0.45)':'rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
+    if(GLASS){   // Countdown in Glas-Scheibe, darunter EINE Hinweis-Pille über dem Handy-Chat (y < 615)
+      ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,512,62,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke();
+      txt(n>0?String(n):'GO!',MID,n>0?538:532,n>0?72:52,n>0?'#fff':'#4fe0c0','900','center');
+      const np=mine.length, hint = chaos ? [`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,'#c4b5ff'] : (!np && balls.some(b=>b.bot)) ? ['🤖 Beat the bots! Type your country','#67e8f9']
+        : [np ? `⭐ ${np} ${np===1?'PLAYER':'PLAYERS'} IN THIS RACE · chat = ⚡ boost` : '💬 chat = ⚡ boost your ball','#c4b5ff'];
+      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
+    } else {
     txt(n>0?String(n):'GO!',MID,500,72,'#fde047','700','center',0,true);
     if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,640,24,'#c084fc','700','center',SW,true);
     else if(!mine.length && balls.some(b=>b.bot)) txt('🤖 Beat the bots! Type your country',MID,640,36,BOT_COL,'700','center',SW+40,true);
     else txt('💬 chat = ⚡ charge your ball',MID,640,24,'#22d3ee','700','center',SW,true);
     if(!mine.length && balls.some(b=>b.bot)) txt('vs '+balls.filter(b=>b.bot).map(b=>`${b.flag} 🤖 ${b.bot}`).join('  '),MID,672,20,BOT_COL,'700','center',SW,true);
     if(mine.length) txt('In this race: '+mine.slice(0,4).map(b=>`${b.flag} ${b.players[0]}`).join('  '),MID,672,20,'#4ade80','700','center',SW,true);
+    }
   }
   if(phase==='podium'||phase==='loading'){
-    const a=Math.min(phaseT/30,1), w=finished[0]; ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378);
+    const a=Math.min(phaseT/30,1), w=finished[0]; if(GLASS){ ctx.fillStyle=`rgba(21,16,38,${0.96*a})`; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=`rgba(255,255,255,${0.12*a})`; ctx.stroke() } else { ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378) }
     ctx.globalAlpha=a; txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,420,36,chaos?'#c084fc':'#ffd700','700','center');
     // Handy-Layout (Niklas 06.10.): alles Wichtige zwischen Stundenleiste und Chat (y 290–615), innerhalb der mittleren ~490 px
     if(w){ bulbRing(MID,478,56,14); ctx.drawImage(ballSprite(w,40),MID-43,478-43); txt(w.name,MID,560,38,'#fff','700','center',SW);
