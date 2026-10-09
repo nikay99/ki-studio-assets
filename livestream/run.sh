@@ -19,7 +19,7 @@ block_left(){
   [ "$seed" -gt "$bs" ] && bs=$seed
   if [ $((now-last)) -lt 45 ] && [ $((now-bs)) -lt $((BLOCK_S-300)) ]; then echo $((BLOCK_S-(now-bs))); else echo "$now" > "$BS_FILE"; echo "$BLOCK_S"; fi
 }
-VBIT="${VBIT:-3000k}"; RES="${RES:-1280x720}"; PRESET="${PRESET:-veryfast}"; FPS="${FPS:-24}"   # 24 statt 30 (Niklas 09.10. 17:37Z, Last für den dritten Stream)
+VBIT="${VBIT:-3000k}"; RES="${RES:-720x1280}"   # Hochformat 9:16 (Niklas 09.10. 20:00Z „country umbauen auf 9:16“); RES=1280x720 = altes 16:9-Bild; PRESET="${PRESET:-veryfast}"; FPS="${FPS:-24}"   # 24 statt 30 (Niklas 09.10. 17:37Z, Last für den dritten Stream)
 CHROME="${CHROME:-$(command -v chromium || command -v chromium-browser || command -v google-chrome)}"
 [ -n "${STREAM_KEY_V:-}" ] && VERT=1 || VERT=0          # zweiter Schlüssel = zusätzlich 9:16-Stream (720x1280)
 RW=${RES%x*}; RH=${RES#*x}; [ "$VERT" = 1 ] && { SW=$((RW+720)); SH=1280; } || { SW=$RW; SH=$RH; }
@@ -69,7 +69,7 @@ start_chrome(){
   "$CHROME" --no-first-run --no-default-browser-check --disable-infobars --kiosk --window-position=0,0 --window-size=${SW},${SH} \
     --autoplay-policy=no-user-gesture-required --disable-background-timer-throttling --disable-renderer-backgrounding \
     --disable-backgrounding-occluded-windows --disable-features=Translate,MediaRouter --password-store=basic \
-    --user-data-dir="$DATA_DIR/chrome" ${CHROME_EXTRA:-} "http://127.0.0.1:8080/?w=${RW}$([ "$VERT" = 1 ] && echo "&v=1")" >/dev/null 2>&1 &
+    --user-data-dir="$DATA_DIR/chrome" ${CHROME_EXTRA:-} "http://127.0.0.1:8080/?w=${RW}$([ "$RH" -gt "$RW" ] && echo "&portrait=1")$([ "$VERT" = 1 ] && echo "&v=1")" >/dev/null 2>&1 &
   CHROME_PID=$!
 }
 for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8080/api/board && break; sleep 2; done

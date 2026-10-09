@@ -31,9 +31,12 @@ const bcol = c => !BRUTAL || (BDARK && !BINK) ? c : BINKS[c] || BDK[c] || c;
 function hardBox(x,y,w,h,fill,r=14,lw=5,sh=10,shc=SHC){ ctx.fillStyle=shc; ctx.beginPath(); ctx.roundRect(x+sh,y+sh,w,h,r); ctx.fill();
   ctx.fillStyle=fill; ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); ctx.lineWidth=lw; ctx.strokeStyle=BK; ctx.stroke() }
 const inkOn = f => { const pb=BINK; BINK=true; try{ f() } finally { BINK=pb } };
-const OUT_W = +(Q.get('w')||1280), SC = OUT_W/W;     // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
+// Hochformat (Niklas 09.10. „country umbauen auf 9:16“): ?portrait=1 zeigt nur die 9:16-Spalte, auf 720x1280 vergrößert; Seitenleisten entfallen
+const PORT = Q.get('portrait')==='1';
+const OUT_W = +(Q.get('w')||(PORT?720:1280)), OUT_H = PORT ? Math.round(OUT_W*16/9) : Math.round(OUT_W*H/W);   // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
+const SC = OUT_H/H, OX = PORT ? Math.round((OUT_W-CW*SC)/2 - CX*SC) : 0;   // Hochformat: Spalte (608x1080) füllt 720x1280, mittig
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-cv.width = OUT_W; cv.height = Math.round(H*SC);
+cv.width = OUT_W; cv.height = OUT_H;
 const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
 
 let engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, camX = 0, camZ = 1, trackLayer, trackSeed = 0, rand;
@@ -748,7 +751,7 @@ const SL = CX+64, SR = CX+CW-64, SW = CW-128;   // sicherer Bereich im Handy-Aus
 const MID = CX+CW/2, secs = n=>Math.max(0,Math.ceil(n/60));
 
 function draw(){
-  ctx.setTransform(SC,0,0,SC,0,0);
+  ctx.setTransform(SC,0,0,SC,OX,0);
   const rank=ranking(), lead=rank.find(b=>!b.done)||rank[rank.length-1];
   // Kamera näher (Niklas 07.10.): am Handy sind die Kugeln sonst winzig. Start/Siegerehrung ganzes Feld, im Rennen näher,
   // beim Duell um Platz 1 und auf der Zielgeraden am nächsten. ?zoom=0 schaltet ab.
@@ -826,7 +829,7 @@ function draw(){
     if(GLASS){ /* Glas: „Photo finish“ steht im Kopf statt der Stundenzeile, nicht über den Kugeln */ }
     else { txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true) } ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
-  drawColumn(rank); if(GLASS){ glassLeft(); glassRight(rank); glassTop() } else { drawLeft(); drawRight(rank) }
+  drawColumn(rank); if(GLASS){ if(!PORT){ glassLeft(); glassRight(rank) } glassTop() } else if(!PORT){ drawLeft(); drawRight(rank) }
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
 // Liegt über der linken Bahnwand, also auch im Hochformat sichtbar, und verdeckt keine Kugel.
@@ -1060,9 +1063,9 @@ function loop(now){
 const origNew = newRace;
 newRace = async()=>{ phase='loading'; await origNew() };
 document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
-  try { await PX.init(document.getElementById('p'), OUT_W, Math.round(H*SC), SC, {W,H,CX,CW}) } catch(e){ console.log('Pixi aus: '+e) }   // ohne WebGL: alles wie bisher auf Canvas 2D
+  try { await PX.init(document.getElementById('p'), OUT_W, OUT_H, SC, {W,H,CX,CW,OX}) } catch(e){ console.log('Pixi aus: '+e) }   // ohne WebGL: alles wie bisher auf Canvas 2D
   await newRace(); setInterval(pollChat,500); setInterval(pollBoard,5000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
-  if(!OFFLINE) fetch('/api/clipgeom',{method:'POST',body:JSON.stringify({x:CX*SC, w:CW*SC, h:H*SC})}).catch(()=>{});   // wo die 9:16-Spalte für Clips liegt
+  if(!OFFLINE) fetch('/api/clipgeom',{method:'POST',body:JSON.stringify(PORT?{x:0, w:OUT_W, h:OUT_H}:{x:CX*SC, w:CW*SC, h:H*SC})}).catch(()=>{});   // wo die 9:16-Spalte für Clips liegt
   AC.resume(); DECK.calm.g.gain.value = MUSIC_VOL; playNext(DECK.calm); setInterval(()=>setMusic(musicWant()), 500); requestAnimationFrame(loop);
 });
 </script></body></html>

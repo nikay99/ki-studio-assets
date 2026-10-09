@@ -29,7 +29,7 @@ PX.init = async (canvas, outW, outH, sc, geo) => {
   app = new PIXI.Application();
   await app.init({ canvas, width: outW, height: outH, antialias: true, autoStart: false, background: '#000000', preference: 'webgl', powerPreference: 'high-performance' });
   dotTex = PIXI.Texture.from(softDot); coneTex = PIXI.Texture.from(cone);
-  root = new PIXI.Container(); root.scale.set(sc); app.stage.addChild(root);
+  root = new PIXI.Container(); root.scale.set(sc); root.x = geo.OX || 0; app.stage.addChild(root);   // OX: Hochformat schiebt die Spalte nach links
   bgSprite = new PIXI.Sprite(); root.addChild(bgSprite);
   lights = new PIXI.Container(); root.addChild(lights);
   col = new PIXI.Container(); col.x = geo.CX; root.addChild(col);
