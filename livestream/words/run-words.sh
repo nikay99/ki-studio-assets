@@ -5,7 +5,7 @@
 set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-words}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/words.env ] && . /etc/marble/words.env
-VBIT="${VBIT:-2500k}"; FPS="${FPS:-30}"; RW=1280; RH=720
+VBIT="${VBIT:-2500k}"; FPS="${FPS:-15}"  # 15 fps seit 09.10. (Niklas: Platz für dritten Stream), Rätselseite ist fast statisch; RW=1280; RH=720
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:98 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
