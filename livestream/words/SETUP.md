@@ -44,3 +44,18 @@ Kontingent: etwa 500 Einheiten mehr pro Tag.
 
 ## Aktualisierungen
 Das Repo wird wie bisher alle 3 Min. gezogen. words-server startet sich selbst neu, wenn sich seine Dateien ändern, und die Seite lädt sich danach neu. Ändert sich run-words.sh, startet man words-stream von Hand neu.
+
+## Chat-Hinweise und YouTube-Kontingent (ab 09.10.)
+
+Die Wächter (`ensure-live.py marble|words`) posten je Stream höchstens 1× pro Stunde einen Hinweis in den Chat der **eigenen** Sendung (liveChatId der gebundenen Sendung), über den n8n-Proxy (`POST liveChat/messages`). Die Spiele ignorieren diese Hinweise (eigener Kanal + bekannter Textanfang). Aus: Datei `NOCHATBOT` in `/var/lib/marble` bzw. `/var/lib/marble-words`.
+
+Tageskontingent 10.000 Einheiten (ein Google-Cloud-Projekt für alles):
+
+| Posten | Einheiten/Tag |
+|---|---|
+| Chat-Hinweise 2 × 24 × 50 | 2.400 |
+| Wächter-Abfragen, Sendungswechsel, Thumbnails | ~1.000 |
+| 1 Short-Upload (1.600) + Video ändern/Thumbnail/erster Kommentar (je ~50) | ~1.750 |
+| **Summe bei 1 Short/Tag** | **~5.150** |
+
+Spielraum: rund 4 Uploads/Tag. Bei `403 quotaExceeded` setzen die Hinweise bis zum nächsten Tag aus. Nightbot-Timer abschalten, sobald die Hinweise laufen.
