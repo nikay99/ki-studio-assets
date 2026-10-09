@@ -540,9 +540,12 @@ function botTick(){
 }
 
 /* ---------- loop ---------- */
-function frame(){const t=now();g.clearRect(0,0,W,H);scene(t);
-  const el=$('tmr');if(el)el.textContent=Math.max(0,Math.ceil(tEnd-t));
-  requestAnimationFrame(frame)}
+// ?fps=15 zeichnet nur jedes n-te Bild (Last auf dem N95, run-colony.sh setzt es passend zum Encoder)
+const FPS_CAP=+QS.get('fps')||0;let lastDraw=0;
+function frame(ts){requestAnimationFrame(frame);
+  if(FPS_CAP&&ts-lastDraw<1000/FPS_CAP-2)return;lastDraw=ts;
+  const t=now();g.clearRect(0,0,W,H);scene(t);
+  const el=$('tmr');if(el)el.textContent=Math.max(0,Math.ceil(tEnd-t))}
 setInterval(()=>{const t=now();botTick();
   if(t>=tEnd){if(phase==='vote')endVote();else newRound()}
   if(t-tickT>5&&$('spot').hidden){const hum=activeHumans();ruleI=(ruleI+1)%RULES.length;const r=ruleI===0&&hum.length===1?`@${hum[0].name}, the colony is in your hands.`:RULES[ruleI];tick(r,true)}
