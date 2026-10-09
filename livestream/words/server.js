@@ -22,7 +22,7 @@ const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^\S{0,16}\s*(Type your|E
 const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''));
 
 // Zeiten: das Videobild hängt einige Sekunden hinter dem Chat, Runden bleiben deshalb lange offen
-const ROUND_MS = 42000, REVEAL_EVERY = 5000, SHOW_MS = 7000, FIRST_REVEAL = 7000;   // Stream läuft mit ultra-niedriger Latenz (Niklas 09.10.)
+const ROUND_MS = 47000, REVEAL_EVERY = 5000, SHOW_MS = 7000, FIRST_REVEAL = 7000;   // Stream läuft mit ultra-niedriger Latenz (Niklas 09.10.)
 const PTS = [10, 7, 5];             // Platz 1–3, danach je 3 Punkte für alle weiteren Richtigen
 
 // ---------- Tageszustand ----------
