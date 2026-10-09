@@ -153,6 +153,27 @@ html,body{margin:0;width:720px;height:1280px;overflow:hidden}
 #ticker,#spot{top:770px;left:40px;right:40px}
 #ticker span{font-size:22px}
 #board{top:1050px;left:40px;right:40px}
+/* ---- Kompakt (09.10. 18:34Z, Niklas „muss kleiner werden, verdeckt viel“): Kästen klein, Dorf ab y≈520 frei ---- */
+#hdr{top:196px;padding:6px 10px;gap:5px;border-width:3px}
+.chip{font-size:20px;padding:1px 4px;border-width:2px!important}.chip i{font-size:13px}
+.goal{font-size:15px;gap:8px}.gbar{height:12px;border-width:2px}
+.next{font-size:16px}
+#card{top:304px;padding:8px 12px 10px;border-width:3px}
+.ctop{margin-bottom:4px}
+.badge{font-size:14px;padding:2px 8px}
+.timer{font-size:28px;min-width:40px}
+.q{font-size:22px;line-height:1.08;margin-bottom:6px}
+.opts{gap:4px}
+.opt{font-size:18px;padding:2px 8px;gap:8px}
+.opt .n{width:24px;height:24px;font-size:16px}
+.headline{font-size:26px;margin-bottom:4px}
+.sub{font-size:16px;line-height:1.2;margin-bottom:6px}
+.d{font-size:15px;padding:2px 8px}
+#ticker,#spot{top:524px}
+#ticker span{font-size:17px;padding:3px 12px}
+.spotbox{padding:6px 14px}.spotbox b{font-size:24px}.spotbox span{font-size:15px}
+#brand .logo{font-size:36px}
+#board{top:1120px;opacity:.85}.bx{padding:6px 10px}.bx h3{font-size:18px;margin-bottom:2px}.bx ol,.bx ul{font-size:15px;gap:1px}.bx li em{font-size:13px}
 .hud[hidden],#spot[hidden],#ticker[hidden]{display:none}
 </style>
 </head><body>
@@ -477,7 +498,7 @@ function buildGround(){
   groundOk=true;
 }
 function lerp(a,b,t){return a+(b-a)*t}
-const SY=48; // Verschiebung des Dorfs nach unten (Handy-Schutzbereich)
+const SY=0; // Verschiebung des Dorfs nach unten (Handy-Schutzbereich)
 function scene(t){
   g.imageSmoothingEnabled=false;
   if(!groundOk)buildGround();
