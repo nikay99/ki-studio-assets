@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Guess the Word LIVE</title>
+<style>
+/* Wortraten-Stream (Entwurf): 1920×1080, alles Wichtige in der Mitte (608 px = Shorts-Ausschnitt, Handy zeigt ~490 px) */
+:root{--bg1:#ffe4ec;--bg2:#e6e0ff;--ink:#2b2140;--muted:#7a6f8f;--pink:#ff5d8f;--violet:#7c5cff;--mint:#2ec4a6;--gold:#ffb627;--tile:#fff;--card:rgba(255,255,255,.82)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:linear-gradient(135deg,var(--bg1),var(--bg2));font-family:"Nunito","Baloo 2","Segoe UI",system-ui,sans-serif;color:var(--ink)}
+#stage{position:absolute;inset:0;transform-origin:0 0}
+.blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;animation:float 18s ease-in-out infinite}
+@keyframes float{50%{transform:translate(40px,-30px) scale(1.08)}}
+.col{position:absolute;top:0;bottom:0}
+#mid{left:656px;width:608px;display:flex;flex-direction:column;align-items:center;padding-top:132px}
+#left{left:40px;width:560px;padding-top:150px}
+#right{right:40px;width:560px;padding-top:150px}
+.live{display:inline-flex;align-items:center;gap:10px;background:var(--pink);color:#fff;font-weight:900;font-size:26px;padding:6px 18px;border-radius:30px;letter-spacing:1px}
+.live i{width:12px;height:12px;border-radius:50%;background:#fff;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+h1{font-size:46px;font-weight:900;margin:10px 0 2px;letter-spacing:.5px}
+.sub{font-size:26px;font-weight:800;color:var(--violet)}
+#cat{margin-top:26px;font-size:30px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
+#emoji{font-size:120px;line-height:1.1;margin:6px 0 4px;filter:drop-shadow(0 8px 14px rgba(80,40,120,.18));transition:transform .3s}
+#emoji.flag{font-size:150px}
+#tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:580px;margin-top:8px}
+.word{display:flex;gap:8px}
+.t{background:var(--tile);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:900;box-shadow:0 5px 0 #d9cff0,0 10px 20px rgba(80,40,120,.12);color:var(--ink)}
+.t.on{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+.t.solved{background:var(--mint);color:#fff;box-shadow:0 5px 0 #1f9a82}
+@keyframes pop{0%{transform:scale(.4)}100%{transform:scale(1)}}
+#timer{width:540px;height:16px;border-radius:10px;background:rgba(255,255,255,.7);margin-top:26px;overflow:hidden}
+#bar{height:100%;width:100%;background:linear-gradient(90deg,var(--mint),var(--gold),var(--pink));border-radius:10px;transition:width .25s linear}
+#cta{margin-top:18px;font-size:30px;font-weight:900;background:var(--violet);color:#fff;padding:10px 24px;border-radius:18px;box-shadow:0 6px 0 #5a3fd1}
+#solvers{margin-top:20px;width:560px;display:flex;flex-direction:column;gap:8px;min-height:180px}
+.sol{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:8px 16px;font-size:30px;font-weight:900;animation:slide .4s ease-out}
+.sol .m{font-size:34px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sol .p{color:var(--mint)}
+.sol.more{font-size:24px;color:var(--muted);justify-content:center}
+@keyframes slide{from{transform:translateY(20px);opacity:0}}
+#answer{position:absolute;left:656px;width:608px;top:470px;text-align:center;pointer-events:none}
+.card{background:var(--card);border-radius:24px;padding:22px 26px;box-shadow:0 10px 30px rgba(80,40,120,.10);margin-bottom:22px}
+.card h2{font-size:30px;font-weight:900;letter-spacing:1px;margin-bottom:12px;color:var(--violet)}
+.row{display:flex;align-items:center;gap:12px;font-size:30px;font-weight:800;padding:5px 0}
+.row .r{width:44px;text-align:center;font-weight:900;color:var(--muted)}.row .n{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.row .p{font-weight:900;color:var(--pink)}
+.row.g1 .r{color:var(--gold)}
+#feed .row{font-size:26px}
+.ok{color:var(--mint)}.no{color:#b9aec9;text-decoration:line-through}
+.how li{font-size:26px;font-weight:700;margin:8px 0 8px 28px}
+#toast{position:absolute;left:50%;top:60px;transform:translateX(-50%);font-size:34px;font-weight:900;color:#fff;background:var(--pink);padding:8px 24px;border-radius:20px;opacity:0;transition:opacity .3s}
+canvas#fx{position:absolute;inset:0;pointer-events:none}
+</style></head>
+<body><div id="stage">
+  <div class="blob" style="left:-120px;top:600px;width:520px;height:520px;background:#ffc2d6"></div>
+  <div class="blob" style="right:-80px;top:-80px;width:600px;height:600px;background:#cfc2ff;animation-delay:-6s"></div>
+  <div class="blob" style="left:760px;top:820px;width:420px;height:420px;background:#bff0e3;animation-delay:-11s"></div>
+
+  <div class="col" id="left">
+    <div class="card"><h2>🏆 TOP PLAYERS TODAY</h2><div id="top"></div></div>
+    <div class="card" id="records"></div>
+  </div>
+
+  <div class="col" id="mid">
+    <div class="live"><i></i>LIVE</div>
+    <h1>GUESS THE WORD</h1>
+    <div class="sub">type your answer in chat ✍️</div>
+    <div id="cat"></div>
+    <div id="emoji"></div>
+    <div id="tiles"></div>
+    <div id="timer"><div id="bar"></div></div>
+    <div id="cta">💬 TYPE IT IN CHAT!</div>
+    <div id="solvers"></div>
+  </div>
+
+  <div class="col" id="right">
+    <div class="card"><h2>💬 LIVE GUESSES</h2><div id="feed"></div></div>
+    <div class="card how"><h2>HOW TO PLAY</h2><ul>
+      <li>Type the word in chat</li><li>Everyone who's right scores</li><li>Fastest = most points 🥇</li><li>Type your country for a flag 🏳️</li>
+    </ul></div>
+  </div>
+  <canvas id="fx" width="1920" height="1080"></canvas>
+  <div id="toast"></div>
+</div>
+<script>
+// Größe: Seite ist für 1920×1080 gebaut und wird auf das Fenster skaliert
+const fit=()=>{const s=Math.min(innerWidth/1920,innerHeight/1080);document.getElementById('stage').style.transform=`scale(${s})`};addEventListener('resize',fit);fit();
+const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S=null, lastN=0, lastRev=-1, lastSolv=0, ver=null, feedSince=0;
+
+// ---------- Ton (synthetisch, wie im Rennen) + Musik leise im Hintergrund ----------
+const AC=new (window.AudioContext||window.webkitAudioContext)(), master=AC.createGain(); master.gain.value=0.9; master.connect(AC.destination);
+function tone(f,d,type='sine',v=.2,at=0){const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+at;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05)}
+const sfx={
+  reveal:()=>tone(880,.12,'triangle',.12),
+  correct:p=>{const b=[784,988,1175][Math.min(p,2)];tone(b,.18,'triangle',.18);tone(b*1.5,.25,'triangle',.14,.08)},
+  start:()=>[523,659,784].forEach((f,i)=>tone(f,.18,'sine',.14,i*.09)),
+  end:()=>[784,988,1175,1568].forEach((f,i)=>tone(f,.3,'triangle',.15,i*.1)),
+  miss:()=>tone(220,.35,'sine',.12),
+};
+const music=new Audio(); music.volume=.35; let mlist=[], mi=0;
+async function nextSong(){ try{ if(!mlist.length) mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
+music.onended=nextSong; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
+
+// ---------- Konfetti ----------
+const fx=$('fx').getContext('2d'); let parts=[];
+function confetti(x,y,n=90){const cols=['#ff5d8f','#7c5cff','#2ec4a6','#ffb627','#fff'];for(let i=0;i<n;i++)parts.push({x,y,vx:(Math.random()-.5)*16,vy:-Math.random()*16-4,c:cols[i%5],r:Math.random()*6+4,a:Math.random()*6,l:90+Math.random()*40})}
+(function loop(){fx.clearRect(0,0,1920,1080);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.a+=.2;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
+
+// ---------- Darstellung ----------
+function tileSize(words){const longest=Math.max(...words.map(w=>w.length)),total=words.join(' ').length;
+  let s=Math.min(84,Math.floor(((longest>7?560:470)-(longest-1)*8)/longest)); if(total>12&&words.length>1)s=Math.min(s,64); return Math.max(44,s)}
+function renderTiles(){
+  const t=S.tiles, words=[]; let cur=[]; t.forEach((ch,i)=>{ if(ch===' '){words.push(cur);cur=[]} else cur.push([ch,i]) }); words.push(cur);
+  const sz=tileSize(words.map(w=>w)), solved=S.phase==='show';
+  $('tiles').innerHTML=words.map(w=>`<div class="word">${w.map(([ch,i])=>`<div class="t ${ch?'on':''} ${solved?'solved':''}" style="width:${sz}px;height:${Math.round(sz*1.12)}px;font-size:${Math.round(sz*.62)}px">${esc(ch)}</div>`).join('')}</div>`).join('');
+}
+function renderSolvers(){
+  const m=['🥇','🥈','🥉'], s=S.solvers;
+  let h=s.slice(0,3).map((x,i)=>`<div class="sol"><span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">+${x.pts}</span></div>`).join('');
+  if(s.length>3) h+=`<div class="sol more">+ ${s.length-3} more got it ✅</div>`;
+  if(!s.length && S.phase==='show') h=`<div class="sol more">Nobody got it 😮 next one is easier!</div>`;
+  if(h!==renderSolvers.last){ renderSolvers.last=h; $('solvers').innerHTML=h }
+}
+async function poll(){
+  try{
+    const s=await (await fetch('/api/state',{cache:'no-store'})).json();
+    if(ver && s.v!==ver) return location.reload(); ver=s.v;
+    const fresh=s.n!==lastN; S=s;
+    if(fresh){ lastN=s.n; lastRev=-1; lastSolv=0; $('cat').textContent=s.cat; $('emoji').textContent=s.emoji; $('emoji').className=s.flagRound?'flag':''; sfx.start() }
+    const rev=s.tiles.filter(Boolean).length;
+    if(rev!==lastRev){ if(lastRev>=0 && s.phase==='guess') sfx.reveal(); lastRev=rev; renderTiles() }
+    if(s.solvers.length!==lastSolv){ for(let i=lastSolv;i<s.solvers.length;i++){ sfx.correct(i); if(i<3) confetti(960,620,i?40:90) } lastSolv=s.solvers.length }
+    renderSolvers();
+    const left=s.phase==='guess'?Math.max(0,(s.end-s.now)/(s.end-s.start)):0; $('bar').style.width=(left*100)+'%';
+    $('cta').textContent=s.phase==='guess'?(s.solvers.length?'⏱️ STILL TIME – TYPE IT!':'💬 TYPE IT IN CHAT!'):'NEXT WORD IN A MOMENT…';
+  }catch{}
+}
+let shownN=0;
+const _poll=poll; poll=async()=>{ await _poll(); if(S && S.phase==='show' && shownN!==S.n){ shownN=S.n; renderTiles(); if(S.solvers.length){sfx.end();confetti(960,420,140)} else sfx.miss() } };
+setInterval(poll,300); poll();
+
+async function pollBoard(){
+  try{
+    const b=await (await fetch('/api/board',{cache:'no-store'})).json();
+    $('top').innerHTML=b.top.slice(0,8).map((x,i)=>`<div class="row ${i?'':'g1'}"><span class="r">${i+1}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">${x.pts}</span></div>`).join('')||'<div class="row">Be the first! ✍️</div>';
+    let r=''; if(b.fastest) r+=`<div class="row">⚡ Fastest: ${esc(b.fastest.user)} · ${(b.fastest.ms/1000).toFixed(1)}s</div>`;
+    if(b.streak&&b.streak.n>1) r+=`<div class="row">🔥 ${esc(b.streak.user)} · ${b.streak.n} in a row</div>`;
+    r+=`<div class="row">🎯 ${b.rounds} words today · ${b.players} players</div>`; $('records').innerHTML=r;
+  }catch{}
+}
+setInterval(pollBoard,2000); pollBoard();
+
+const feedRows=[];
+async function pollFeed(){
+  try{
+    const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last;
+    for(const e of f.feed) feedRows.unshift(e.ok?`<div class="row"><span class="ok">✅</span><span class="n">${esc(e.user)}</span><span class="ok">got it!</span></div>`:`<div class="row"><span>🤔</span><span class="n">${esc(e.user)}</span><span class="no">${esc(e.guess)}</span></div>`);
+    feedRows.length=Math.min(feedRows.length,9); $('feed').innerHTML=feedRows.join('');
+  }catch{}
+}
+setInterval(pollFeed,700);
+</script>
+</body></html>

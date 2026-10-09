@@ -14,6 +14,12 @@ async function hasChat(videoId) {
 
 async function findLiveVideo(channel) {
   if (process.env.VIDEO_ID) return process.env.VIDEO_ID;
+  // Zwei Streams auf einem Kanal (09.10.): /live zeigt nur einen davon. Der Wächter schreibt die aktuelle Sendungs-ID in eine Datei;
+  // mit VIDEO_ID_ONLY=1 wird nie auf /live ausgewichen (sonst liest das Wortraten womöglich den Chat vom Kugelrennen).
+  if (process.env.VIDEO_ID_FILE) {
+    try { const f = require('fs').readFileSync(process.env.VIDEO_ID_FILE, 'utf8').trim(); if (/^[\w-]{11}$/.test(f) && await hasChat(f)) return f; } catch {}
+    if (process.env.VIDEO_ID_ONLY === '1') return null;
+  }
   // Erst die Kanalseite (öffentliche Sendung, auch nach dem automatischen Neustart mit neuer ID),
   // dann video_id.txt – aber nur, wenn diese Sendung gerade wirklich live ist (nicht gelistete Sendungen fehlen unter /live).
   const v = await liveOnChannel(channel).catch(() => null);
