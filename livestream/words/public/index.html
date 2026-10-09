@@ -102,15 +102,12 @@ html.night .row .r{background:#2c2450;color:var(--ink2)}
 html.night .late{color:#ffb627}
 /* Neo-Brutalism = Standard seit 09.10. (Niklas „hell live“); ?style=glass zeigt den alten Glas-Nachtmodus, ?dark=1 die dunkle Brutalism-Fassung */
 html.brutal{--ink:#111;--ink2:#111;--ink3:#555;--bd:#111;--paper:#fff7e0;--y:#ffd23f;--p:#ff6fb5;--c:#3ee0ff;--l:#b6f36a;--o:#ff8a3d;--card:#fff}
-html.brutal.bdark{--paper:#1b1b1f;--card:#2a2a31;--ink:#fff;--ink2:#fff;--ink3:#9a9aa6;--bd:#000}
 html.brutal #stage{background:var(--paper);background-image:radial-gradient(rgba(0,0,0,.13) 2px,transparent 2px);background-size:34px 34px}
-html.brutal.bdark #stage{background-image:radial-gradient(rgba(255,255,255,.07) 2px,transparent 2px)}
 html.brutal .orb{display:none}
 html.brutal .glass{background:var(--card);backdrop-filter:none;-webkit-backdrop-filter:none;border:5px solid var(--bd);border-radius:14px;box-shadow:10px 10px 0 var(--bd)}
 html.brutal #left .glass:first-child{background:var(--y)} html.brutal #right .glass:first-child{background:var(--c)}
 html.brutal #left .glass:first-child *,html.brutal #right .glass:first-child *{color:#111}
 html.brutal .label{color:#111;font-weight:900;letter-spacing:.06em;background:#fff;display:inline-block;padding:4px 12px;border:4px solid #111;border-radius:8px;box-shadow:4px 4px 0 #111}
-html.brutal.bdark .how .label,html.brutal.bdark #records .label{background:var(--l)}
 html.brutal .live{background:#ff3b3b;border:4px solid #111;border-radius:10px;box-shadow:6px 6px 0 #111;transform:rotate(-3deg)}
 html.brutal h1{font-size:80px;letter-spacing:-.03em;-webkit-text-stroke:0;text-shadow:5px 5px 0 var(--p)}
 html.brutal .sub{color:var(--ink);font-weight:800}
@@ -129,18 +126,24 @@ html.brutal #cta.wait{background:var(--card);color:var(--ink);box-shadow:8px 8px
 html.brutal .sol{background:var(--card);border:4px solid var(--bd);border-radius:10px;box-shadow:5px 5px 0 var(--bd);color:var(--ink)}
 html.brutal .sol.first{background:var(--y);color:#111}
 html.brutal .sol .p,html.brutal .ok{color:#0a8f5a}
-html.brutal.bdark .sol .p,html.brutal.bdark .ok{color:var(--l)}
 html.brutal #right .glass:first-child .ok{color:#0a6b42}
 html.brutal .row .r{background:#fff;border:3px solid #111;color:#111;border-radius:6px}
 html.brutal .row.g1 .r{background:var(--y)} html.brutal .row .p{color:#111}
-html.brutal.bdark #records *, html.brutal.bdark .how *{color:#fff}
 html.brutal .no{color:rgba(0,0,0,.45)}
 
-html.brutal.bdark{--bd:#f4f0e6}
-html.brutal.bdark .glass,html.brutal.bdark #cat .cp,html.brutal.bdark #emoji,html.brutal.bdark #cta{border-color:#f4f0e6;box-shadow:9px 9px 0 #f4f0e6}
-html.brutal.bdark .live,html.brutal.bdark .t.on,html.brutal.bdark .t.solved,html.brutal.bdark .sol,html.brutal.bdark .label{border-color:#f4f0e6;box-shadow:5px 5px 0 #f4f0e6}
-html.brutal.bdark #left .glass:first-child .label,html.brutal.bdark #right .glass:first-child .label{border-color:#111;box-shadow:4px 4px 0 #111}
-html.brutal.bdark .how .label,html.brutal.bdark #records .label{color:#111!important}
+/* Dunkle Brutalism-Fassung v2 (?dark=1): bunte Kästen mit schwarzem Rand wie hell, harte Schatten in Creme auf tiefem Lila */
+html.brutal.bdark{--paper:#1d1640;--card:#fff7e0;--ink:#111;--ink2:#111;--ink3:#8a8070;--bd:#111;--sh:#fff7e0}
+html.brutal.bdark #stage{background-image:radial-gradient(rgba(255,255,255,.09) 2px,transparent 2px)}
+html.brutal.bdark h1{color:#fff;text-shadow:5px 5px 0 var(--p)}
+html.brutal.bdark .sub{color:#fff}
+html.brutal.bdark #records{background:var(--p)} html.brutal.bdark .how{background:var(--l)}
+html.brutal.bdark #records *,html.brutal.bdark .how *{color:#111}
+html.brutal.bdark .glass,html.brutal.bdark #cat .cp,html.brutal.bdark #emoji,html.brutal.bdark #cta{box-shadow:10px 10px 0 var(--sh)}
+html.brutal.bdark .live,html.brutal.bdark .t,html.brutal.bdark .sol,html.brutal.bdark #timer,html.brutal.bdark #cat .len{box-shadow:6px 6px 0 var(--sh)}
+html.brutal.bdark #emoji .plus{color:#111}
+html.brutal.bdark .t:not(.on):not(.solved){background:#fff7e0}
+html.brutal.bdark #bar{background:var(--p)}
+html.brutal.bdark .sol .p,html.brutal.bdark .ok{color:#0a6b42}
 html.brutal .sol.first .p{color:#0a6b42!important}
 </style></head>
 <body><div id="stage">
