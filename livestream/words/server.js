@@ -17,6 +17,9 @@ const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').repla
 const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
 const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
 const CHAT_BOTS = /^(nightbot|streamelements|moobot|fossabot)$/i;
+// Chat-Hinweise der Wächter (ensure-live.py) kommen vom eigenen Kanal: nicht als Spieler-Nachricht zählen
+const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^(🎯|⚡|🏆|✍️|🚩|:[a-z_]+:)\s*(Type your|Every chat message|Points add up|Know the word|The fastest answer)/u;
+const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''));
 
 // Zeiten: das Videobild hängt einige Sekunden hinter dem Chat, Runden bleiben deshalb lange offen
 const ROUND_MS = 42000, REVEAL_EVERY = 5000, SHOW_MS = 7000, FIRST_REVEAL = 7000;   // Stream läuft mit ultra-niedriger Latenz (Niklas 09.10.)
@@ -144,7 +147,7 @@ http.createServer((req, res) => {
 }).listen(PORT, '127.0.0.1');
 
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = s; },
-  onMessage: m => { const name = String(m.user).replace(/^@/, ''); if (CHAT_BOTS.test(name)) return; onChat(cleanName(name.slice(0, 20)), m.text); } });
+  onMessage: m => { const name = String(m.user).replace(/^@/, ''); if (CHAT_BOTS.test(name) || isHint(m)) return; onChat(cleanName(name.slice(0, 20)), m.text); } });
 
 // Test-Zuschauer (DEMO=1): raten mal falsch, mal richtig
 if (process.env.DEMO === '1') {

@@ -140,6 +140,9 @@ async function sampleViewers() {
 if (CHANNEL) { setInterval(sampleViewers, 120000); setTimeout(sampleViewers, 20000); }
 // Chat-Moderatoren-Bots (Nightbot usw.) spielen nicht mit und laden keine Boosts auf.
 const CHAT_BOTS = /^(nightbot|streamelements|moobot|fossabot)$/i;
+// Chat-Hinweise der Wächter (ensure-live.py) kommen vom eigenen Kanal: nicht als Spieler-Nachricht zählen
+const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^(🎯|⚡|🏆|✍️|🚩|:[a-z_]+:)\s*(Type your|Every chat message|Points add up|Know the word|The fastest answer)/u;
+const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''));
 function onChat(user, text) {
   hourStat.msgs++; hourStat.users.add(user);
   const c = countryOf(text), prev = picks.get(user), active = prev && Date.now() - prev.ts < ACTIVE_MS;
@@ -148,7 +151,7 @@ function onChat(user, text) {
   else if (prev) cheer(user);
 }
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = { ...s, since: new Date().toISOString() }; },
-  onMessage: m => { if (CHAT_BOTS.test(String(m.user).replace(/^@/, ''))) return; msgCount++; if (m.ts) { chatDelays.push(Date.now() - m.ts); chatDelays = chatDelays.slice(-30); } onChat(uniqueName(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.channelId), m.text); } });
+  onMessage: m => { if (CHAT_BOTS.test(String(m.user).replace(/^@/, '')) || isHint(m)) return; msgCount++; if (m.ts) { chatDelays.push(Date.now() - m.ts); chatDelays = chatDelays.slice(-30); } onChat(uniqueName(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.channelId), m.text); } });
 
 // Demo-Zuschauer, solange niemand im Chat ist (DEMO=1): damit die Seitenleiste im Test nicht leer bleibt.
 if (process.env.DEMO === '1') {
