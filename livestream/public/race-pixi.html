@@ -11,8 +11,8 @@
 const {Engine, Bodies, Body, Composite, Events} = Matter;
 const W = 1920, H = 1080, CW = 608, CX = (W-CW)/2, TW = CW, R = 17, FINISH_Y = 7900, WORLD_H = 8200, START_WAIT = 60*8, MAX_BALLS = 48;
 const Q = new URLSearchParams(location.search);
-// Stil: ?style=… in der Adresse, sonst vom Server (Datei style im Datenordner, fehlt = glass)
-if(!Q.has('style')){ try{ const x=new XMLHttpRequest(); x.open('GET','/api/version',false); x.send(); const st=JSON.parse(x.responseText).style; if(st) Q.set('style',st) }catch{} }
+// Stil: ?style=… in der Adresse, sonst setzt der Server ihn beim Ausliefern ein (Datei style im Datenordner, fehlt = glass)
+if(!Q.has('style') && window.SRV_STYLE) Q.set('style', window.SRV_STYLE);
 const OFFLINE = Q.has('offline'), ZOOM_OFF = Q.get('zoom')==='0';
 // Glas-Look wie Wortraten (Niklas 09.10.): dunkel-lila, kompakte Glas-Kästen mittig, Inter. Standard seit 09.10. (Niklas „passt geh live“), alte Fassung per ?style=classic
 const GLASS = Q.get('style')!=='classic', FONT = GLASS ? 'Inter, "DejaVu Sans"' : '"DejaVu Sans"';

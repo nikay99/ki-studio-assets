@@ -193,22 +193,29 @@ function media(req, res, p) {
     if (e) return send(res, 404, 'not found', 'text/plain');
     const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || ''), h = { 'Content-Type': TYPES[path.extname(p)] || 'application/octet-stream', 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' };
     if (!m || (!m[1] && !m[2])) { res.writeHead(200, { ...h, 'Content-Length': stt.size }); return fs.createReadStream(p).pipe(res); }
-    const start = m[1] ? +m[1] : Math.max(0, stt.size - +m[2]), end = m[1] && m[2] ? Math.min(+m[2], stt.size - 1) : stt.size - 1;
+    const start = m[1] ? +m[1] : Math.max(0, stt.size - +m[2]), end = Math.min(m[1] && m[2] ? +m[2] : stt.size - 1, start + (1 << 20) - 1, stt.size - 1);   // höchstens 1 MB pro Abruf (09.10.: hängende Musik-Abrufe blockierten alle Seitenabfragen)
     if (start > end || start >= stt.size) { res.writeHead(416, { 'Content-Range': `bytes */${stt.size}` }); return res.end(); }
     res.writeHead(206, { ...h, 'Content-Range': `bytes ${start}-${end}/${stt.size}`, 'Content-Length': end - start + 1 });
     fs.createReadStream(p, { start, end }).pipe(res);
   });
 }
+// Stil per Datei $DATA_DIR/style (glass | brutal | classic, fehlt = glass)
+const styleNow = () => { try { return fs.readFileSync(path.join(DATA, 'style'), 'utf8').trim() || 'glass' } catch { return 'glass' } };
+let lastPage = Date.now();   // letzte Abfrage der Rennseite (Wächter unten)
 function file(res, p) { fs.readFile(p, (e, b) => e ? send(res, 404, 'not found', 'text/plain') : send(res, 200, b, TYPES[path.extname(p)] || 'application/octet-stream')); }
 function body(req) { return new Promise(r => { let d = ''; req.on('data', c => d += c); req.on('end', () => { try { r(JSON.parse(d)); } catch { r({}); } }); }); }
 
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   // Pixi-Fassung live (Niklas 07.10. „live“): Effekte, Zoom-Kamera, Bots. Zurück zur alten Seite: Datei livestream/CLASSIC oder CLASSIC=1
-  if (u.pathname === '/') return file(res, path.join(PUB, process.env.CLASSIC === '1' || fs.existsSync(path.join(__dirname, 'CLASSIC')) ? 'race.html' : 'race-pixi.html'));
+  if (u.pathname === '/') { lastPage = Date.now(); const classic = process.env.CLASSIC === '1' || fs.existsSync(path.join(__dirname, 'CLASSIC'));
+    if (classic) return file(res, path.join(PUB, 'race.html'));
+    return fs.readFile(path.join(PUB, 'race-pixi.html'), 'utf8', (e, html) => e ? send(res, 404, 'not found', 'text/plain')
+      : send(res, 200, html.replace('<head>', `<head><script>window.SRV_STYLE=${JSON.stringify(styleNow())}</script>`), TYPES['.html'])); }
   if (u.pathname === '/matter.min.js') return file(res, require.resolve('matter-js/build/matter.min.js'));
   // Stil per Datei $DATA_DIR/style (glass | brutal | classic, fehlt = glass): Umschalten ohne Push und ohne Neustart, Seite lädt nach dem Rennen neu (Niklas 09.10. „lila zurück“)
-  if (u.pathname === '/api/version') { let style = 'glass'; try { style = fs.readFileSync(path.join(DATA, 'style'), 'utf8').trim() || 'glass' } catch {} return send(res, 200, { v: VERSION + '|' + style, style }) }
+  if (u.pathname === '/api/version') { const style = styleNow(); return send(res, 200, { v: VERSION + '|' + style, style, lastPage: new Date(lastPage).toISOString() }) }
+  if (u.pathname === '/api/board') lastPage = Date.now();
   if (u.pathname === '/api/lineup') return send(res, 200, lineup());
   if (u.pathname === '/api/joined') return send(res, 200, joined);
   if (u.pathname === '/api/events') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: evId, events: events.filter(e => e.id > since) }); }
@@ -310,9 +317,22 @@ if (CHANNEL && process.env.SELF_HEAL !== '0') setInterval(async () => {
   if (healNone >= 4 && Date.now() - healLast > 15 * 60e3) {
     healNone = 0; healLast = Date.now();
     logLine('selbstheiler: seit 4 Min. keine Sendung auf dem Kanal, Verbindung zu YouTube wird neu aufgebaut');
-    execFile('pkill', ['-TERM', '-f', 'a.rtmp.youtube.com/live2'], () => {});
+    execFile('pkill', ['-TERM', '-f', `-progress ${path.join(DATA, 'progress.txt')}`], () => {});   // nur das eigene ffmpeg, nicht den Wortraten-Stream
   }
 }, 60e3);
+// Seiten-Wächter (09.10. 14:23–15:20Z hing die Rennseite: keine Abfragen mehr, keine Musik, keine Spieler):
+// fragt die Seite 3 Min. lang nichts ab, Chrome und Sende-ffmpeg DIESES Streams beenden; run.sh startet beides neu (~11 s Lücke). Höchstens alle 15 Min.
+// Nur aktiv mit Datei livestream/PAGE_HEAL im Repo (Niklas-Ja nötig, fasst den Stream automatisch an)
+let pageHealLast = 0; const STARTED = Date.now();
+if (CHANNEL) setInterval(() => {
+  if (!fs.existsSync(path.join(__dirname, 'PAGE_HEAL'))) return;
+  let run = {}; try { run = JSON.parse(fs.readFileSync(path.join(DATA, 'run.json'), 'utf8')); } catch {}
+  if (run.mode !== 'live' || Date.now() - STARTED < 5 * 60e3 || Date.now() - lastPage < 3 * 60e3 || Date.now() - pageHealLast < 15 * 60e3) return;
+  pageHealLast = Date.now(); lastPage = Date.now();
+  logLine('seiten-wächter: Rennseite fragt seit 3 Min. nichts ab, Chrome und Sendung werden neu gestartet');
+  execFile('pkill', ['-TERM', '-f', `user-data-dir=${path.join(DATA, 'chrome')}`], () =>
+    setTimeout(() => execFile('pkill', ['-TERM', '-f', `-progress ${path.join(DATA, 'progress.txt')}`], () => {}), 2000));
+}, 30e3);
 const NAMES = Object.fromEntries(COUNTRY_LIST.map(c => [c[0], c[1]]));
 clips.init({ data: DATA, log: logLine, state: () => { rollDay(); const [l] = Object.entries(st.countryWins).sort((a, b) => b[1] - a[1]);
   return { videoId: chatStatus.videoId, leader: l ? { code: l[0], flag: flagOf(l[0]), name: NAMES[l[0]] || l[0] } : null }; } });
