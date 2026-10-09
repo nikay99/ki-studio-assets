@@ -15,7 +15,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg0);color:var(--ink);
   font-family:Inter,system-ui,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;-webkit-font-smoothing:antialiased}
-#stage{position:absolute;inset:0;transform-origin:0 0;background:linear-gradient(135deg,var(--bg0),var(--bg1))}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:linear-gradient(135deg,var(--bg0),var(--bg1))}
 /* Farbflächen hinter dem Glas: sehr langsam (60 s), damit nichts pulsiert */
 .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.6;animation:drift 60s ease-in-out infinite alternate}
 @keyframes drift{to{transform:translate(60px,-40px) scale(1.12)}}

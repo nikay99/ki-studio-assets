@@ -1,5 +1,5 @@
 #!/bin/bash
-# Wortraten-Stream (zweiter Livestream, 09.10.): eigener Bildschirm :98 (Xvfb, schont die Grafik fürs Kugelrennen),
+# Wortraten-Stream (zweiter Livestream, 09.10.): eigener Bildschirm :98 (GPU wie Kugelrennen, sonst Xvfb),
 # eigener Ton (PulseAudio des Benutzers „words“), Chrome mit http://127.0.0.1:8090 und ffmpeg zu YouTube.
 # Sendungen verwaltet der zweite Wächter (ensure-live-words.py): er beendet/legt an und startet ffmpeg neu über $DATA_DIR/ffmpeg.pid.
 set -u
@@ -15,7 +15,24 @@ trap cleanup EXIT
 HW=none
 if [ -e /dev/dri/renderD128 ] && ffmpeg -hide_banner -loglevel error -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc=size=1280x720:rate=30 -t 1 -vf format=nv12,hwupload -c:v h264_vaapi -f null - 2>/dev/null; then HW=vaapi; fi
 log "Kodierung: $HW"
-rm -f /tmp/.X98-lock; Xvfb :98 -screen 0 ${RW}x${RH}x24 -nolisten tcp >/dev/null 2>&1 &
+# Bildschirm wie beim Kugelrennen: wenn möglich auf der Intel-Grafik (sway ohne Monitor + Xwayland als :98), dann rechnet
+# Chrome auf der GPU statt ~1,5 Kerne in Software. Klappt das nicht, Xvfb. GPU_DISPLAY=0 schaltet es ab.
+rm -f /tmp/.X98-lock; GPU_X=0
+if [ "${GPU_DISPLAY:-1}" = 1 ] && [ -e /dev/dri/renderD128 ] && command -v sway >/dev/null && command -v Xwayland >/dev/null; then
+  rm -f "$XDG_RUNTIME_DIR"/wayland-*
+  printf 'output HEADLESS-1 resolution %sx%s position 0 0 bg #000000 solid_color\nxwayland disable\n' "$RW" "$RH" > "$XDG_RUNTIME_DIR/sway.conf"
+  WLR_BACKENDS=headless WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128 WLR_LIBINPUT_NO_DEVICES=1 sway -c "$XDG_RUNTIME_DIR/sway.conf" >/dev/null 2>&1 &
+  SWAY_PID=$!
+  for i in $(seq 1 20); do WL=$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -E '^wayland-[0-9]+$' | head -1); [ -n "$WL" ] && break; sleep 0.5; done
+  if [ -n "${WL:-}" ]; then
+    WAYLAND_DISPLAY="$WL" Xwayland :98 -noreset -nolisten tcp >/dev/null 2>&1 &
+    XWL_PID=$!
+    for i in $(seq 1 20); do xdpyinfo -display :98 2>/dev/null | grep -q "dimensions: *${RW}x${RH} " && { GPU_X=1; break; }; sleep 0.5; done
+  fi
+  [ "$GPU_X" = 1 ] || { kill ${XWL_PID:-} $SWAY_PID 2>/dev/null; rm -f /tmp/.X98-lock /tmp/.X11-unix/X98; }
+fi
+[ "$GPU_X" = 1 ] || Xvfb :98 -screen 0 ${RW}x${RH}x24 -nolisten tcp >/dev/null 2>&1 &
+log "Bildschirm: $([ "$GPU_X" = 1 ] && echo 'Intel-Grafik (sway + Xwayland)' || echo 'Xvfb (Software)')"
 pulseaudio --daemonize=no --exit-idle-time=-1 --log-target=stderr >/dev/null 2>&1 &
 sleep 2
 pactl load-module module-null-sink sink_name=words sink_properties=device.description=words >/dev/null

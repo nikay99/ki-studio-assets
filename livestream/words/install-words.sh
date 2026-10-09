@@ -36,7 +36,7 @@ EOS
 
 cat > /etc/systemd/system/words-stream.service <<'EOS'
 [Unit]
-Description=Wortraten stream (Xvfb :98 + Chrome + ffmpeg)
+Description=Wortraten stream (:98 + Chrome + ffmpeg)
 After=words-server.service
 [Service]
 User=words
