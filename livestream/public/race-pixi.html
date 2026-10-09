@@ -10,15 +10,18 @@
 // Alles, was man zum Mitspielen braucht (Bahn, Aufruf, Ansagen, Sieger), liegt in dieser Spalte; links/rechts nur Zusatzinfos.
 const {Engine, Bodies, Body, Composite, Events} = Matter;
 const W = 1920, H = 1080, CW = 608, CX = (W-CW)/2, TW = CW, R = 17, FINISH_Y = 7900, WORLD_H = 8200, START_WAIT = 60*8, MAX_BALLS = 48;
-const Q = new URLSearchParams(location.search), OFFLINE = Q.has('offline'), ZOOM_OFF = Q.get('zoom')==='0';
+const Q = new URLSearchParams(location.search);
+// Stil: ?style=… in der Adresse, sonst vom Server (Datei style im Datenordner, fehlt = glass)
+if(!Q.has('style')){ try{ const x=new XMLHttpRequest(); x.open('GET','/api/version',false); x.send(); const st=JSON.parse(x.responseText).style; if(st) Q.set('style',st) }catch{} }
+const OFFLINE = Q.has('offline'), ZOOM_OFF = Q.get('zoom')==='0';
 // Glas-Look wie Wortraten (Niklas 09.10.): dunkel-lila, kompakte Glas-Kästen mittig, Inter. Standard seit 09.10. (Niklas „passt geh live“), alte Fassung per ?style=classic
 const GLASS = Q.get('style')!=='classic', FONT = GLASS ? 'Inter, "DejaVu Sans"' : '"DejaVu Sans"';
 if(GLASS){ const ff=new FontFace('Inter','url(/fonts/InterVariable.woff2)',{weight:'100 900'}); ff.load().then(f=>document.fonts.add(f)).catch(()=>{}) }
 // Farben der klassischen Fassung → Wortraten-Palette (Bahn unverändert)
 const GMAP = {'#94a3b8':'#a99fc6','#64748b':'#6c6390','#cbd5e1':'#c9c0e3','#e2e8f0':'#e6e0f7','#e5e7eb':'#e6e0f7','#22d3ee':'#4fe0c0','#fde047':'#ffd166','#ffd700':'#ffd166','#ef4444':'#ff5d8d','#4ade80':'#4fe0c0','#f9a8d4':'#ff8fb1'};
 const gc = c => GLASS && GMAP[c] || c;
-// Neo-Brutalism wie Wortraten (Niklas 09.10. Vorschau): ?style=brutal, immer dunkel wie Wortraten (Niklas: kein Tag/Nacht-Wechsel); ?light=1 = helle Fassung
-const BRUTAL = Q.get('style')==='brutal', BDARK = Q.get('light')!=='1';
+// Neo-Brutalism wie Wortraten (Niklas 09.10.): ?style=brutal oder Datei style, immer dunkel wie Wortraten (Niklas: kein Tag/Nacht-Wechsel); ?light=1 = helle Fassung
+const BRUTAL = Q.get('style')==='brutal', BDARK = Q.get('light')!=='1';   // live per Datei style=brutal (Niklas 09.10. „brutal mal live“), „lila zurück“ = style=glass
 // dunkel v3 wie Wortraten (Gemini 09.10.): schwarze Schatten, hellerer Lila-Grund, weichere Farben, helle statt cremefarbene Flächen
 const BK='#111', PAPER=BDARK?'#2f2858':'#fff7e0', CARDC=BDARK?'#f8f4eb':'#fff', SHC=BDARK?'#000':'#111', BY=BDARK?'#fed439':'#ffd23f', BP=BDARK?'#ff7b9c':'#ff6fb5', BC=BDARK?'#61d4f5':'#3ee0ff', BL='#b6f36a', BO='#ff8a3d', BTS=BDARK?'#ff4b72':'#ff6fb5';
 let BINK=false;   // true = Text steht auf heller Karte → dunkle Schrift

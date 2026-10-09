@@ -207,7 +207,8 @@ http.createServer(async (req, res) => {
   // Pixi-Fassung live (Niklas 07.10. „live“): Effekte, Zoom-Kamera, Bots. Zurück zur alten Seite: Datei livestream/CLASSIC oder CLASSIC=1
   if (u.pathname === '/') return file(res, path.join(PUB, process.env.CLASSIC === '1' || fs.existsSync(path.join(__dirname, 'CLASSIC')) ? 'race.html' : 'race-pixi.html'));
   if (u.pathname === '/matter.min.js') return file(res, require.resolve('matter-js/build/matter.min.js'));
-  if (u.pathname === '/api/version') return send(res, 200, { v: VERSION });
+  // Stil per Datei $DATA_DIR/style (glass | brutal | classic, fehlt = glass): Umschalten ohne Push und ohne Neustart, Seite lädt nach dem Rennen neu (Niklas 09.10. „lila zurück“)
+  if (u.pathname === '/api/version') { let style = 'glass'; try { style = fs.readFileSync(path.join(DATA, 'style'), 'utf8').trim() || 'glass' } catch {} return send(res, 200, { v: VERSION + '|' + style, style }) }
   if (u.pathname === '/api/lineup') return send(res, 200, lineup());
   if (u.pathname === '/api/joined') return send(res, 200, joined);
   if (u.pathname === '/api/events') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: evId, events: events.filter(e => e.id > since) }); }
