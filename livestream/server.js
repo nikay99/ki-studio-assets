@@ -141,7 +141,7 @@ if (CHANNEL) { setInterval(sampleViewers, 120000); setTimeout(sampleViewers, 200
 // Chat-Moderatoren-Bots (Nightbot usw.) spielen nicht mit und laden keine Boosts auf.
 const CHAT_BOTS = /^(nightbot|streamelements|moobot|fossabot)$/i;
 // Chat-Hinweise der Wächter (ensure-live.py) kommen vom eigenen Kanal: nicht als Spieler-Nachricht zählen
-const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^(🎯|⚡|🏆|✍️|🚩|:[a-z_]+:)\s*(Type your|Every chat message|Points add up|Know the word|The fastest answer)/u;
+const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^\S{0,16}\s*(Type your|Every chat message|Points add up|Know the word|The fastest answer)/u;
 const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''));
 function onChat(user, text) {
   hourStat.msgs++; hourStat.users.add(user);

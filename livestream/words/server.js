@@ -18,7 +18,7 @@ const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hit
 const cleanName = u => BAD.test(u.replace(/[^a-z]/gi, '')) ? 'viewer' : u;
 const CHAT_BOTS = /^(nightbot|streamelements|moobot|fossabot)$/i;
 // Chat-Hinweise der Wächter (ensure-live.py) kommen vom eigenen Kanal: nicht als Spieler-Nachricht zählen
-const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^(🎯|⚡|🏆|✍️|🚩|:[a-z_]+:)\s*(Type your|Every chat message|Points add up|Know the word|The fastest answer)/u;
+const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^\S{0,16}\s*(Type your|Every chat message|Points add up|Know the word|The fastest answer)/u;
 const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''));
 
 // Zeiten: das Videobild hängt einige Sekunden hinter dem Chat, Runden bleiben deshalb lange offen
