@@ -80,6 +80,7 @@ function finish() {
 setInterval(tick, 250); tick();
 
 function isCorrect(text) {
+  if (/^\s*!/.test(text)) return false;
   const t = norm(text); if (!t) return false;
   const q = round.q, flat = t.replace(/ /g, '');
   if (flat === q.w) return true;
@@ -103,10 +104,12 @@ function onChat(user, text) {
     feed.push({ id: ++feedId, user, late: 1 });   // richtig, aber nach Rundenende (Bildverzögerung) – freundlich quittieren
   } else if (!round || !round.solvers.some(s => s.user === user)) {
     // Flagge fürs Leaderboard: wer ein Land schreibt (und nicht gerade richtig rät), bekommt sie sofort sichtbar
+    // nur mit „!“ davor (z. B. „!germany“), sonst wechselt beim Länderraten ständig die eigene Flagge (Niklas 09.10.)
     let flag = null;
-    for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(norm(text))) { flag = code; break; }
-    if (flag && st.flags[user] !== flag) { st.flags[user] = flag; save(); feed.push({ id: ++feedId, user, flag: flagOf(flag) }); }
-    else {
+    const cmd = /^\s*!/.test(text) ? norm(text) : '';
+    if (cmd) for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(cmd)) { flag = code; break; }
+    if (flag) { if (st.flags[user] !== flag) { st.flags[user] = flag; save(); feed.push({ id: ++feedId, user, flag: flagOf(flag) }); } }
+    else if (!cmd) {
       const g = norm(text).toUpperCase();
       if (g && !BAD.test(g.replace(/ /g, ''))) feed.push({ id: ++feedId, user, guess: g.length > 14 ? g.slice(0, 13) + '…' : g });
     }
@@ -153,11 +156,11 @@ if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), 
 if (process.env.DEMO === '1') {
   const names = ['lena_k', 'mike_tx', 'joao.br', 'aziz99', 'tom_uk', 'sakura', 'pierre', 'marta_pl', 'ravi', 'kim.s', 'emma.rose', 'lucia'];
   const ctry = ['brazil', 'germany', 'japan', 'france', 'india', 'poland', 'mexico', 'italy'];
-  for (const n of names.slice(0, 8)) onChat(n, ctry[Math.floor(Math.random() * ctry.length)]);
+  for (const n of names.slice(0, 8)) onChat(n, '!' + ctry[Math.floor(Math.random() * ctry.length)]);
   setInterval(() => {
     const u = names[Math.floor(Math.random() * names.length)], el = Date.now() - round.start;
     if (!round || round.phase !== 'guess') { if (round && Math.random() < 0.3) onChat(u, round.q.w); return; }
-    if (Math.random() < 0.12) return onChat(u, ['hello!', 'no idea lol', 'canada', 'is it a fish?'][Math.floor(Math.random() * 4)]);
+    if (Math.random() < 0.12) return onChat(u, ['hello!', 'no idea lol', '!canada', 'is it a fish?'][Math.floor(Math.random() * 4)]);
     if (el > 9000 && Math.random() < Math.min(0.5, (el - 9000) / 20000)) onChat(u, round.q.w);
     else onChat(u, round.q.w.split('').sort(() => Math.random() - 0.5).join(''));
   }, 1300);
