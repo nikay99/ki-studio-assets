@@ -177,8 +177,9 @@ html.brutal .sol.first .p{color:#0a6b42!important}
 <script>
 if(!/[?&]day=1/.test(location.search))document.documentElement.classList.add('night');
 if(!/[?&]style=glass/.test(location.search)){document.documentElement.classList.add('brutal');// Tag/Nacht nach Wiener Zeit (Niklas 09.10.): 07–19 Uhr hell, sonst dunkel; ?light=1 / ?dark=1 erzwingen
+  const DARK_UNTIL=Date.parse('2026-10-10T05:00:00Z');   // Niklas 09.10. 14:28: „gleich dunkel“, ab 10.10. 07:00 Wien wieder automatisch
   const viennaHour=()=>+new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Vienna',hour:'2-digit',hour12:false}).format(new Date())%24;
-  const dayNight=()=>{const q=location.search,dark=/[?&]dark=1/.test(q)?true:/[?&]light=1/.test(q)?false:(viennaHour()<7||viennaHour()>=19);document.documentElement.classList.toggle('bdark',dark)};
+  const dayNight=()=>{const q=location.search,dark=/[?&]dark=1/.test(q)?true:/[?&]light=1/.test(q)?false:(Date.now()<DARK_UNTIL||viennaHour()<7||viennaHour()>=19);document.documentElement.classList.toggle('bdark',dark)};
   dayNight();setInterval(dayNight,60000)}
 const fit=()=>{const s=Math.min(innerWidth/1920,innerHeight/1080);document.getElementById('stage').style.transform=`scale(${s})`};addEventListener('resize',fit);fit();
 const CAT_ICON={'Nature':'🌿','Animals':'🐾','Food & Drinks':'🍔','Everyday Things':'🏠','Places & Buildings':'🏙️','Sports & Games':'🏆','Transport':'🚗','People & Fantasy':'🧙','Feelings & Actions':'💭','Which country?':'🌍'};
