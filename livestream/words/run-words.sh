@@ -52,12 +52,12 @@ while true; do
   [ -f /etc/marble/words.env ] && . /etc/marble/words.env
   kill -0 $CHROME_PID 2>/dev/null || { log "Chrome neu gestartet"; start_chrome; sleep 8; }
   if [ -f "$DATA_DIR/PAUSE" ] || [ -z "${STREAM_KEY:-}" ]; then sleep 20; continue; fi
-  HWDEV=(); [ "$HW" = vaapi ] && [ "${WORDS_VAAPI:-0}" = 1 ] && HWDEV=(-vaapi_device /dev/dri/renderD128)
+  HWDEV=(); [ "$HW" = vaapi ] && [ "${WORDS_VAAPI:-1}" = 1 ] && HWDEV=(-vaapi_device /dev/dri/renderD128)
   IN=("${HWDEV[@]}" -thread_queue_size 1024 -f x11grab -draw_mouse 0 -video_size "${RW}x${RH}" -framerate "$FPS" -i :98.0
       -thread_queue_size 1024 -f pulse -i words.monitor)
-  # Standard libx264 mit echter CBR (nal-hrd): Das Wortraten-Bild ist fast still, h264_vaapi lieferte dann nur ~400 kbit/s
-  # und YouTube warnte „Bitrate zu niedrig“. WORDS_VAAPI=1 schaltet zurück auf die Grafik-Kodierung.
-  if [ "$HW" = vaapi ] && [ "${WORDS_VAAPI:-0}" = 1 ]; then
+  # Standard h264_vaapi (gemessen 2,5–2,7 Mbit/s; die 400-kbit/s-Warnung kam nur kurz nach dem Neuverbinden).
+  # WORDS_VAAPI=0 = libx264 mit echter CBR (nal-hrd), falls die Rate bei stillem Bild doch einbricht.
+  if [ "$HW" = vaapi ] && [ "${WORDS_VAAPI:-1}" = 1 ]; then
     ENC=(-vf format=nv12,hwupload -c:v h264_vaapi -rc_mode CBR -b:v "$VBIT" -maxrate "$VBIT" -bufsize "$VBIT" -bf 0 -g "$FPS" -keyint_min "$FPS")
   else
     ENC=(-c:v libx264 -preset veryfast -tune zerolatency -x264-params nal-hrd=cbr:force-cfr=1 -b:v "$VBIT" -minrate "$VBIT" -maxrate "$VBIT" -bufsize "$VBIT" -bf 0 -pix_fmt yuv420p -g "$FPS" -keyint_min "$FPS" -sc_threshold 0)
