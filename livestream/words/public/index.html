@@ -72,6 +72,27 @@ h1{font-size:74px;font-weight:900;letter-spacing:-.04em;line-height:1.02;margin-
 .ok{color:var(--mint-d);font-weight:800}.late{color:#c77800;font-weight:800}.no{color:var(--ink3);text-decoration:line-through;font-weight:600;letter-spacing:.04em}
 .how{font-size:24px;font-weight:600;color:var(--ink2);line-height:1.6}.how b{color:var(--ink)}
 canvas#fx{position:absolute;inset:0;pointer-events:none}
+/* Nachtmodus (Standard, Niklas 09.10.: hell war zu grell); ?day=1 zeigt die helle Fassung */
+html.night{
+  --bg0:#151026;--bg1:#1d1636;
+  --glass:rgba(40,32,70,.62);--edge:rgba(255,255,255,.08);
+  --ink:#f3effc;--ink2:#a99fc6;--ink3:#6c6390;
+  --violet:#9b82ff;--violet-d:#5a3fd1;--mint:#2ec4a6;--mint-d:#1f9a82;
+  --tile-sh:#120d22;
+}
+html.night .glass{box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 24px 50px rgba(0,0,0,.35)}
+html.night .orb{opacity:.22}
+html.night #emoji::before{background:radial-gradient(closest-side,rgba(155,130,255,.22),transparent)}
+html.night #emoji{filter:drop-shadow(0 14px 18px rgba(0,0,0,.35))}
+html.night .t{background:rgba(255,255,255,.04);border-color:#2f2752;color:var(--ink3);box-shadow:0 3px 0 rgba(0,0,0,.35)}
+html.night .t.on{background:#2c2450;color:var(--ink);box-shadow:0 5px 0 var(--tile-sh),0 12px 22px rgba(0,0,0,.35)}
+html.night .t.solved{color:#fff;box-shadow:0 5px 0 var(--mint-d),0 14px 28px rgba(46,196,166,.25)}
+html.night #timer{background:rgba(255,255,255,.08);box-shadow:none}
+html.night #cta.wait{background:#2c2450;color:var(--ink2);box-shadow:0 5px 0 var(--tile-sh)}
+html.night .sol.first{background:linear-gradient(90deg,rgba(255,182,39,.22),rgba(40,32,70,.62));border-color:rgba(255,215,122,.35)}
+html.night .sol .p,html.night .ok{color:#4fe0c0}
+html.night .row .r{background:#2c2450;color:var(--ink2)}
+html.night .late{color:#ffb627}
 </style></head>
 <body><div id="stage">
   <div class="orb" style="left:-160px;top:560px;width:640px;height:640px;background:#ffb3cd"></div>
@@ -102,6 +123,7 @@ canvas#fx{position:absolute;inset:0;pointer-events:none}
   <canvas id="fx" width="1920" height="1080"></canvas>
 </div>
 <script>
+if(!/[?&]day=1/.test(location.search))document.documentElement.classList.add('night');
 const fit=()=>{const s=Math.min(innerWidth/1920,innerHeight/1080);document.getElementById('stage').style.transform=`scale(${s})`};addEventListener('resize',fit);fit();
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
