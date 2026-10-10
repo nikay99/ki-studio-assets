@@ -630,7 +630,7 @@ function chip(x,y,s,i){ if(BRUTAL){ ctx.fillStyle=[BY,'#e8e8e8',BO][i]||'#fff'; 
   txt(s,x+19,y-3,20,i<3?'#22182e':'#a99fc6','900','center') }
 // Mitte wie Wortraten: Kopf ohne dunklen Balken (gleicher Hintergrund wie die Seiten), alles zentriert,
 // darunter die Bahn als abgerundete Glas-Karte. Handy: Kopf bleibt in y 128–378, Bahn ab 386.
-const TRK_Y=PORT?274:386, PDY2=PORT?TRK_Y+14-392:0;   // PDY2: Sieger/Stundenehrung im Hochformat direkt unter den Kopf   // Hochformat (Niklas 10.10. „mehr Platz fürs Race, weniger Blabla oben“): Kopf nur Laufband + 2 Zeilen
+const TRK_Y=PORT?234:386, PDY2=PORT?TRK_Y+14-392:0;   // PDY2: Sieger/Stundenehrung im Hochformat direkt unter den Kopf   // Hochformat (Niklas 10.10. „mehr Platz fürs Race, weniger Blabla oben“): Kopf nur Laufband + 2 Zeilen
 function glassFrame(){ ctx.save(); ctx.beginPath(); ctx.rect(CX,0,CW,H); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.clip('evenodd');
   glassSide(CX,CW); ctx.restore();
   if(BRUTAL){ ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,18); ctx.stroke(); return }
@@ -638,19 +638,11 @@ function glassFrame(){ ctx.save(); ctx.beginPath(); ctx.rect(CX,0,CW,H); ctx.rou
 // Hochformat-Kopf (Niklas 10.10. „mehr Platz fürs Race, weniger Blabla oben“): Laufband (glassTop) + eine Zeile Rennen/Top 3/Stunde + eine Zeile Aufruf.
 // Titel und LIVE entfallen (stehen in der YouTube-App ohnehin). Alles unter der App-Leiste (y > ~118).
 function portHeader(rank){
-  const y1=182, rh=34, fin=finalMin();
-  ctx.save(); ctx.letterSpacing='1.5px'; ctx.font=`900 19px ${FONT}`;
-  const a=`RACE #${raceNo}`, aw=ctx.measureText(a).width+22, tl=(fin?'🔥 ':'👑 ')+hourLeft(), hl=(board.hour||[])[0], bw=ctx.measureText(tl).width+22+(hl?52:0);
-  if(BRUTAL){ hardBox(SL-24,y1,aw,rh,'#fff',7,3,4,BK); hardBox(SR+24-bw,y1,bw,rh,fin?BP:BY,7,3,4,BK) }
-  else { card(SL-24,y1,aw,rh); card(SR+24-bw,y1,bw,rh) }
-  ctx.fillStyle=BRUTAL?BK:'#f3effc'; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillText(a,SL-24+aw/2,y1+24);
-  ctx.textAlign='left'; ctx.fillText(tl,SR+24-bw+11,y1+24); ctx.restore();
-  if(hl){ ctx.drawImage(flagSprite(hl[0],10),SR+24-50,y1+5); txt(String(hl[1]),SR+24-26,y1+24,18,BRUTAL?'#111':'#ffd166','900','left') }
-  rank.slice(0,3).forEach((b,i)=>{ const x=MID-62+i*48; ctx.drawImage(ballSprite(b,14),x,y1) });
-  // Aufruf-Zeile: Zeitlupe > Chaos > Champion (8-s-Wechsel) > „type your country“
-  const y2=226, h2=40, cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS: ${chaos.name} · WIN x2` : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT':'in '+cl}! · WIN x2` : null;
+  // Niklas 10.10. 07:41Z „find das noch unnötig“: Rennzeile (RACE #, Top 3, Stunden-Uhr) weg; Kopf = Laufband + eine Aufruf-Zeile.
+  // Die Stunde erscheint nur noch in den letzten Minuten in dieser Zeile.
+  const y2=182, h2=40, fin=finalMin(), cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS: ${chaos.name} · WIN x2` : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT':'in '+cl}! · WIN x2` : null;
   const rg=board.reigning, champ = rg && !fin && Math.floor(Date.now()/8000)%2;
-  const [s,fill] = timeScale<0.9 ? ['📸 PHOTO FINISH · slow motion',BY] : chaosLine ? [chaosLine,BC] : champ ? [`🏆 Champion: ${rg.user} · ${rg.pts} pts`,BC] : ['🎯 Type your COUNTRY = your own ball!',BP];
+  const [s,fill] = timeScale<0.9 ? ['📸 PHOTO FINISH · slow motion',BY] : chaosLine ? [chaosLine,BC] : fin ? [`🔥 LAST MINUTES ${hourLeft()} · win the hour!`,BY] : champ ? [`🏆 Champion: ${rg.user} · ${rg.pts} pts`,BC] : ['🎯 Type your COUNTRY = your own ball!',BP];
   if(BRUTAL) hardBox(SL-24,y2,SW+48,h2,fill,10,4,6,SHC); else card(SL-24,y2,SW+48,h2);
   inkOn(()=>txt(s,MID,y2+28,24,'#fff','900','center',SW+30));
 }
@@ -710,7 +702,7 @@ function chargeRing(x,y,r,n){ for(let j=0;j<3;j++){ const a0=-Math.PI/2+j*2*Math
 // Ansage wie eine iOS-Mitteilung: Symbol im getönten Kreis, Text hell, Name hervorgehoben; erscheint mit Feder
 function glassToast(o){
   const m=o.s.match(/^([\u{1F1E6}-\u{1F1FF}]{2}|\p{Extended_Pictographic}\uFE0F?)\s*(.*)$/u), icon=m?m[1]:'💬', rest=m?m[2]:o.s, col=gc(o.col);
-  const sc=0.92+0.08*spring(o.t/60,0.35), y=!PORT?452:phase==='countdown'?628:380, H2=58, size=26;
+  const sc=0.92+0.08*spring(o.t/60,0.35), y=!PORT?452:phase==='countdown'?588:340, H2=58, size=26;
   ctx.save(); ctx.translate(MID,y); ctx.scale(sc,sc); ctx.translate(-MID,-y);
   const maxW=SW-H2-24; let size2=size; ctx.font=`700 ${size2}px ${FONT}`; while(size2>20 && ctx.measureText(rest).width>maxW){ size2--; ctx.font=`700 ${size2}px ${FONT}` }
   const s=fitTxt(rest,size2,maxW,'700');
@@ -745,8 +737,8 @@ function glassTop(){
   txt(rs,x1-26,y0+46,22,'#a99fc6','700','right');
   // Mitte: Laufband (Länder mit den meisten Siegen heute)
   // Laufband = Spieler statt Länder (Niklas 10.10.: „dass die Leute sich mehr auf dem Bildschirm sehen“): Tagespunkte mit Platz und Abzeichen
-  const L0=PORT?x0+14:x0+18+lw+24, L1=PORT?x1-14:x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
-  const items=list.length? [...(board.reigning?[`🏆 Champion: ${board.reigning.user}`]:[]), ...list.map(([u,n],i)=>`${MED[i]||'#'+(i+1)} ${badge(u)}${u}  ${n} pts`), ...newFaces.map(u=>`👋 welcome ${u}!`)] : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
+  const L0=PORT?x0+60:x0+18+lw+24, L1=PORT?x1-14:x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
+  const items=list.length? [...(board.reigning?[`🏆 Champion: ${board.reigning.user}`]:[]), ...list.map(([u,n],i)=>`${MED[i]||'#'+(i+1)} ${badge(u)}${u}  ${n} pts`), ...newFaces.map(u=>`👋 welcome ${u}!`), ...(list.length<3?[`${MED[list.length]} your name here – type your country!`]:[])] : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
   const sep='     ·     ', line=items.join(sep)+sep; ctx.font=`700 24px ${FONT}`; const lwid=ctx.measureText(line).width;
   tickX=(tickX+dt*0.045)%lwid;
   ctx.save(); ctx.beginPath(); ctx.rect(L0,y0+4,L1-L0,h-8); ctx.clip();
@@ -827,7 +819,7 @@ function draw(){
   const pb=rank.find(b=>b.players.length&&!b.done), wantF = phase==='race' && pb && pb!==lead && lead.position.y<FINISH_Y*0.84 && timeScale>=0.9 ? pb : null;
   if(wantF!==camFollow && (performance.now()-camSwitchT>3000 || !wantF)){ camFollow=wantF; camSwitchT=performance.now() }
   const foc = camFollow && !camFollow.done && balls.includes(camFollow) ? camFollow : lead;
-  const target=Math.min(Math.max(foc.position.y+(camZ>1.05?foc.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-(PORT?84:330)/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
+  const target=Math.min(Math.max(foc.position.y+(camZ>1.05?foc.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-(PORT?44:330)/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*(0.12+0.3*Math.max(0,camZ-1));   // näher dran → Kamera folgt straffer, sonst rutscht der Erste unter den Chat
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   if(PX.ready){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,OUT_W,OUT_H); ctx.restore(); PX.draw({pal:PAL, camY, camX, camZ, trackLayer, statics, spinners, balls, rank, phase, R, ballSprite}) } else { ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=bg; ctx.fillRect(0,0,OUT_W,OUT_H); ctx.restore() }
@@ -897,7 +889,7 @@ function draw(){
     else { txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true) } ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
   if(phase==='race' && camFollow && !camFollow.done){ const pl=rank.indexOf(camFollow)+1; ctx.font=`800 20px ${FONT}`;   // wem die Kamera folgt (oben in der Bahn, nicht über der verfolgten Kugel)
-    pill(`🎥 following ${short(camFollow.players[0],14)} · #${pl}`,MID,318,20,BRUTAL?'#111':'#ffd166',BRUTAL?BY:'rgba(18,14,33,0.86)',BRUTAL?BK:'rgba(255,209,102,0.6)') }
+    pill(`🎥 following ${short(camFollow.players[0],14)} · #${pl}`,MID,278,20,BRUTAL?'#111':'#ffd166',BRUTAL?BY:'rgba(18,14,33,0.86)',BRUTAL?BK:'rgba(255,209,102,0.6)') }
   drawColumn(rank); if(GLASS){ if(!PORT){ glassLeft(); glassRight(rank) } glassTop() } else if(!PORT){ drawLeft(); drawRight(rank) }
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
@@ -973,13 +965,13 @@ function drawColumn(rank){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
     const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle=GLASS?'rgba(21,16,38,0.45)':'rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
     if(GLASS){   // Countdown in Glas-Scheibe, darunter EINE Hinweis-Pille über dem Handy-Chat (y < 615)
-      const CY=PORT?482:512, CR=PORT?52:62;   // Hochformat: Countdown unter der Startreihe (Niklas 10.10.: verdeckte Kugeln), noch über dem Handy-Chat
+      const CY=PORT?442:512, CR=PORT?52:62;   // Hochformat: Countdown unter der Startreihe (Niklas 10.10.: verdeckte Kugeln), noch über dem Handy-Chat
       if(BRUTAL){ ctx.fillStyle=BK; ctx.beginPath(); ctx.arc(MID+7,CY+7,CR,0,7); ctx.fill(); ctx.fillStyle=n>0?'#fff':BL; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.stroke() }
       else { ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke() }
       inkOn(()=>txt(n>0?String(n):'GO!',MID,CY+(n>0?(PORT?22:26):(PORT?16:20)),n>0?(PORT?60:72):(PORT?42:52),n>0?'#fff':BRUTAL?'#111':'#4fe0c0','900','center'));
       const np=mine.length, hint = chaos ? [`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,'#c4b5ff'] : (!np && balls.some(b=>b.bot)) ? ['🤖 Beat the bots! Type your country','#67e8f9']
         : [np ? `⭐ ${np} ${np===1?'PLAYER':'PLAYERS'} IN THIS RACE · chat = ⚡ boost` : '💬 chat = ⚡ boost your ball','#c4b5ff'];
-      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,PORT?568:652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
+      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,PORT?528:652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
     } else {
     txt(n>0?String(n):'GO!',MID,500,72,'#fde047','700','center',0,true);
     if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,640,24,'#c084fc','700','center',SW,true);
