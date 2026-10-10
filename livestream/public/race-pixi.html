@@ -322,6 +322,8 @@ function step(){
   moveParts(spinners, phase==='race' ? t : 0);
   if(phase==='countdown'){
     if(phaseT%60===0 && phaseT<START_WAIT) sfx.beep(phaseT>=START_WAIT-60?880:440);
+    // Start ohne Stillstand (Gemini 10.10.: „nichts bewegt sich“): Kugeln hüpfen im Startkasten, Mitspieler-Kugeln öfter und höher
+    if(phaseT%12===0 && phaseT<START_WAIT-30) for(const b of balls){ const me=b.players.length; if(Math.random()<(me?0.35:0.12)) Body.setVelocity(b,{x:(Math.random()-0.5)*(me?3:2), y:-(me?3.5:2)-Math.random()*1.5}) }
     if(phaseT>=START_WAIT){ phase='race'; phaseT=0; sfx.go();
       for(const b of balls) if(b.players.length && carry[b.players[0]]){ b.charge=Math.min(3,(b.charge||0)+carry[b.players[0]]); delete carry[b.players[0]]; b.startPush=true } goAt=performance.now(); leadTimes=[]; say([raceNo%2?'off':'here-we-go'],2); const g=statics.find(s=>s.gate); Composite.remove(engine.world,g); statics=statics.filter(s=>!s.gate)}
   }
@@ -500,7 +502,7 @@ const musicBus = AC.createGain(); musicBus.connect(master); const MUSIC_VOL = 0.
 function deck(dnb){ const d = {a:new Audio(), g:AC.createGain(), list:[], i:0, dnb, gen:0}; d.g.gain.value = 0;
   AC.createMediaElementSource(d.a).connect(d.g); d.g.connect(musicBus);
   d.a.onended = ()=>playNext(d); d.a.onerror = ()=>{ lastFetch = 0; const g=d.gen; setTimeout(()=>{ if(g===d.gen) playNext(d) }, 1000) };   // Datei fehlt (Musiktausch) → Liste sofort neu holen
-  d.a.onplaying = ()=>{ const n = songTitle(decodeURIComponent(d.a.src.split('/').pop())); if(n!==nowPlaying){ nowPlaying = n; nowAt = Date.now(); if(phase && phase!=='loading') toast(GLASS?`🎵 ${n}`:`🎵 Now playing: ${n}`,'#f9a8d4',200) } }; return d }
+  d.a.onplaying = ()=>{ const n = songTitle(decodeURIComponent(d.a.src.split('/').pop())); if(n!==nowPlaying){ nowPlaying = n; nowAt = Date.now(); if(phase && phase!=='loading' && !PORT) toast(GLASS?`🎵 ${n}`:`🎵 Now playing: ${n}`,'#f9a8d4',200) } }; return d }
 let nowPlaying = '', nowAt = 0;
 const songTitle = f => f.replace(/\.(mp3|ogg)$/,'').replace(/^summer-\d+-/,'').split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
 const DECK = {calm:deck(false), dnb:deck(true)}; let musicMode = 'calm', lastFetch = 0;
@@ -702,7 +704,7 @@ function chargeRing(x,y,r,n){ for(let j=0;j<3;j++){ const a0=-Math.PI/2+j*2*Math
 // Ansage wie eine iOS-Mitteilung: Symbol im getönten Kreis, Text hell, Name hervorgehoben; erscheint mit Feder
 function glassToast(o){
   const m=o.s.match(/^([\u{1F1E6}-\u{1F1FF}]{2}|\p{Extended_Pictographic}\uFE0F?)\s*(.*)$/u), icon=m?m[1]:'💬', rest=m?m[2]:o.s, col=gc(o.col);
-  const sc=0.92+0.08*spring(o.t/60,0.35), y=!PORT?452:phase==='countdown'?588:340, H2=58, size=26;
+  const sc=0.92+0.08*spring(o.t/60,0.35), y=!PORT?452:phase==='countdown'?636:340, H2=58, size=26;
   ctx.save(); ctx.translate(MID,y); ctx.scale(sc,sc); ctx.translate(-MID,-y);
   const maxW=SW-H2-24; let size2=size; ctx.font=`700 ${size2}px ${FONT}`; while(size2>20 && ctx.measureText(rest).width>maxW){ size2--; ctx.font=`700 ${size2}px ${FONT}` }
   const s=fitTxt(rest,size2,maxW,'700');
@@ -810,16 +812,18 @@ function draw(){
   // Zoom nur so weit, dass die ersten 5 Kugeln im Bild bleiben (sonst wirkt das Feld leer), höchstens 1,25; ganz nah nur in der Zeitlupe am Ziel
   const grp=rank.filter(b=>!b.done).slice(0,5), span=grp.length>1 ? grp[0].position.y-grp[grp.length-1].position.y : 0;
   const gx=grp.length ? grp.reduce((a,b)=>a+b.position.x,0)/grp.length : TW/2;
-  const wantZ = ZOOM_OFF || phase!=='race' || t<120 || finished.length || camFollow ? 1 : timeScale<0.9 ? 1.6 : Math.min(1.25, Math.max(1, 170/Math.max(span,1)));
+  const ZB = PORT && !ZOOM_OFF ? 1.3 : 1;   // Hochformat (Gemini 10.10.: Kugeln am Handy zu klein): im Rennen grundsätzlich näher
+  const wantZ = ZOOM_OFF || phase!=='race' || t<120 || finished.length ? 1 : camFollow ? ZB : timeScale<0.9 ? 1.6 : Math.min(Math.max(ZB,1.25), Math.max(ZB, 170/Math.max(span,1)));
   camZ += (wantZ-camZ)*0.06;
   const VW=TW/camZ, VH=H/camZ;
-  camX += (Math.min(Math.max(gx-VW/2,0),TW-VW)-camX)*0.1; camX=Math.min(Math.max(camX,0),TW-VW);
+  const cxT = camFollow && !camFollow.done ? camFollow.position.x : gx;   // folgt die Kamera einem Mitspieler, auch seitlich auf ihm bleiben
+  camX += (Math.min(Math.max(cxT-VW/2,0),TW-VW)-camX)*0.1; camX=Math.min(Math.max(camX,0),TW-VW);
   // Kamera auf den besten Mitspieler (Niklas 10.10. „jo passt“): fährt jemand mit, folgt sie seiner Kugel; Zielgerade (Führender
   // im letzten Sechstel) oder Zeitlupe → zurück zum Führenden. Wechsel frühestens nach 3 s, damit nichts hin und her springt.
   const pb=rank.find(b=>b.players.length&&!b.done), wantF = phase==='race' && pb && pb!==lead && lead.position.y<FINISH_Y*0.84 && timeScale>=0.9 ? pb : null;
   if(wantF!==camFollow && (performance.now()-camSwitchT>3000 || !wantF)){ camFollow=wantF; camSwitchT=performance.now() }
   const foc = camFollow && !camFollow.done && balls.includes(camFollow) ? camFollow : lead;
-  const target=Math.min(Math.max(foc.position.y+(camZ>1.05?foc.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-(PORT?44:330)/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
+  const target=Math.min(Math.max(foc.position.y+(camZ>1.05?foc.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-(PORT?70:330)/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*(0.12+0.3*Math.max(0,camZ-1));   // näher dran → Kamera folgt straffer, sonst rutscht der Erste unter den Chat
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   if(PX.ready){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,OUT_W,OUT_H); ctx.restore(); PX.draw({pal:PAL, camY, camX, camZ, trackLayer, statics, spinners, balls, rank, phase, R, ballSprite}) } else { ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=bg; ctx.fillRect(0,0,OUT_W,OUT_H); ctx.restore() }
@@ -865,6 +869,11 @@ function draw(){
     if(b.crown && !b.done && phase==='race') txt('👑',b.position.x,b.position.y-r+4,Math.round(r*1.5),'#fff','400','center');
     if(b.turboT>0){ if(GLASS) pill('🔥 TURBO',b.position.x,b.position.y+r+30,18,'#ffd2bd','rgba(18,14,33,0.88)','rgba(255,143,107,0.75)',1.5); else txt('TURBO',b.position.x,b.position.y+r+24,20,'#fb923c','700','center',0,true) }
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
+    if(BRUTAL && b.boostT>0 && !b.done && b.boostBy){ const k=b.boostT/60, e=springB((60-b.boostT)/60,0.3,0.5), bx=b.position.x, by=b.position.y;   // Boost sichtbar machen (Gemini 10.10.): harte Flamme hinter der Kugel + „+SPEED“
+      for(let j=0;j<3;j++){ const wv=r*(0.85-j*0.25), L=(r*2.4+j*r*0.5)*(0.7+0.3*Math.sin(phaseT*0.8+j*2))*Math.min(1,k*1.6);
+        ctx.fillStyle=[BO,BY,'#fff'][j]; ctx.beginPath(); ctx.moveTo(bx-wv,by-r*0.55); ctx.lineTo(bx+wv,by-r*0.55); ctx.lineTo(bx+(j-1)*2,by-r-L); ctx.closePath(); ctx.fill();
+        if(!j){ ctx.lineWidth=3; ctx.strokeStyle=BK; ctx.stroke() } }
+      if(b.boostT>12) pill('⚡ +SPEED',bx,by+r+36,24,'#111',BY,BK,3,0.55+0.45*e) }
   }
   const nx = x => Math.min(Math.max(x,camX+115/camZ),camX+(TW-115)/camZ);   // Schild bis 220 px breit: an der Wand nicht abschneiden
   if(GLASS){ { const cd=phase==='countdown';   // Glas-Pillen; am Start nur Mitspieler (Niklas 10.10.: Namen schon im Countdown), keine Bots; überlappende Schilder weglassen, Bessere zuerst
@@ -965,13 +974,13 @@ function drawColumn(rank){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
     const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle=GLASS?'rgba(21,16,38,0.45)':'rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
     if(GLASS){   // Countdown in Glas-Scheibe, darunter EINE Hinweis-Pille über dem Handy-Chat (y < 615)
-      const CY=PORT?442:512, CR=PORT?52:62;   // Hochformat: Countdown unter der Startreihe (Niklas 10.10.: verdeckte Kugeln), noch über dem Handy-Chat
+      const CY=PORT?468:512, CR=PORT?52:62;   // Hochformat: Countdown unter der Startreihe (Niklas 10.10.: verdeckte Kugeln), noch über dem Handy-Chat
       if(BRUTAL){ ctx.fillStyle=BK; ctx.beginPath(); ctx.arc(MID+7,CY+7,CR,0,7); ctx.fill(); ctx.fillStyle=n>0?'#fff':BL; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.stroke() }
       else { ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke() }
       inkOn(()=>txt(n>0?String(n):'GO!',MID,CY+(n>0?(PORT?22:26):(PORT?16:20)),n>0?(PORT?60:72):(PORT?42:52),n>0?'#fff':BRUTAL?'#111':'#4fe0c0','900','center'));
       const np=mine.length, hint = chaos ? [`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,'#c4b5ff'] : (!np && balls.some(b=>b.bot)) ? ['🤖 Beat the bots! Type your country','#67e8f9']
         : [np ? `⭐ ${np} ${np===1?'PLAYER':'PLAYERS'} IN THIS RACE · chat = ⚡ boost` : '💬 chat = ⚡ boost your ball','#c4b5ff'];
-      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,PORT?528:652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
+      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,PORT?554:652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
     } else {
     txt(n>0?String(n):'GO!',MID,500,72,'#fde047','700','center',0,true);
     if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,640,24,'#c084fc','700','center',SW,true);
