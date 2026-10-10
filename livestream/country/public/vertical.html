@@ -137,7 +137,7 @@ const fx=$('fx').getContext('2d'); let parts=[];
 function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627','#5ab4ff'];for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,v=8+Math.random()*12;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:cols[i%5],r:Math.random()*5+4,a:Math.random()*6,l:80+Math.random()*40})}}
 (function loop(){fx.clearRect(0,0,1080,1920);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=.15;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
 
-let SHAPES=null, S=null, lastN=0, shownN=0, lastSolv=0, ver=null, tileEls=[], revSet=new Set(), lastHints=0;
+let welcome='', SHAPES=null, S=null, lastN=0, shownN=0, lastSolv=0, ver=null, tileEls=[], revSet=new Set(), lastHints=0;
 fetch('shapes.json').then(r=>r.json()).then(j=>{SHAPES=j; $('world').setAttribute('d',j.world)});
 
 // Kachelgröße + Zeilen: größte Kachel, bei der der Name in höchstens 2 Zeilen à 860 px passt (Niklas 10.10.: zweizeilige Namen
@@ -192,7 +192,9 @@ function renderSolvers(){
     more.textContent=`+${s.length-3} more got it`; if(s.length>lastSolv) sfx.correct(2) }
   if(!s.length && S.phase==='show' && !box.querySelector('.all')){ const d=document.createElement('div'); d.className='sol more all'; d.textContent='Nobody got it – next one is easier'; box.appendChild(d); pop(d,{opacity:0},1,.3) }
   lastSolv=s.length;
-  let cta=box.querySelector('.cta'); const t=S.phase==='guess'&&!s.length?'💬 Type the country in chat':'';
+  let cta=box.querySelector('.cta'), t=S.phase==='guess'&&!s.length?'💬 Type the country in chat':'';
+  // Begrüßung neuer Spieler im Aufruf-Feld (4 s je Name), solange noch niemand richtig lag
+  if(t && (hello.length || Date.now()<helloUntil)){ if(Date.now()>=helloUntil && hello.length){ welcome=hello.shift(); helloUntil=Date.now()+4000 } if(Date.now()<helloUntil) t='👋 Welcome '+welcome+'! Type the country'; }
   if(t){ if(!cta){cta=document.createElement('div');cta.className='sol cta';box.prepend(cta)} cta.textContent=t } else if(cta) cta.remove();
 }
 async function poll(){
@@ -220,13 +222,13 @@ async function pollBoard(){
 setInterval(pollBoard,2000); pollBoard();
 
 // Live-Rateversuche (neueste oben, max. 8, damit es unten in die Bühne passt): falsch = durchgestrichen, richtig = „got it ✓“ ohne die Lösung zu verraten
-let feedSince=0, feedItems=[];
+let feedSince=0, feedItems=[], hello=[], helloUntil=0;
 async function pollFeed(){
   try{
     const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json();
     if(feedSince===0 && f.last>0){ feedSince=f.last; return }   // nach Neuladen keine alten Nachrichten nachspielen
     if(!f.feed.length) return; feedSince=f.last;
-    for(const x of f.feed){ feedItems.unshift(x) } feedItems=feedItems.slice(0,8);
+    for(const x of f.feed){ if(x.hello){ hello.push(x.user); hello=hello.slice(-3); continue } feedItems.unshift(x) } feedItems=feedItems.slice(0,8);
     $('feed').innerHTML=feedItems.map(x=>{
       const [cls,txt]=x.ok?['ok','got it ✓ +'+x.pts]:x.late?['late','right, too late ⏱']:x.flag&&!x.guess?['fl',x.flag+' joined']:['no',(x.flag?x.flag+' ':'')+x.guess];
       return `<div class="g ${cls}" data-id="${x.id}"><span class="u">${esc(x.user)}</span><span class="x">${esc(txt)}</span></div>`}).join('');
