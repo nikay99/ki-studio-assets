@@ -7,7 +7,7 @@ set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-country}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/country.env ] && . /etc/marble/country.env
 # 24 fps wie die anderen Streams; Bildschirm läuft mit derselben Rate, FPS/VBIT in country.env überschreibbar
-VBIT="${VBIT:-2500k}"; FPS="${FPS:-24}"; RW=720; RH=1280
+VBIT="${VBIT:-2500k}"; FPS="${FPS:-15}"; RW=720; RH=1280   # 15 fps seit 10.10. (4 Streams auf 4 Kernen)
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:96 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
