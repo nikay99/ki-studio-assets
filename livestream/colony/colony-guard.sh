@@ -3,6 +3,7 @@
 # Verliert einer der beiden Bilder (drop_frames steigt um mehr als DROP_MAX pro Minute), sendet er zu langsam
 # (speed < 0.97) oder ist die CPU 3 Minuten in Folge über CPU_MAX %, pausiert der Wächter die Colony
 # (Datei PAUSE + ffmpeg beenden). Selbst gesetzte Pausen hebt er nach 10 ruhigen Minuten wieder auf; von Hand: rm /var/lib/marble-colony/PAUSE. Werte landen in guard.log.
+# Seit 10.10. (Guess the Capital): läuft Colony nicht (von Hand pausiert), pausiert er stattdessen Capital (/var/lib/marble-capital).
 set -u
 C=/var/lib/marble-colony; S=$C/guard.state; LOG=$C/guard.log
 DROP_MAX=${DROP_MAX:-30}; CPU_MAX=${CPU_MAX:-88}
@@ -36,14 +37,20 @@ for s in "${MS%x}" "${WS%x}" "${GS%x}"; do [ -n "$s" ] && awk "BEGIN{exit !($s>0
 [ "$CPU" -gt "$CPU_MAX" ] && HOT=$((HOT+1)) || HOT=0
 [ "$HOT" -ge 3 ] && WHY="CPU $CPU % seit 3 Min."
 # Selbst gesetzte Pause nach 10 ruhigen Minuten wieder aufheben (eine von Hand gesetzte PAUSE ohne PAUSE.guard bleibt)
-if [ -z "$WHY" ] && [ -f $C/PAUSE.guard ]; then QUIET=$((QUIET+1)); else QUIET=0; fi
-if [ "$QUIET" -ge 10 ]; then rm -f $C/PAUSE $C/PAUSE.guard; QUIET=0; echo "$(date -u +%FT%TZ) Pause aufgehoben (10 Min. ruhig)" >> $LOG; fi
+P=/var/lib/marble-capital
+if [ -z "$WHY" ] && { [ -f $C/PAUSE.guard ] || [ -f $P/PAUSE.guard ]; }; then QUIET=$((QUIET+1)); else QUIET=0; fi
+if [ "$QUIET" -ge 10 ]; then [ -f $C/PAUSE.guard ] && rm -f $C/PAUSE $C/PAUSE.guard; [ -f $P/PAUSE.guard ] && rm -f $P/PAUSE $P/PAUSE.guard; QUIET=0; echo "$(date -u +%FT%TZ) Pause aufgehoben (10 Min. ruhig)" >> $LOG; fi
 printf 'PM=%s PW=%s PG=%s HOT=%s QUIET=%s\n' "${M:-0}" "${W:-0}" "${G:-0}" "$HOT" "$QUIET" > $S
 echo "$(date -u +%FT%TZ) cpu=$CPU marble_drop=${M:--} words_drop=${W:--} country_drop=${G:--} speed=${MS:--}/${WS:--}/${GS:--} colony_fps=${K:--}${WHY:+ PAUSE: $WHY}" >> $LOG
 tail -n 3000 $LOG > $LOG.tmp && mv $LOG.tmp $LOG
-if [ -n "$WHY" ] && [ ! -f $C/PAUSE ] && [ ! -f $C/NOGUARD ]; then
-  echo "$WHY" > $C/PAUSE; chown colony:colony $C/PAUSE 2>/dev/null
-  touch $C/PAUSE.guard
-  [ -f $C/ffmpeg.pid ] && kill "$(cat $C/ffmpeg.pid)" 2>/dev/null
+# Opfer: zuerst Colony; ist Colony schon pausiert (z. B. von Hand), dann Capital
+V=""; U=""
+if [ ! -f $C/PAUSE ]; then V=$C; U=colony
+elif [ -d $P ] && [ ! -f $P/PAUSE ] && [ ! -f $P/NOGUARD ]; then V=$P; U=capital; fi
+if [ -n "$WHY" ] && [ -n "$V" ] && [ ! -f $C/NOGUARD ]; then
+  echo "$WHY" > $V/PAUSE; chown $U:$U $V/PAUSE 2>/dev/null
+  touch $V/PAUSE.guard
+  [ -f $V/ffmpeg.pid ] && kill "$(cat $V/ffmpeg.pid)" 2>/dev/null
+  echo "$(date -u +%FT%TZ) $U pausiert: $WHY" >> $LOG
 fi
 exit 0
