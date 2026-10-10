@@ -734,8 +734,9 @@ function glassTop(){
   if(!BRUTAL){ ctx.save(); ctx.beginPath(); ctx.roundRect(x0,y0,x1-x0,h,28); ctx.clip(); ctx.globalAlpha=0.9; ctx.fillStyle=g; ctx.fillRect(x0,y0+h-3,x1-x0,3); ctx.restore() }
   // links: Etikett
   const lab=PORT?'⭐ TOP':'⭐ TOP PLAYERS'; ctx.save(); ctx.letterSpacing='2px'; ctx.font=`800 21px ${FONT}`; const lw=ctx.measureText(lab).width+36; ctx.restore();
-  const lx=x0+(PORT?56:18);   /* Hochformat: links liegt die Krone der YouTube-App */
-  if(BRUTAL) label(lab,lx+lw/2,y0+h/2+12,'#111','center');
+  const lx=x0+18;
+  if(PORT){ /* Hochformat (Niklas 10.10. „falsch gecentered“): kein Etikett, Laufband über die ganze Leiste */ }
+  else if(BRUTAL) label(lab,lx+lw/2,y0+h/2+12,'#111','center');
   else { ctx.fillStyle='rgba(124,92,255,0.28)'; ctx.beginPath(); ctx.roundRect(x0+18,y0+18,lw,38,19); ctx.fill(); ctx.strokeStyle='rgba(155,130,255,0.55)'; ctx.lineWidth=1.5; ctx.stroke();
   label(lab,x0+18+lw/2,y0+44,'#e6e0ff','center') }
   // rechts: Rennen heute
@@ -743,7 +744,7 @@ function glassTop(){
   txt(rs,x1-26,y0+46,22,'#a99fc6','700','right');
   // Mitte: Laufband (Länder mit den meisten Siegen heute)
   // Laufband = Spieler statt Länder (Niklas 10.10.: „dass die Leute sich mehr auf dem Bildschirm sehen“): Tagespunkte mit Platz und Abzeichen
-  const L0=x0+(PORT?56:18)+lw+24, L1=x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
+  const L0=PORT?x0+14:x0+18+lw+24, L1=PORT?x1-14:x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
   const items=list.length? [...(board.reigning?[`🏆 Champion: ${board.reigning.user}`]:[]), ...list.map(([u,n],i)=>`${MED[i]||'#'+(i+1)} ${badge(u)}${u}  ${n} pts`), ...newFaces.map(u=>`👋 welcome ${u}!`)] : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
   const sep='     ·     ', line=items.join(sep)+sep; ctx.font=`700 24px ${FONT}`; const lwid=ctx.measureText(line).width;
   tickX=(tickX+dt*0.045)%lwid;
@@ -895,7 +896,7 @@ function draw(){
     else { txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true) } ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
   if(phase==='race' && camFollow && !camFollow.done){ const pl=rank.indexOf(camFollow)+1; ctx.font=`800 20px ${FONT}`;   // wem die Kamera folgt (oben in der Bahn, nicht über der verfolgten Kugel)
-    pill(`🎥 following ${short(camFollow.players[0],14)} · #${pl}`,MID+34,416,20,BRUTAL?'#111':'#ffd166',BRUTAL?BY:'rgba(18,14,33,0.86)',BRUTAL?BK:'rgba(255,209,102,0.6)') }
+    pill(`🎥 following ${short(camFollow.players[0],14)} · #${pl}`,MID,318,20,BRUTAL?'#111':'#ffd166',BRUTAL?BY:'rgba(18,14,33,0.86)',BRUTAL?BK:'rgba(255,209,102,0.6)') }
   drawColumn(rank); if(GLASS){ if(!PORT){ glassLeft(); glassRight(rank) } glassTop() } else if(!PORT){ drawLeft(); drawRight(rank) }
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
