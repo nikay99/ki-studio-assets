@@ -41,7 +41,7 @@ for s in "${MS%x}" "${WS%x}" "${GS%x}"; do [ -n "$s" ] && awk "BEGIN{exit !($s>0
 # Selbst gesetzte Pause nach 10 ruhigen Minuten wieder aufheben (eine von Hand gesetzte PAUSE ohne PAUSE.guard bleibt)
 P=/var/lib/marble-capital; R=/var/lib/marble
 # Tausch: Capital vom Wächter pausiert, Kugelrennen läuft → Kugelrennen pausieren, Capital wieder an
-if [ -f $P/PAUSE.guard ] && [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ]; then
+if [ -f $P/PAUSE.guard ] && [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ] && [ ! -f /opt/marble/PAUSE ]; then
   cat $P/PAUSE > $R/PAUSE 2>/dev/null || echo "Tausch mit Capital" > $R/PAUSE; touch $R/PAUSE.guard; rm -f $P/PAUSE $P/PAUSE.guard
   echo "$(date -u +%FT%TZ) Tausch: Capital wieder an, Kugelrennen pausiert (Quiz hat Vorrang)" >> $LOG
 fi
@@ -57,7 +57,7 @@ tail -n 3000 $LOG > $LOG.tmp && mv $LOG.tmp $LOG
 # Opfer: zuerst Colony, dann Kugelrennen, Capital nur wenn beide schon aus sind (Word und Country nie)
 V=""; U=""
 if [ ! -f $C/PAUSE ]; then V=$C; U=colony
-elif [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ]; then V=$R; U=marble
+elif [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ] && [ ! -f /opt/marble/PAUSE ]; then V=$R; U=marble
 elif [ -d $P ] && [ ! -f $P/PAUSE ] && [ ! -f $P/NOGUARD ]; then V=$P; U=capital; fi
 if [ -n "$WHY" ] && [ -n "$V" ] && [ ! -f $C/NOGUARD ]; then
   echo "$WHY" > $V/PAUSE; chown $U:$U $V/PAUSE 2>/dev/null

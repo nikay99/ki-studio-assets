@@ -83,7 +83,8 @@ SELF_SUM=$(cat "$0" /etc/marble/stream.env "$DIR/PAUSE" "$DATA_DIR/PAUSE" 2>/dev
 while true; do
   [ -f /etc/marble/stream.env ] && . /etc/marble/stream.env
   # Lastwächter-Pause (colony-guard.sh, seit 10.10.: Kugelrennen weicht vor den Quiz-Streams, Niklas 12:22Z): auch Chrome aus, das spart die CPU
-  if [ -f "$DATA_DIR/PAUSE" ]; then kill $CHROME_PID 2>/dev/null; runjson pause "Lastwächter: $(head -c 200 "$DATA_DIR/PAUSE")"; sleep 20; continue; fi
+  # Kugelrennen aus (Niklas 10.10. 13:39Z, Karte „Kugelrennen aus“): Repo-Datei livestream/PAUSE, ebenfalls ohne Chrome
+  if [ -f "$DATA_DIR/PAUSE" ] || [ -f "$DIR/PAUSE" ]; then kill $CHROME_PID 2>/dev/null; runjson pause "$(cat "$DATA_DIR/PAUSE" "$DIR/PAUSE" 2>/dev/null | head -c 200 | tr -d '\n"')"; sleep 20; continue; fi
   kill -0 $CHROME_PID 2>/dev/null || { log "Chrome neu gestartet"; start_chrome; sleep 8; }
   HWDEV=(); [ "$HW" = vaapi ] && HWDEV=(-vaapi_device /dev/dri/renderD128)
   IN=("${HWDEV[@]}" -thread_queue_size 1024 -f x11grab -draw_mouse 0 -video_size "${SW}x${SH}" -framerate "$FPS" -i :99.0

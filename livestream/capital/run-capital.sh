@@ -7,7 +7,7 @@ set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-capital}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/capital.env ] && . /etc/marble/capital.env
 # 24 fps wie die anderen Streams; Bildschirm läuft mit derselben Rate, FPS/VBIT in capital.env überschreibbar
-VBIT="${VBIT:-2500k}"; FPS="${FPS:-15}"; RW=720; RH=1280   # 15 fps seit 10.10. (4 Streams auf 4 Kernen)
+VBIT="${VBIT:-2500k}"; FPS="${FPS:-24}"; RW=720; RH=1280   # 24 fps wieder seit 10.10. 13:39Z (Kugelrennen aus), 11:45–13:39Z 15
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:95 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
