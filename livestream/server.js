@@ -219,8 +219,8 @@ function media(req, res, p) {
   });
 }
 // Stil per Datei $DATA_DIR/style (glass | brutal | classic, fehlt = glass)
-// Vorrang: Datei im Datenordner (VM-Schalter, z. B. „lila zurück“); fehlt sie, gilt die Repo-Datei livestream/STYLE
-const styleNow = () => { for (const f of [path.join(DATA, 'style'), path.join(__dirname, 'STYLE')]) { try { const v = fs.readFileSync(f, 'utf8').trim(); if (v) return v } catch {} } return 'glass' };
+// Stil: die zuletzt geänderte Datei gewinnt – VM-Schalter $DATA_DIR/style („lila zurück“) oder Repo-Datei livestream/STYLE (Push aus dem Thread)
+const styleNow = () => { let best = null; for (const f of [path.join(DATA, 'style'), path.join(__dirname, 'STYLE')]) { try { const v = fs.readFileSync(f, 'utf8').split('\n')[0].trim(), m = fs.statSync(f).mtimeMs; if (v && (!best || m > best.m)) best = { v, m } } catch {} } return best ? best.v : 'glass' };
 let lastPage = Date.now();   // letzte Abfrage der Rennseite (Wächter unten)
 function file(res, p) { fs.readFile(p, (e, b) => e ? send(res, 404, 'not found', 'text/plain') : send(res, 200, b, TYPES[path.extname(p)] || 'application/octet-stream')); }
 function body(req) { return new Promise(r => { let d = ''; req.on('data', c => d += c); req.on('end', () => { try { r(JSON.parse(d)); } catch { r({}); } }); }); }
