@@ -41,14 +41,15 @@ for s in "${MS%x}" "${WS%x}" "${GS%x}"; do [ -n "$s" ] && awk "BEGIN{exit !($s>0
 # Selbst gesetzte Pause nach 10 ruhigen Minuten wieder aufheben (eine von Hand gesetzte PAUSE ohne PAUSE.guard bleibt)
 P=/var/lib/marble-capital; R=/var/lib/marble
 # Tausch: Capital vom Wächter pausiert, Kugelrennen läuft → Kugelrennen pausieren, Capital wieder an
-if [ -f $P/PAUSE.guard ] && [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ] && [ ! -f /opt/marble/PAUSE ]; then
+if [ -f $P/PAUSE.guard ] && [ ! -f $P/PAUSE.rot ] && [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ] && [ ! -f /opt/marble/PAUSE ]; then
   cat $P/PAUSE > $R/PAUSE 2>/dev/null || echo "Tausch mit Capital" > $R/PAUSE; touch $R/PAUSE.guard; rm -f $P/PAUSE $P/PAUSE.guard
   echo "$(date -u +%FT%TZ) Tausch: Capital wieder an, Kugelrennen pausiert (Quiz hat Vorrang)" >> $LOG
 fi
 if [ -z "$WHY" ] && { [ -f $C/PAUSE.guard ] || [ -f $R/PAUSE.guard ] || [ -f $P/PAUSE.guard ]; }; then QUIET=$((QUIET+1)); else QUIET=0; fi
 if [ "$QUIET" -ge 10 ]; then
   # immer nur eine Stufe zurück, wichtigste zuerst: Capital, dann Kugelrennen, dann Colony
-  for X in $P $R $C; do [ -f $X/PAUSE.guard ] && { rm -f $X/PAUSE $X/PAUSE.guard; echo "$(date -u +%FT%TZ) Pause aufgehoben: $X (10 Min. ruhig)" >> $LOG; break; }; done
+  # PAUSE einer Rotation (PAUSE.rot, ensure-live.py) bleibt immer stehen, nur die eigene Sperre fällt weg
+  for X in $P $R $C; do [ -f $X/PAUSE.guard ] && { rm -f $X/PAUSE.guard; [ -f $X/PAUSE.rot ] || rm -f $X/PAUSE; echo "$(date -u +%FT%TZ) Pause aufgehoben: $X (10 Min. ruhig)" >> $LOG; break; }; done
   QUIET=0
 fi
 printf 'PM=%s PW=%s PG=%s HOT=%s QUIET=%s\n' "${M:-0}" "${W:-0}" "${G:-0}" "$HOT" "$QUIET" > $S

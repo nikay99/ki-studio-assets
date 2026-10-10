@@ -43,7 +43,8 @@ PROFILES = {
                     thumb='/opt/marble/capital/thumbnail.jpg', runjson=False, slot=40, latency='ultraLow',
                     remind=['🏛️ Know the capital? Type it in the chat – everyone who is right scores!']),
 }
-P = PROFILES[sys.argv[1] if len(sys.argv) > 1 else 'marble']
+GAME = sys.argv[1] if len(sys.argv) > 1 else 'marble'
+P = PROFILES[GAME]
 D = P['D']
 STATE, LOG = D + '/broadcast.state', D + '/broadcast.log'
 P_B, P_S = 'Broadcasts', 'Streams'   # Pfadnamen des Webhooks fuer liveBroadcasts / liveStreams
@@ -63,6 +64,13 @@ REMIND_S = 3600          # Chat-Erinnerung je Stream (Niklas 09.10.): eine Nachr
 THUMB_FAST = 15          # so viele Thumbnail-Versuche im Minutentakt, danach alle 30 min
 CATEGORY = '24'          # Unterhaltung (fuer videos.update mit Tags noetig)
 RTMP = 'a.rtmp.youtube.com/live2'
+# EIN Stream rotierend (Niklas 10.10. 15:56Z Karte „1 Stream rotierend“, 16:03Z „rotation umbauen“): ab ROT_FROM sendet nur noch
+# eines der Quiz-Spiele; an jedem festen Termin (ROT_TIMES, ohne Versatz) wechselt das Spiel. Tag 1 (ab 11.10. 05:30 UTC = 07:30 Wien):
+# Word -> Country -> Capital, jeden Tag um eine Stelle verschoben, damit jedes Spiel in 3 Tagen jede Uhrzeit bekommt.
+# Nicht dran: Sendung beenden (bleibt oeffentlich als Archiv), Dateien PAUSE + PAUSE.rot, ffmpeg aus. Dran: PAUSE weg, neue Sendung.
+ROTATION = ('words', 'country', 'capital')
+ROT_FROM = calendar.timegm((2026, 10, 10, 22, 30, 0))     # erster rotierender Block (00:30 Wien)
+ROT_ANCHOR = calendar.timegm((2026, 10, 11, 5, 30, 0))    # Tag 1, erster Block = ROTATION[0]
 
 def log(msg):
     with open(LOG, 'a') as f:
@@ -150,6 +158,35 @@ def next_slot(now, slot=None):
     return min(day + b * 86400 + h * 3600 + (m + slot) * 60 for b in (0, 1) for h, m in ROT_TIMES
                if day + b * 86400 + h * 3600 + (m + slot) * 60 > now)
 
+def rotation_game(now):
+    """Welches Quiz-Spiel ist im rotierenden Betrieb gerade dran? None vor ROT_FROM."""
+    if now < ROT_FROM: return None
+    s = last_slot(now, 0)
+    d = (s - ROT_ANCHOR) // 86400                      # Tag (beginnt 05:30 UTC), auch negativ
+    off = (s - ROT_ANCHOR) - d * 86400
+    k = sorted(((h * 60 + m - 330) % 1440) * 60 for h, m in ROT_TIMES).index(off)   # 0, 1, 2 = Block im Tag
+    return ROTATION[int(k + d) % len(ROTATION)]
+
+def rotation_off(st, save):
+    """Spiel ist im rotierenden Betrieb nicht dran: laufende Sendung beenden (Archiv bleibt), Encoder pausieren."""
+    if not os.path.exists(D + '/PAUSE.rot'):
+        open(D + '/PAUSE.rot', 'w').close(); log('Rotation: %s ist nicht dran, Encoder pausiert' % GAME)
+    if not os.path.exists(D + '/PAUSE'): open(D + '/PAUSE', 'w').write('Rotation: anderes Spiel ist dran\n')
+    vid = st.get('pending') or (st.get('live') or {}).get('id') or (st.get('rot') or {}).get('old')
+    if not vid:
+        try: vid = open(D + '/video_id').read().strip()
+        except OSError: vid = None
+    if vid and st.get('rot_ended') != vid:
+        it = api('GET', P_B, dict(part='id,status', id=vid)).get('items', [])
+        if it and it[0]['status']['lifeCycleStatus'] not in ('complete', 'revoked'):
+            api('POST', P_B + '/transition', dict(broadcastStatus='complete', id=vid, part='id,status'))
+            log('Rotation: Sendung %s beendet' % vid)
+        st['rot_ended'] = vid
+    try: os.kill(int(open(D + '/ffmpeg.pid').read().strip()), 15)
+    except Exception: pass
+    for k in ('pending', 'live', 'rot', 'miss', 'blind'): st.pop(k, None)
+    save()
+
 def rotate_due(start, now):
     """Wechsel faellig? Ja, wenn seit dem Sendungsstart (+2 h) ein fester Termin vorbei ist, oder als Notbremse nach 11,5 h."""
     s = last_slot(now)
@@ -158,11 +195,20 @@ def rotate_due(start, now):
 def main():
     scrub()
     if os.path.exists(D + '/NOBROADCAST'): return
+    rg = rotation_game(time.time()) if GAME in ROTATION else None
+    if rg: P['slot'] = 0   # im rotierenden Betrieb wechselt alles genau zum Termin
     try: st = json.load(open(STATE))
     except Exception: st = {}
     now = time.time()
     def save():
         json.dump(st, open(STATE + '.tmp', 'w')); os.replace(STATE + '.tmp', STATE)
+    if rg and rg != GAME: return rotation_off(st, save)
+    if rg == GAME and os.path.exists(D + '/PAUSE.rot'):
+        for f in ('PAUSE', 'PAUSE.rot'):
+            try: os.remove(D + '/' + f)
+            except OSError: pass
+        st.pop('rot_ended', None); st['created_at'] = 0; save()
+        log('Rotation: %s ist dran, Encoder startet' % GAME)
     def setvid(v):
         # aktuelle Sendungs-ID fuer den Chat-Leser (server.js, VIDEO_ID_FILE): bei mehreren Sendungen auf dem Kanal zeigt /live nur eine
         try:
