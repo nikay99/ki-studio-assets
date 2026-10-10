@@ -1,6 +1,9 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Country Marble Race LIVE</title>
 <style>html,body{margin:0;background:#0b0f1e;overflow:hidden;cursor:none}canvas{display:block;position:absolute;top:0;left:0}</style>
+<script>// Notbremse (10.10. nach 15 Min. leerem Bild): startet die Seite nicht binnen 45 s (Skriptfehler beim Laden), neu laden – ohne Cache, damit eine Korrektur sofort greift
+window.__raceOK=false; setTimeout(()=>{ if(!window.__raceOK){ console.log('Rennseite startet nicht – neu laden'); location.reload() } },45000);
+window.addEventListener('error',e=>{ if(!window.__raceOK) console.log('Startfehler: '+(e.message||e)) });</script>
 <script src="/matter.min.js"></script><script src="/vendor/pixi.min.js"></script><script src="/vendor/pixi-filters.js"></script><script src="/pixi-layer.js"></script><script src="/countries.js"></script>
 </head><body><canvas id="p"></canvas><canvas id="c" width="1920" height="1080"></canvas>
 <script>
@@ -26,7 +29,7 @@ const ARCADE = Q.get('style')==='arcade';
 const BRUTAL = Q.get('style')==='brutal'||ARCADE, BDARK = Q.get('light')!=='1';   // live per Datei style=brutal (Niklas 09.10. „brutal mal live“), „lila zurück“ = style=glass
 // dunkel v3 wie Wortraten (Gemini 09.10.): schwarze Schatten, hellerer Lila-Grund, weichere Farben, helle statt cremefarbene Flächen
 const BK='#111', PAPER=ARCADE?'#0d0f18':BDARK?'#2f2858':'#fff7e0', CARDC=ARCADE?'#161926':BDARK?'#f8f4eb':'#fff', SHC=BDARK?'#000':'#111', BY=ARCADE?'#ffc93c':BDARK?'#fed439':'#ffd23f', BP=ARCADE?'#ff4d8d':BDARK?'#ff7b9c':'#ff6fb5', BC=ARCADE?'#22d3ee':BDARK?'#61d4f5':'#3ee0ff', BL=ARCADE?'#a3e635':'#b6f36a', BO=ARCADE?'#ff9f1c':'#ff8a3d', BTS=BDARK?'#ff4b72':'#ff6fb5';
-const INK=ARCADE?'#fff':BK, BGD=ARCADE?'#0d0f18':BGD, DOTC=ARCADE?'#1b2033':DOTC;   // Arcade: Schrift auf dunklen Karten weiß
+const INK=ARCADE?'#fff':BK, BGD=ARCADE?'#0d0f18':'#231c47', DOTC=ARCADE?'#1b2033':'#3a3170';   // Arcade: Schrift auf dunklen Karten weiß
 let BINK=false;   // true = Text steht auf heller Karte → dunkle Schrift
 const BINKS={'#f3effc':'#111','#fff':'#111','#ffffff':'#111','#e6e0ff':'#111','#e6e0f7':'#222','#c9c0e3':'#333','#a99fc6':'#555','#6c6390':'#777','#22182e':'#111'};
 const BDK={'#4fe0c0':'#0a7a50','#ffd166':'#9a6400','#9b82ff':'#5b2fd6','#ff5d8d':'#c8104f','#ff8fb1':'#c8104f','#67e8f9':'#086f8a','#c4b5ff':'#5b2fd6','#ffb627':'#9a6400','#ffd2bd':'#b04a00'};
@@ -629,7 +632,7 @@ const GBOX = {'#ffd70030':'rgba(255,182,39,0.16)','#ffd70033':'rgba(255,182,39,0
 // ---------- Glas-Seitenleisten wie Wortraten: kompakte Kästen (552 px), 48 px vom Rand, oben bündig ab y 150 ----------
 let sideBg=null;
 function glassSide(x,w){ if(!sideBg && BRUTAL){ sideBg=document.createElement('canvas'); sideBg.width=W; sideBg.height=H; const g=sideBg.getContext('2d');   // Papier mit Punktraster + harter Schatten der Bahn
-    g.fillStyle=PAPER; g.fillRect(0,0,W,H); g.fillStyle=BDARK?DOTC:'rgba(0,0,0,0.13)';
+    g.fillStyle=PAPER; g.fillRect(0,0,W,H); g.fillStyle=BDARK?(ARCADE?DOTC:'#4a4180'):'rgba(0,0,0,0.13)';
     for(let yy=17;yy<H;yy+=34) for(let xx=17;xx<W;xx+=34){ g.beginPath(); g.arc(xx,yy,2,0,7); g.fill() }
     if(!ARCADE){ g.fillStyle=SHC; g.beginPath(); g.roundRect(CX+10+10,TRK_Y+10,CW-20,H-TRK_Y-14,18); g.fill() } }
   if(!sideBg){ sideBg=document.createElement('canvas'); sideBg.width=W; sideBg.height=H; const g=sideBg.getContext('2d');   // einmal vorzeichnen, kein Live-Blur (GPU schonen)
@@ -1161,7 +1164,7 @@ const origNew = newRace;
 newRace = async()=>{ phase='loading'; await origNew() };
 document.fonts.load('40px "Noto Color Emoji"','🇩🇪').then(async()=>{
   try { await PX.init(document.getElementById('p'), OUT_W, OUT_H, SC, {W,H,CX,CW,OX,OY,brutal:BRUTAL,arcade:ARCADE}) } catch(e){ console.log('Pixi aus: '+e) }   // ohne WebGL: alles wie bisher auf Canvas 2D
-  await newRace(); setInterval(pollChat,500); setInterval(pollBoard,5000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
+  await newRace(); window.__raceOK=true; setInterval(pollChat,500); setInterval(pollBoard,5000); pollBoard(); pollVersion(); setInterval(pollVersion,30000);
   if(!OFFLINE) fetch('/api/clipgeom',{method:'POST',body:JSON.stringify(PORT?{x:0, w:OUT_W, h:OUT_H}:{x:CX*SC, w:CW*SC, h:H*SC})}).catch(()=>{});   // wo die 9:16-Spalte für Clips liegt
   AC.resume(); DECK.calm.g.gain.value = MUSIC_VOL; playNext(DECK.calm); setInterval(()=>setMusic(musicWant()), 500); requestAnimationFrame(loop);
 });
