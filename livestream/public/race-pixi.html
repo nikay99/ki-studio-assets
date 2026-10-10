@@ -758,7 +758,7 @@ function glassTop(){
   txt(rs,x1-26,y0+46,22,'#a99fc6','700','right');
   // Mitte: Laufband (Länder mit den meisten Siegen heute)
   // Laufband = Spieler statt Länder (Niklas 10.10.: „dass die Leute sich mehr auf dem Bildschirm sehen“): Tagespunkte mit Platz und Abzeichen
-  const L0=PORT?x0+60:x0+18+lw+24, L1=PORT?x1-14:x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
+  const L0=PORT?x0+14:x0+18+lw+24, L1=PORT?x1-14:x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
   const items=list.length? [...(board.reigning?[`🏆 Champion: ${board.reigning.user}`]:[]), ...list.map(([u,n],i)=>`${MED[i]||'#'+(i+1)} ${badge(u)}${u}  ${n} pts`), ...newFaces.map(u=>`👋 welcome ${u}!`), ...(list.length<3?[`${MED[list.length]} your name here – type your country!`]:[])] : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
   const sep='     ·     ', line=items.join(sep)+sep; ctx.font=`700 24px ${FONT}`; const lwid=ctx.measureText(line).width;
   tickX=(tickX+dt*0.045)%lwid;
@@ -769,8 +769,8 @@ function glassTop(){
   ctx.restore();
   // weiche Ränder des Laufbands (Text läuft unter Glas aus statt hart abgeschnitten)
   const fc=ARCADE?'22,25,38':BRUTAL?(BDARK?'254,212,57':'255,210,63'):'30,24,56';
-  ctx.fillStyle=fade(L0,L0+40,`rgba(${fc},1)`,`rgba(${fc},0)`); ctx.fillRect(L0,y0+6,40,h-12);
-  ctx.fillStyle=fade(L1-40,L1,`rgba(${fc},0)`,`rgba(${fc},1)`); ctx.fillRect(L1-40,y0+6,40,h-12);
+  const FW=PORT?72:40; ctx.fillStyle=fade(L0,L0+FW,`rgba(${fc},1)`,`rgba(${fc},0)`); ctx.fillRect(L0,y0+6,FW,h-12);   // breitere weiche Kante: kein hart abgeschnittenes Wort am Rand
+  ctx.fillStyle=fade(L1-FW,L1,`rgba(${fc},0)`,`rgba(${fc},1)`); ctx.fillRect(L1-FW,y0+6,FW,h-12);
   BINK=pb;
 }
 const GX0=48, GW=552, GX1=W-48-552, GTOP=150, PADX=30;
@@ -1015,6 +1015,7 @@ function drawColumn(rank){
     const a=Math.min(phaseT/30,1), w=finished[0]; if(BRUTAL){ /* Niklas 10.10.: keine große helle Fläche mehr – dunkler Schleier über der Bahn, helle Karte nur so groß wie der Inhalt */
       const tp=(board.countries||[])[0], cp=PORT&&results.length>0, bot=results.length?(cp?534:(PORT?580:590)):(tp&&!(w&&w.players.length)?690:650);
       ctx.globalAlpha=0.88*a; ctx.fillStyle=BGD; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,18); ctx.fill();
+      podRect=[SL-24-12,392+PDY2-12,SW+48+24,bot-392+24+(results.length?Math.min(cp?2:3,results.length)*36+70:0)];   /* samt Ergebniskarte darunter */   // Konfetti fliegt um die Karte herum, nicht über den Text (Niklas 10.10. „Überlagerungen fixen“)
       ctx.globalAlpha=a; ctx.save(); ctx.translate(0,PDY2); hardBox(SL-24,392,SW+48,bot-392,CARDC,18,5,10); ctx.restore(); ctx.globalAlpha=1 } else if(GLASS){ ctx.fillStyle=`rgba(21,16,38,${0.96*a})`; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=`rgba(255,255,255,${0.12*a})`; ctx.stroke() } else { ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378) }
     ctx.save(); ctx.translate(0,PDY2); ctx.globalAlpha=a; if(GLASS) inkOn(()=>glassPodium(w)); else {
     txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,420,36,chaos?'#c084fc':'#ffd700','700','center');
@@ -1142,10 +1143,10 @@ function bulbRow(x,y,w,dir=0){ const n=Math.floor(w/22), k=Math.floor(Date.now()
 function bulbRing(cx,cy,r,n){ const k=Math.floor(Date.now()/220); for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; if(Math.sin(a)>0.8) continue; bulb(cx+Math.cos(a)*r,cy+Math.sin(a)*r,(i+k)%3!==0) } }   // unten frei für den Ländernamen
 // sanftes Glimmen statt hartem Blinken (Schlussminuten, Chaos)
 const glow=(a,b)=>{ const k=(1+Math.sin(Date.now()/450))/2; return `rgba(${a.map((v,i)=>Math.round(v+(b[i]-v)*k)).join(',')},0.95)` };
-let conf=[];
+let conf=[], podRect=null;
 function confetti(n){ const cols=BRUTAL?[BY,BP,BC,BL,BO]:GLASS?['#9b82ff','#4fe0c0','#ffd166','#ff5d8d','#f3effc']:PAL===PALETTES[1]?['#ffc8dd','#7fd1e8','#ffd166','#fff']:['#ffd166','#ef476f','#2ec4b6','#fff1d0','#ff8c61'];
   for(let i=0;i<n;i++) conf.push({x:CX+Math.random()*CW, y:280-Math.random()*300, vx:(Math.random()-0.5)*2, vy:1.5+Math.random()*2.5, a:Math.random()*6, va:(Math.random()-0.5)*0.3, s:6+Math.random()*6, c:cols[i%cols.length]}) }
-function drawConfetti(){ if(!conf.length) return; ctx.save(); ctx.beginPath(); ctx.rect(CX,378,CW,H-378); ctx.clip();
+function drawConfetti(){ const pr=(phase==='podium'||phase==='loading')?podRect:null; podRect=null; if(!conf.length) return; ctx.save(); ctx.beginPath(); ctx.rect(CX,PORT?TRK_Y:378,CW,H-(PORT?TRK_Y:378)); if(pr) ctx.rect(...pr); ctx.clip(pr?'evenodd':'nonzero');
   for(const p of conf){ p.x+=p.vx+Math.sin(p.a)*0.6; p.y+=p.vy; p.a+=p.va; ctx.fillStyle=p.c; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); ctx.restore() }
   ctx.restore(); conf=conf.filter(p=>p.y<H+20) }
 
