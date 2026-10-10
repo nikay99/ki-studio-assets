@@ -33,8 +33,26 @@ const lastFan = new Map();        // user → Zeit des letzten Fanpunkts
 let st = { day: '', countryWins: {}, playerWins: {}, fans: {}, races: 0, totalRaces: 0 };
 try { st = { ...st, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }; } catch {}
 const today = () => new Date().toISOString().slice(0, 10);
-function rollDay() { if (st.day !== today()) { st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.best = {}; st.points = {}; st.races = 0; lastFan.clear(); } }
+function rollDay() { if (st.day !== today()) {
+  // Champion von gestern (Niklas 10.10. „Ränge + Begrüßung“): meiste Tagespunkte, bleibt im Bild, bis der nächste Tag einen neuen hat
+  const top = Object.entries(st.points || {}).sort((a, b) => b[1] - a[1])[0]; if (top && st.day) st.reigning = { user: top[0], pts: top[1], day: st.day };
+  st.day = today(); st.countryWins = {}; st.playerWins = {}; st.fans = {}; st.best = {}; st.points = {}; st.races = 0; lastFan.clear(); } }
 const save = () => fs.writeFile(STATE_FILE, JSON.stringify(st), () => {});
+// Spieler-Gedächtnis über Tage (Niklas 10.10. „Ränge + Begrüßung“): Tage, Serie, Rennen, Siege, Punkte gesamt → Rang
+const PLAYERS_FILE = path.join(DATA, 'players.json');
+let players = {}; try { players = JSON.parse(fs.readFileSync(PLAYERS_FILE, 'utf8')); } catch {}
+let playersTimer = null;
+const savePlayers = () => { if (!playersTimer) playersTimer = setTimeout(() => { playersTimer = null; fs.writeFile(PLAYERS_FILE, JSON.stringify(players), () => {}); }, 3000); };
+const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+const RANKS = [['Legend', 30, 500], ['Pro', 10, 150], ['Regular', 3, 30], ['Rookie', 0, 0]];   // Rang ab so vielen Tagen ODER Rennen
+const rankOf = p => p ? RANKS.find(([, d, r]) => p.days >= d || p.races >= r)[0] : 'Rookie';
+function touchPlayer(user, knownBefore) {   // bei jeder Nachricht; Rückgabe = Begrüßung, wenn heute zum ersten Mal da
+  const d = today(); let p = players[user];
+  if (!p) { p = players[user] = { days: 1, streak: 1, last: d, races: 0, wins: 0, pts: 0 }; savePlayers(); return { kind: knownBefore ? 'back' : 'first', days: 1, streak: 1, rank: 'Rookie' }; }
+  if (p.last === d) return null;
+  p.streak = p.last === yesterday() ? p.streak + 1 : 1; p.days++; p.last = d; savePlayers();
+  return { kind: 'back', days: p.days, streak: p.streak, rank: rankOf(p) };
+}
 rollDay();
 // Nation of the Hour: Siege pro volle Stunde (UTC); beim Stundenwechsel wird der Stundensieger festgehalten
 const hourKey = () => new Date().toISOString().slice(0, 13);
@@ -76,11 +94,11 @@ function uniqueName(name, cid) {
   if (!st.ids[n]) { st.ids[n] = cid; save(); }
   return n;
 }
-function addPick(user, code, back = false) {
+function addPick(user, code, back = false, greet = null) {
   fanPoint(user, code);
   picks.set(user, { code, ts: Date.now() });
   joined = [{ user, code, ts: Date.now() }, ...joined.filter(j => j.user !== user)].slice(0, 6); savePicks();
-  events.push({ id: ++evId, user, code, ...(back ? { back: 1 } : {}) }); if (events.length > 500) events.shift();
+  events.push({ id: ++evId, user, code, ...(back ? { back: 1 } : {}), ...(greet ? { greet } : {}) }); if (events.length > 500) events.shift();
   joinCount++; hourStat.joins++;
 }
 // CHEER: jede weitere Nachricht eines Mitspielers gibt seiner Kugel einen Schub – höchstens alle 10 s pro Person,
@@ -146,9 +164,10 @@ const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''
 function onChat(user, text) {
   hourStat.msgs++; hourStat.users.add(user);
   const c = countryOf(text), prev = picks.get(user), active = prev && Date.now() - prev.ts < ACTIVE_MS;
-  if (c && (!active || prev.code !== c)) addPick(user, c);
-  else if (prev && !active) addPick(user, prev.code, true);   // Rückkehrer ohne Ländernamen: mit der gemerkten Nation wieder rein
-  else if (prev) cheer(user);
+  const greet = touchPlayer(user, seen.has(user) || !!prev);
+  if (c && (!active || prev.code !== c)) addPick(user, c, false, greet);
+  else if (prev && !active) addPick(user, prev.code, true, greet);   // Rückkehrer ohne Ländernamen: mit der gemerkten Nation wieder rein
+  else { if (greet) { events.push({ id: ++evId, user, greet }); if (events.length > 500) events.shift(); } if (prev) cheer(user); }
 }
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = { ...s, since: new Date().toISOString() }; },
   onMessage: m => { if (CHAT_BOTS.test(String(m.user).replace(/^@/, '')) || isHint(m)) return; msgCount++; if (m.ts) { chatDelays.push(Date.now() - m.ts); chatDelays = chatDelays.slice(-30); } onChat(uniqueName(cleanName(m.user.replace(/^@/, '').slice(0, 20)), m.channelId), m.text); } });
@@ -227,7 +246,7 @@ http.createServer(async (req, res) => {
     rollHour();
     const k = r.double ? 2 : 1;   // Chaos-Rennen zählt doppelt
     if (r.winner) { st.countryWins[r.winner] = (st.countryWins[r.winner] || 0) + k; st.hourWins[r.winner] = (st.hourWins[r.winner] || 0) + k; }
-    for (const p of r.players || []) st.playerWins[p] = (st.playerWins[p] || 0) + k;
+    for (const p of r.players || []) { st.playerWins[p] = (st.playerWins[p] || 0) + k; if (players[p]) players[p].wins++; }
     // Ergebnis pro Spieler (Niklas 06.10. „Sichtbarkeit“): bester Platz heute, Antwort nennt ihn für die Siegerehrung
     // Punkte für jede Platzierung (Niklas 06.10.): jede Kugel hinter dir = 1 Punkt, Letzter bekommt 1, Chaos doppelt
     st.best = st.best || {}; st.points = st.points || {}; const best = {};
@@ -236,7 +255,9 @@ http.createServer(async (req, res) => {
       const pts = Math.max(1, total - x.place + 1) * k + (x.beatBots ? 10 : 0); st.points[x.user] = (st.points[x.user] || 0) + pts;
       const old = st.best[x.user]; best[x.user] = { place: x.place, best: old || null, record: !old || x.place < old, pts, points: st.points[x.user] };
       if (!old || x.place < old) st.best[x.user] = x.place;
+      const pl = players[x.user]; if (pl) { const r0 = rankOf(pl); pl.races++; pl.pts += pts; const r1 = rankOf(pl); best[x.user].rank = r1; if (r1 !== r0) best[x.user].rankUp = r1; }
     }
+    savePlayers();
     st.races++; st.totalRaces++; save(); return send(res, 200, { ...board(), best });
   }
   // Highlight-Clips: Rennseite meldet Spalten-Lage und spannende Rennen (clips.js)
@@ -251,7 +272,8 @@ function board() {
   const teams = {}, cut = Date.now() - 20 * 60 * 1000;   // aktive Spieler je Nation (gleiche 20-Min.-Regel wie die Aufstellung)
   for (const p of picks.values()) if (p.ts >= cut) teams[p.code] = (teams[p.code] || 0) + 1;
   return { teams: top(teams, 5), races: st.races, countries: top(st.countryWins, 10), players: top(st.playerWins, 5), points: top(st.points || {}, 5), fans: top(st.fans || {}, 5),
-    hour: top(st.hourWins || {}, 3), hourEnds, champ: st.champ || null };
+    hour: top(st.hourWins || {}, 3), hourEnds, champ: st.champ || null, reigning: st.reigning || null, ticker: top(st.points || {}, 20),
+    ranks: Object.fromEntries([...picks.keys()].filter(u => players[u]).map(u => [u, rankOf(players[u])])) };
 }
 
 // Statusseite nach außen: nur /s/<TOKEN>/…

@@ -270,6 +270,7 @@ async function newRace(){
   Events.on(engine,'collisionStart',onHit);
   if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
   if(finalMin()) toast(GLASS?'🔥 Final races of the hour!':'🔥 FINAL RACES of the hour – type your country!','#f87171',300);
+  rankUps.splice(0,2).forEach(s=>toast(s,'#ffd166',300));
   t=0; finished=[]; results=[]; slowT=-1; slowDone=false; timeScale=1; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
   balls.forEach(b=>vload('win-'+b.code));
   if(chaos) say(['chaos',chaos.id,'double'],2);
@@ -376,7 +377,7 @@ function step(){
     // Ergebnis für jeden Spieler: Platz (auch wer noch nicht im Ziel war, nach Lage auf der Bahn) + bester Platz heute vom Server
     results = fin.map((b,i)=>({b, place:i+1})).filter(x=>x.b.players.length).map(x=>({user:x.b.players[0], flag:x.b.flag, place:x.place, done:x.b.done, pts:ptsFor(x.place)+(x.b.beat?10:0), beat:!!x.b.beat}));
     if(w && !OFFLINE) fetch('/api/result',{method:'POST',body:JSON.stringify({winner:w.code,players:w.players,double:!!chaos, total:balls.length, places:results.map(x=>({user:x.user,place:x.place,beatBots:x.beat}))})})
-      .then(r=>r.json()).then(b=>{ board=b; for(const x of results){ const k=(b.best||{})[x.user]; if(k){ x.best=k.best; x.record=k.record && k.best!==null; x.points=k.points } } }).catch(()=>{});
+      .then(r=>r.json()).then(b=>{ board=b; for(const x of results){ const k=(b.best||{})[x.user]; if(k){ x.best=k.best; x.record=k.record && k.best!==null; x.points=k.points; x.rank=k.rank; if(k.rankUp) rankUps.push(`⬆️ ${short(x.user)} is now ${RBADGE[k.rankUp]||''} ${k.rankUp}!`) } } }).catch(()=>{});
   }
   if(phase==='podium' && phaseT>60*8){ if(reloadPending){ location.reload(); phase='loading'; return } phase='loading'; newRace()}
 }
@@ -394,6 +395,10 @@ function boost(b, user, why, k=1){
 let lastBoostSay=0; const boostSaid={};
 function sayBoost(code){ const now=Date.now(); if(!code || now-lastBoostSay<6000 || now-(boostSaid[code]||0)<20000) return;
   lastBoostSay=now; boostSaid[code]=now; vload('boost-'+code).then(b=>{ if(b) say(['boost-'+code],2) }) }   // ohne Clip still bleiben
+// Ränge über Tage (Niklas 10.10. „Ränge + Begrüßung“): Abzeichen am Namen, Begrüßung, Champion von gestern
+const RBADGE={Rookie:'🌱',Regular:'⭐',Pro:'🔥',Legend:'💎'}, rankUps=[], newFaces=[], greetAt={};
+const badge=u=>(board.reigning&&board.reigning.user===u?'🏆':'')+(RBADGE[(board.ranks||{})[u]]||'');
+const greetText=e=>{ const g=e.greet, u=short(e.user); return g.kind==='first'?`🎉 Welcome ${u}! First race`:g.streak>=2?`🔥 ${u} · ${g.streak} days in a row!`:g.days>=2?`👋 Welcome back ${u} · ${RBADGE[g.rank]||''} ${g.rank}`:`👋 Welcome back ${u}!` };
 const short=(u,n=12)=>{ u=String(u||''); return [...u].length>n?[...u].slice(0,n-1).join('')+'…':u };   // lange Namen kürzen statt abschneiden (Niklas 09.10.)
 function fitTxt(s,size,maxW,w='800'){ ctx.font=`${w} ${size}px ${FONT}`; if(ctx.measureText(s).width<=maxW) return s; let a=[...s]; while(a.length>4 && ctx.measureText(a.join('')+'…').width>maxW) a.pop(); return a.join('').trimEnd()+'…' }
 function toast(s, col='#fde047', life=240){ toasts.push({s,col,t:0,life}); if(toasts.length>2) toasts.shift() }
@@ -405,14 +410,19 @@ async function pollChat(){
       try{ if(!chatLog.length) chatLog=(await (await fetch('/api/joined')).json()).map(j=>({user:j.user,flag:flagOf(j.code),ts:j.ts})) }catch{}
       return }
     for(const e of r.events){
+      if(e.id<=lastEv) continue; lastEv=e.id;   // zwei überlappende Abrufe (alle 0,5 s) zeigten sonst dasselbe Ereignis doppelt
+      if(e.greet && e.greet.kind==='first'){ newFaces=[e.user,...newFaces.filter(u=>u!==e.user)].slice(0,3) }   // Neue fürs Laufband
+      if(e.greet){ greetAt[e.user]=Date.now() }
+      if(e.greet && !e.code){ toast(greetText(e),'#4ade80'); continue }
       const flag=flagOf(e.code), nm=NAME[e.code]||e.code;
       const mine = balls && balls.find(x=>x.players.includes(e.user));
       // Schub nur für die eigene Kugel, auf der der Spieler seit dem Start sitzt
       // Boost-Ladung (Niklas 06.10.): Chat kommt ~25 s verzögert an, deshalb lädt jede Nachricht die eigene Kugel auf (max 3).
       // Die Ladung zündet von selbst, wenn die Kugel hängt oder auf der Zielgeraden ist; was übrig bleibt, wird Startschub im nächsten Rennen.
       if(e.cheer){ const tgt = mine && !(mine.done && phase==='race') && phase!=='podium' ? mine : null;
-        if(tgt){ tgt.charge=Math.min(3,(tgt.charge||0)+1); toast(GLASS?`⚡ ${short(e.user)} boosted ${tgt.flag}  ${tgt.charge}/3`:`⚡ ${e.user} charged ${tgt.flag} ${tgt.name} (${tgt.charge}/3)`, '#22d3ee', 120) }
-        else { carry[e.user]=Math.min(3,(carry[e.user]||0)+1); toast(GLASS?`⚡ ${short(e.user)}: boost saved  ${carry[e.user]}/3`:`⚡ ${e.user}: boost saved for the next race (${carry[e.user]}/3)`, '#22d3ee', 120) }
+        const quiet = Date.now()-(greetAt[e.user]||0)<4000;   // Begrüßung nicht sofort mit der Boost-Ansage überschreiben
+        if(tgt){ tgt.charge=Math.min(3,(tgt.charge||0)+1); if(!quiet) toast(GLASS?`⚡ ${short(e.user)} boosted ${tgt.flag}  ${tgt.charge}/3`:`⚡ ${e.user} charged ${tgt.flag} ${tgt.name} (${tgt.charge}/3)`, '#22d3ee', 120) }
+        else { carry[e.user]=Math.min(3,(carry[e.user]||0)+1); if(!quiet) toast(GLASS?`⚡ ${short(e.user)}: boost saved  ${carry[e.user]}/3`:`⚡ ${e.user}: boost saved for the next race (${carry[e.user]}/3)`, '#22d3ee', 120) }
         sfx.charge(tgt?tgt.charge:carry[e.user]); sayBoost(tgt?tgt.code:e.code); continue }
       // Eigene Kugel pro Spieler (Niklas 06.10.): im Countdown sofort – freie Haus-Kugel des Landes übernehmen oder neue Kugel
       // (höchstens 6 pro Nation, 48 insgesamt); im Rennen erst ab dem nächsten (kein Aufspringen auf den Führenden)
@@ -426,14 +436,14 @@ async function pollChat(){
       if(b){
         if(mine) mine.players = [];                        // Länderwechsel: alte Kugel fährt als Haus-Kugel weiter
         b.players = [e.user];
-        toast(GLASS?(e.back?`👋 ${short(e.user)} is back!`:`${flag} ${short(e.user)} joined the race!`):e.back?`👋 welcome back ${e.user}! ${flag} racing again`:`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'racing now'});
+        if(e.greet) toast(greetText(e),'#4ade80'); else toast(GLASS?(e.back?`👋 ${short(e.user)} is back!`:`${flag} ${short(e.user)} joined the race!`):e.back?`👋 welcome back ${e.user}! ${flag} racing again`:`${flag} ${e.user} is racing for ${nm}!`, '#4ade80'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'racing now'});
       } else {
         nextUp = nextUp.filter(x=>x.user!==e.user); nextUp.push({user:e.user, code:e.code});
-        toast(GLASS?(e.back?`👋 ${short(e.user)} is back!`:`${flag} ${short(e.user)} is in the next race!`):e.back?`👋 welcome back ${e.user}! ${flag} in the next race`:`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
+        if(e.greet) toast(greetText(e),'#fde047'); else toast(GLASS?(e.back?`👋 ${short(e.user)} is back!`:`${flag} ${short(e.user)} is in the next race!`):e.back?`👋 welcome back ${e.user}! ${flag} in the next race`:`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
       }
       sfx.join(); if(Date.now()-lastWelcome>30000){ lastWelcome=Date.now(); say(['welcome']) }
     }
-    chatLog = chatLog.slice(0,6); lastEv = r.last;
+    chatLog = chatLog.slice(0,6); lastEv = Math.max(lastEv, r.last);
   }catch{}
 }
 let myVersion=null, reloadPending=false;
@@ -645,6 +655,11 @@ function glassHeader(rank){
   const cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS RACE: ${chaos.name} · WIN = x2` : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT!':'in '+cl+' races'} · WIN = x2` : null;
   if(timeScale<0.9) pill('📸 Photo finish · slow motion',MID,373,22,'#22182e','#ffd166','rgba(255,255,255,0.45)',1.5,0.9+0.1*springB(Math.min(1,(1-timeScale)/0.5),0.4,0.55));
   else if(chaosLine) txt(chaosLine,MID,372,22,'#c4b5ff','800','center',SW);
+  else if(board.reigning && !finalMin() && Math.floor(Date.now()/8000)%2){ const rg=board.reigning;
+    if(BRUTAL){ hardBox(SL-24,340,SW+48,42,BC,10,4,5,SHC); BINK=true }
+    else { ctx.fillStyle='rgba(40,32,70,0.62)'; ctx.beginPath(); ctx.roundRect(SL-24,342,SW+48,44,22); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,209,102,0.45)'; ctx.stroke() }
+    ctx.save(); ctx.letterSpacing='1.5px'; const lab='🏆 CHAMPION'; txt(lab,SL-6,371,18,'#a99fc6','800','left'); const tl=ctx.measureText(lab).width; ctx.restore();
+    const ps=`${rg.pts} pts`; txt(rg.user,SL-6+tl+12,372,22,'#f3effc','900','left',SW+30-tl-12-textW(ps,20,'900')-20); txt(ps,SR+18,372,20,'#ffd166','900','right'); BINK=false }
   else { const fin=finalMin(), hl=(board.hour||[]).slice(0,2);
     if(BRUTAL){ hardBox(SL-24,340,SW+48,42,fin?BP:BY,10,4,5,SHC); BINK=true }
     else { ctx.fillStyle='rgba(40,32,70,0.62)'; ctx.beginPath(); ctx.roundRect(SL-24,342,SW+48,44,22); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=fin?'rgba(255,93,141,0.55)':'rgba(255,255,255,0.08)'; ctx.stroke() }
@@ -690,23 +705,24 @@ const hit=(a,l)=>l.some(b=>a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h);
 // und einer feinen Farblinie (Lila → Pink → Mint), die langsam wandert. Liegt am Handy unter der Statusleiste, nur Schmuck fürs 16:9-Bild.
 let tickX=0, tickLast=0;
 function glassTop(){
-  const x0=48, x1=W-48, y0=30, h=76, now=performance.now(); const dt=tickLast?Math.min(100,now-tickLast):16; tickLast=now;
+  const x0=PORT?CX+10:48, x1=PORT?CX+CW-10:W-48, y0=30, h=76,   /* Hochformat: Leiste nur so breit wie die Spalte */ now=performance.now(); const dt=tickLast?Math.min(100,now-tickLast):16; tickLast=now;
   card(x0,y0,x1-x0,h,BY); const pb=BINK; BINK=true;
   // Farblinie unten an der Leiste
   const sh=(now/40)%(x1-x0), g=ctx.createLinearGradient(x0-sh,0,x0-sh+2*(x1-x0),0);
   ['#9b82ff','#ff5d8d','#4fe0c0','#9b82ff','#ff5d8d','#4fe0c0','#9b82ff'].forEach((c,i,a)=>g.addColorStop(i/(a.length-1),c));
   if(!BRUTAL){ ctx.save(); ctx.beginPath(); ctx.roundRect(x0,y0,x1-x0,h,28); ctx.clip(); ctx.globalAlpha=0.9; ctx.fillStyle=g; ctx.fillRect(x0,y0+h-3,x1-x0,3); ctx.restore() }
   // links: Etikett
-  const lab='🏆 TODAY'; ctx.save(); ctx.letterSpacing='2px'; ctx.font=`800 21px ${FONT}`; const lw=ctx.measureText(lab).width+36; ctx.restore();
+  const lab=PORT?'⭐ TOP':'⭐ TOP PLAYERS'; ctx.save(); ctx.letterSpacing='2px'; ctx.font=`800 21px ${FONT}`; const lw=ctx.measureText(lab).width+36; ctx.restore();
   if(BRUTAL) label(lab,x0+18+lw/2,y0+50,'#111','center');
   else { ctx.fillStyle='rgba(124,92,255,0.28)'; ctx.beginPath(); ctx.roundRect(x0+18,y0+18,lw,38,19); ctx.fill(); ctx.strokeStyle='rgba(155,130,255,0.55)'; ctx.lineWidth=1.5; ctx.stroke();
   label(lab,x0+18+lw/2,y0+44,'#e6e0ff','center') }
   // rechts: Rennen heute
-  const rs=`${board.races||0} races today`; ctx.font=`700 22px ${FONT}`; const rw=ctx.measureText(rs).width;
+  const rs=PORT?'':`${board.races||0} races today`; ctx.font=`700 22px ${FONT}`; const rw=ctx.measureText(rs).width;
   txt(rs,x1-26,y0+46,22,'#a99fc6','700','right');
   // Mitte: Laufband (Länder mit den meisten Siegen heute)
-  const L0=x0+18+lw+24, L1=x1-26-rw-30, list=(board.countries||[]).slice(0,10);
-  const items=list.length? list.map(([c,n],i)=>`${i===0?'👑 ':''}${flagOf(c)} ${NAME[c]||c}  ${n} ${n===1?'win':'wins'}`) : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
+  // Laufband = Spieler statt Länder (Niklas 10.10.: „dass die Leute sich mehr auf dem Bildschirm sehen“): Tagespunkte mit Platz und Abzeichen
+  const L0=x0+18+lw+24, L1=x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
+  const items=list.length? [...(board.reigning?[`🏆 Champion: ${board.reigning.user}`]:[]), ...list.map(([u,n],i)=>`${MED[i]||'#'+(i+1)} ${badge(u)}${u}  ${n} pts`), ...newFaces.map(u=>`👋 welcome ${u}!`)] : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
   const sep='     ·     ', line=items.join(sep)+sep; ctx.font=`700 24px ${FONT}`; const lwid=ctx.measureText(line).width;
   tickX=(tickX+dt*0.045)%lwid;
   ctx.save(); ctx.beginPath(); ctx.rect(L0,y0+4,L1-L0,h-8); ctx.clip();
@@ -834,7 +850,7 @@ function draw(){
     const taken=[], up=b=>b.position.y-b.circleRadius-14-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0);
     for(const b of rank) if((b.players.length||b.bot) && b.position.y>camY-40 && b.position.y<camY+H/camZ+40 && !(b.bot&&b.done)){
       const me=b.players.length, boo=me&&b.boostT>0&&!b.done, room=(TW-152)/camZ-27, pts=me&&b.done&&b.pts?`  +${b.pts}`:'';
-      const s=boo ? '⚡ '+fitTxt(short(b.players[0],10),24,room-textW('⚡   BOOST',24,'800'))+'  BOOST' : me ? fitTxt(who(b),24,room-textW(pts,24,'800'))+pts : fitTxt('🤖 '+b.bot,24,room);
+      const s=boo ? '⚡ '+fitTxt(short(b.players[0],10),24,room-textW('⚡   BOOST',24,'800'))+'  BOOST' : me ? fitTxt(badge(b.players[0])+who(b),24,room-textW(pts,24,'800'))+pts : fitTxt('🤖 '+b.bot,24,room);
       ctx.font=`800 24px ${FONT}`; const w=ctx.measureText(s).width+27, x=Math.min(Math.max(b.position.x,camX+w/2+128/camZ),camX+TW/camZ-w/2-24/camZ)   /* links Platz für die Fortschrittsleiste */, box={x:x-w/2,y:up(b)-27,w,h:37};
       if(hit(box,taken)) continue; taken.push(box);
       if(boo){ const tt=(60-b.boostT)/60; pill(s,x,up(b),24,'#0f2a26','#4fe0c0','rgba(255,255,255,0.45)',1.5,0.85+0.15*springB(tt,0.35,0.55)) }
@@ -926,9 +942,10 @@ function drawColumn(rank){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
     const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle=GLASS?'rgba(21,16,38,0.45)':'rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
     if(GLASS){   // Countdown in Glas-Scheibe, darunter EINE Hinweis-Pille über dem Handy-Chat (y < 615)
-      if(BRUTAL){ ctx.fillStyle=BK; ctx.beginPath(); ctx.arc(MID+7,519,62,0,7); ctx.fill(); ctx.fillStyle=n>0?'#fff':BL; ctx.beginPath(); ctx.arc(MID,512,62,0,7); ctx.fill(); ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.stroke() }
-      else { ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,512,62,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke() }
-      inkOn(()=>txt(n>0?String(n):'GO!',MID,n>0?538:532,n>0?72:52,n>0?'#fff':BRUTAL?'#111':'#4fe0c0','900','center'));
+      const CY=PORT?546:512;   // Hochformat: Countdown tiefer, damit die Ansage darüber frei bleibt (noch über dem Handy-Chat)
+      if(BRUTAL){ ctx.fillStyle=BK; ctx.beginPath(); ctx.arc(MID+7,CY+7,62,0,7); ctx.fill(); ctx.fillStyle=n>0?'#fff':BL; ctx.beginPath(); ctx.arc(MID,CY,62,0,7); ctx.fill(); ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.stroke() }
+      else { ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,CY,62,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke() }
+      inkOn(()=>txt(n>0?String(n):'GO!',MID,CY+(n>0?26:20),n>0?72:52,n>0?'#fff':BRUTAL?'#111':'#4fe0c0','900','center'));
       const np=mine.length, hint = chaos ? [`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,'#c4b5ff'] : (!np && balls.some(b=>b.bot)) ? ['🤖 Beat the bots! Type your country','#67e8f9']
         : [np ? `⭐ ${np} ${np===1?'PLAYER':'PLAYERS'} IN THIS RACE · chat = ⚡ boost` : '💬 chat = ⚡ boost your ball','#c4b5ff'];
       ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
@@ -994,7 +1011,7 @@ function glassPodium(w){
     card(SL-16,y0,SW+32,h);
     results.slice(0,n).forEach((x,j)=>{ const ry=y0+30+j*rh, pts=`+${x.pts}${x.beat?' 🏆':''}`;
       txt(`#${x.place}`,SL+2,ry,20,x.place<=3?'#ffd166':'#a99fc6','900','left');
-      txt(`${x.flag} ${x.user}`,SL+54,ry,22,'#f3effc','700','left',SW-54-textW(pts,22,'800')-16);
+      txt(`${x.flag} ${badge(x.user)}${x.user}`,SL+54,ry,22,'#f3effc','700','left',SW-54-textW(pts,22,'800')-16);
       txt(pts,SR-2,ry,22,'#4fe0c0','800','right') });
     if(more) txt(`+${more} more ${more===1?'player':'players'}`,MID,y0+30+n*rh,18,'#a99fc6','700','center') }
   else if(top && !w?.players.length){ const s=`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} · ${top[1]}`; txt(s,MID,662,20,'#a99fc6','700','center',SW) }
