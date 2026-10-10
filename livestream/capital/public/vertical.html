@@ -134,8 +134,8 @@ const sfx={reveal:i=>bell(PENTA[i%PENTA.length],.35,.07), hint:()=>{bell(659.25,
   correct:p=>{const b=[1046.5,880,783.99][Math.min(p,2)];bell(b,.6,.14);bell(b*1.5,.7,.08,.07)},
   start:()=>[0,2,4].forEach((n,i)=>bell(PENTA[n],.5,.08,i*.08)), end:()=>[0,2,4,5].forEach((n,i)=>bell(PENTA[n],.9,.1,i*.09)), miss:()=>bell(392,.8,.08)};
 const music=new Audio(); music.volume=.32; let mlist=[], mi=0;
-async function nextSong(){ try{ if(!mlist.length) mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
-music.onended=nextSong; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
+async function nextSong(){ try{ if(!mlist.length||mi>=mlist.length){ mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); mi=0 } if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
+music.onended=nextSong; music.onerror=()=>{mlist=[];setTimeout(nextSong,3000)}; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
 
 const fx=$('fx').getContext('2d'); let parts=[];
 function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627','#5ab4ff'];for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,v=8+Math.random()*12;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:cols[i%5],r:Math.random()*5+4,a:Math.random()*6,l:80+Math.random()*40})}}

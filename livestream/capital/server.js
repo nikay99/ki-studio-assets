@@ -6,6 +6,8 @@ const { COUNTRY_LIST, flagOf } = require('../public/countries.js');
 const chat = require('../chat.js');
 
 const DATA = process.env.DATA_DIR || '/var/lib/marble-capital';
+// Eigene Musik dieses Streams (DATA/music, von sync-music.sh aus capital/music.json), sonst die gemeinsame Playlist
+const musicDir = () => { const own = path.join(DATA, 'music'); try { if (fs.readdirSync(own).some(x => /\.mp3$/.test(x))) return own; } catch {} return process.env.MUSIC_DIR || '/var/lib/marble/music'; };
 const CHANNEL = process.env.CHANNEL || '';
 const PORT = +process.env.PORT || 8093;
 const PUB = path.join(__dirname, 'public');
@@ -142,8 +144,8 @@ http.createServer((req, res) => {
   if (u.pathname === '/api/board') return send(res, 200, board());
   if (u.pathname === '/api/feed') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: feedId, feed: feed.filter(f => f.id > since).slice(-20) }); }
   if (u.pathname === '/api/status') return send(res, 200, { chatStatus, msgCount, round: round && round.n });
-  if (u.pathname === '/api/music') return fs.readdir(path.join(process.env.MUSIC_DIR || '/var/lib/marble/music'), (e, f) => send(res, 200, (f || []).filter(x => /\.(mp3|ogg)$/.test(x))));
-  if (u.pathname.startsWith('/music/')) { const f = path.join(process.env.MUSIC_DIR || '/var/lib/marble/music', path.basename(decodeURIComponent(u.pathname))); return fs.readFile(f, (e, b) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': 'audio/mpeg' }); res.end(b); }); }
+  if (u.pathname === '/api/music') return fs.readdir(musicDir(), (e, f) => send(res, 200, (f || []).filter(x => /\.(mp3|ogg)$/.test(x))));
+  if (u.pathname.startsWith('/music/')) { const f = path.join(musicDir(), path.basename(decodeURIComponent(u.pathname))); return fs.readFile(f, (e, b) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': 'audio/mpeg' }); res.end(b); }); }
   if (u.pathname.startsWith('/fonts/')) return fs.readFile(path.join(WORDS_PUB, 'fonts', path.basename(u.pathname)), (e, b) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': 'font/woff2' }); res.end(b); });
   const file = path.join(PUB, path.normalize(u.pathname === '/' ? '/vertical.html' : u.pathname).replace(/^(\.\.[/\\])+/, ''));
   if (!file.startsWith(PUB)) { res.writeHead(403); return res.end(); }

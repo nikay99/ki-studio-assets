@@ -117,8 +117,8 @@ const sfx={
   miss:()=>bell(392,.8,.08),
 };
 const music=new Audio(); music.volume=.32; let mlist=[], mi=0;
-async function nextSong(){ try{ if(!mlist.length) mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
-music.onended=nextSong; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
+async function nextSong(){ try{ if(!mlist.length||mi>=mlist.length){ mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); mi=0 } if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
+music.onended=nextSong; music.onerror=()=>{mlist=[];setTimeout(nextSong,3000)}; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
 
 // ---------- Konfetti nur für den Erstplatzierten und die Auflösung (sparsam, sonst stumpft es ab) ----------
 const fx=$('fx').getContext('2d'); let parts=[];
