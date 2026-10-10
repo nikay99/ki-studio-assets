@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Guess the Capital Short</title>
+<style>
+/* Quiz-Short aus dem Spiel „Guess the Capital“ (Werbung für den Stream, 10.10.), Kopie der Country-Short-Vorlage (country/short/short.html). Bild 1080×1920, zeitgesteuert über render(t) (Sekunden),
+   damit render-short.js jedes Bild einzeln aufnehmen kann. Shorts-Safe-Zone: x 60–940, y 380–1500 (Feed verdeckt oben bis y≈370) (unten Titel, rechts Knöpfe). */
+@font-face{font-family:Inter;src:url(../../words/public/fonts/InterVariable.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--paper:#173d3a;--dot:#245a55;--card:#f8f4eb;--y:#fed439;--p:#ff7b9c;--c:#61d4f5;--l:#b6f36a;--o:#ff8a3d;--sea:#d9f1fb}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper);font-family:Inter,"Noto Color Emoji",sans-serif;cursor:none;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;inset:0;background-image:radial-gradient(var(--dot) 2.4px,transparent 2.4px);background-size:36px 36px}
+.b{border:6px solid #111;box-shadow:10px 10px 0 #000;border-radius:18px}
+#hook{position:absolute;top:385px;left:60px;width:880px;display:flex;flex-direction:column;align-items:center;gap:14px}
+#hook .l1,#hook .l2{font-weight:900;color:#111;text-transform:uppercase;letter-spacing:-.02em;line-height:1;white-space:nowrap}
+#hook .l1{font-size:70px;background:var(--y);padding:10px 26px 14px;transform:rotate(-2deg)}
+#hook .l2{font-size:72px;background:var(--p);padding:8px 24px 12px;transform:rotate(1.5deg)}
+#map{position:absolute;top:605px;left:60px;width:880px;height:470px;overflow:hidden;background:var(--sea);
+  background-image:radial-gradient(#b4e2f3 2px,transparent 2px);background-size:24px 24px}
+#shape{position:absolute;left:40px;top:24px;width:788px;height:410px}
+#shape .sh{fill:#000}#shape .fg{fill:var(--y);stroke:#111;stroke-width:5;stroke-linejoin:round}
+#shape.solved .fg{fill:var(--l)}
+#count{position:absolute;top:545px;left:800px;width:180px;height:180px;border-radius:50%;background:#ff3b3b;color:#fff;font-weight:900;font-size:116px;
+  display:flex;align-items:center;justify-content:center;border:7px solid #111;box-shadow:8px 8px 0 #000;z-index:3}
+#shape .pt{fill:#ff3b3b;stroke:#111;stroke-width:5}#shape .ring{fill:none;stroke:#ff3b3b;stroke-width:6}
+#shape .lab rect{fill:#fff;stroke:#111;stroke-width:6}#shape .lab text{font-weight:900;fill:#111}
+#flag{position:absolute;left:24px;top:24px;font-size:150px;line-height:1;background:#fff;border:6px solid #111;border-radius:16px;box-shadow:8px 8px 0 #000;padding:6px 20px;opacity:0;z-index:2}
+#hints{position:absolute;top:1100px;left:60px;width:880px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.hint{height:150px;display:flex;flex-direction:column;justify-content:center;padding:0 16px;background:#e7e2d6;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000;white-space:nowrap;overflow:hidden}
+.hint .k{font-size:22px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.hint .v{font-size:40px;font-weight:900;overflow:hidden;text-overflow:ellipsis}
+.hint.open{background:var(--c)}
+#tiles{position:absolute;top:1268px;left:60px;width:880px;height:118px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:10px 22px}
+.word{display:flex;gap:10px}
+.t{display:flex;align-items:center;justify-content:center;font-weight:900;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000;color:#111}
+.t.on{background:var(--y)}.t.solved{background:var(--l)}
+#timer{position:absolute;top:1400px;left:70px;width:860px;height:30px;background:var(--card);border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;overflow:hidden}
+#bar{height:100%;background:var(--p)}
+#cta{position:absolute;top:1446px;left:60px;width:880px;text-align:center;font-size:40px;font-weight:900;color:#fff}
+#cta b{background:var(--y);color:#111;padding:2px 14px;border:4px solid #111;border-radius:8px}
+#end{position:absolute;inset:0;background:rgba(15,30,42,.82);display:flex;align-items:center;justify-content:center;opacity:0;z-index:5}
+#endcard{width:880px;padding:50px 40px 56px;background:var(--card);display:flex;flex-direction:column;align-items:center;gap:30px;text-align:center}
+.live{display:inline-flex;align-items:center;gap:14px;background:#ff3b3b;color:#fff;font-weight:900;font-size:52px;padding:8px 26px;border:6px solid #111;border-radius:12px;box-shadow:8px 8px 0 #000;transform:rotate(-3deg)}
+.live i{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid #111}
+#endcard h2{font-size:82px;font-weight:900;line-height:1.02;letter-spacing:-.03em;color:#111}
+#endcard .arrow{font-size:52px;font-weight:900;background:var(--y);padding:8px 24px;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000}
+#endcard .games{font-size:36px;font-weight:800;color:#333}
+canvas{position:absolute;inset:0;z-index:4;pointer-events:none}
+#flash{position:absolute;inset:-40px;background:#fff;opacity:0;z-index:4;pointer-events:none}
+#vig{position:absolute;inset:-40px;opacity:0;z-index:3;pointer-events:none;box-shadow:inset 0 0 220px 60px rgba(255,40,40,.75)}
+</style></head>
+<body><div id="stage">
+  <div id="hook"><div class="b l1" id="h1">What's the capital of</div><div class="b l2" id="h2"></div></div>
+  <div class="b" id="map"><svg id="shape" viewBox="0 0 820 335" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="flag"></div></div>
+  <div id="count">5</div>
+  <div id="hints"></div>
+  <div id="tiles"></div>
+  <div id="timer"><div id="bar"></div></div>
+  <div id="cta">💬 <b>comment</b> your answer!</div>
+  <div id="flash"></div><div id="vig"></div>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+  <div id="end"><div class="b" id="endcard"><div class="live"><i></i>LIVE 24/7</div><h2>Guess capitals live with the chat</h2>
+    <div class="arrow">→ link in description</div><div class="games">Guess the Capital · Country · Word</div></div></div>
+</div>
+<script>
+// Ablauf (Sekunden): 0 Land + Umriss + Hook, 1–6 Countdown 5…1 mit Tipps (2,0 Anfangsbuchstabe / 3,2 Punkt im Umriss / 4,4 Endbuchstabe
+// bzw. „Not Sydney“) und Buchstaben, 6 Auflösung mit Namensschild am Punkt, 10 Endkarte, Ende 15
+const P=new URLSearchParams(location.search), CODE=P.get('c')||'AU', COUNTRY=(P.get('n')||'Australia').toUpperCase(), CAP=(P.get('cap')||'Canberra').toUpperCase(), TRAP=P.get('trap')||'';
+const T={hint:[2.0,3.2,4.4], rev0:2.5, rev1:5.5, solve:6.0, end:10.0, total:15.0};
+const $=id=>document.getElementById(id), flagOf=c=>String.fromCodePoint(...[...c].map(x=>0x1F1E6+x.charCodeAt(0)-65));
+const pop=x=>x<=0?0:x>=1.2?1:1-Math.exp(-7*x)*Math.cos(12*x);
+let SH=null, tiles=[], order=[], CAPXY=[0,0], VB=null;
+async function init(){
+  SH=await (await fetch('../public/shapes.json')).json();
+  const s=SH.shapes[CODE]; CAPXY=s.cap;
+  $('shape').innerHTML=`<path class="sh" transform="translate(10 10)" d="${s.d}"/><path class="fg" d="${s.d}"/><g id="dot"></g><g class="lab" id="lab"></g>`;
+  const bb=$('shape').querySelector('.fg').getBBox(), pad=30; VB=[bb.x-pad,bb.y-pad,bb.width+2*pad+10,bb.height+2*pad+10];
+  $('shape').setAttribute('viewBox',VB.join(' '));
+  $('h2').textContent=flagOf(CODE)+' '+COUNTRY+'?';
+  const words=CAP.split(' '), n=Math.max(...words.map(w=>w.length)), L=CAP.replace(/ /g,'').length; let sz=Math.min(104,Math.floor((880-(L-1)*10-(words.length-1)*22)/L));
+  if(sz<58) sz=Math.min(80,Math.floor((880-(n-1)*10)/n));
+  let k=0; $('tiles').innerHTML=words.map(w=>`<div class="word">${[...w].map(()=>`<div class="t" data-i="${k++}" style="width:${sz}px;height:${Math.round(sz*1.12)}px;font-size:${Math.round(sz*.6)}px"></div>`).join('')}</div>`).join('');
+  tiles=[...document.querySelectorAll('.t')]; const letters=CAP.replace(/ /g,'');
+  // Anfangsbuchstabe kommt mit Tipp 1, danach die Hälfte der übrigen in fester Reihenfolge
+  order=[...letters].map((_,i)=>i).filter(i=>i>0).sort((a,b)=>((a*7919)%13)-((b*7919)%13)).slice(0,Math.floor((letters.length-1)/2));
+  tiles.forEach((el,i)=>el.dataset.ch=letters[i]);
+  window.READY=true;
+}
+function hints(t){
+  const last=CAP.replace(/ /g,'').slice(-1);
+  const it=[['🔤 Starts with',CAP[0],T.hint[0]],['📍 Location','see the dot',T.hint[1]],TRAP?['🤯 Tricky','Not '+TRAP,T.hint[2]]:['🔚 Ends with',last,T.hint[2]]];
+  $('hints').innerHTML=it.map(([k,v,at])=>{ const o=t>=at, s=o?.8+.2*pop(t-at):1; return `<div class="hint ${o?'open':''}" style="transform:scale(${s})"><div class="k">${k}</div><div class="v" style="font-size:${o&&v.length>8?Math.max(26,Math.floor(40*8/v.length)):o&&v.length<=2?64:40}px">${o?v:'🔒'}</div></div>`}).join('');
+}
+function dot(t){
+  const [x,y]=CAPXY, u=VB[2]/788;   // Größen relativ zur viewBox, damit der Punkt bei kleinen und großen Ländern gleich groß wirkt
+  if(t<T.hint[1]){ $('dot').innerHTML=''; return }
+  const rp=((t-T.hint[1])%1)/1, sc=pop(t-T.hint[1]);
+  $('dot').innerHTML=`<circle class="ring" cx="${x}" cy="${y}" r="${(20+40*rp)*u}" style="opacity:${1-rp};stroke-width:${6*u}"/><circle class="pt" cx="${x}" cy="${y}" r="${22*u*sc}" style="stroke-width:${5*u}"/>`;
+}
+function label(t){
+  if(t<T.solve){ $('lab').innerHTML=''; return }
+  const [x,y]=CAPXY, u=VB[2]/788, fs=62*u, w=(CAP.length*42+90)*u, h=88*u, sc=pop(t-T.solve);
+  const lx=Math.max(VB[0]+8*u,Math.min(VB[0]+VB[2]-w-8*u,x-w/2)), ly=y-VB[1]>VB[3]*.4?y-h-30*u:y+30*u;
+  $('lab').innerHTML=`<g transform="translate(${lx+w/2} ${ly+h/2}) scale(${sc}) translate(${-w/2} ${-h/2})"><rect width="${w}" height="${h}" rx="${12*u}" style="stroke-width:${6*u}"/><text x="${w/2}" y="${h*.7}" text-anchor="middle" style="font-size:${fs}px">★ ${CAP}</text></g>`;
+}
+const fx=$('fx').getContext('2d'); const R=(i=>()=>(i=(i*16807)%2147483647)/2147483647)(42);
+const parts=[...Array(120)].map((_,i)=>({a:-Math.PI/2+(R()-.5)*2.4,v:14+R()*16,c:['#ff5d8d','#7c5cff','#2ec4a6','#ffb627','#5ab4ff'][i%5],r:5+R()*6,s:R()*6}));
+function confetti(t){ fx.clearRect(0,0,1080,1920); const d=t-T.solve; if(d<0||d>3) return;
+  for(const p of parts){ const f=d*30, x=540+Math.cos(p.a)*p.v*f*.97, y=840+Math.sin(p.a)*p.v*f+.19*f*f; fx.save(); fx.translate(x,y); fx.rotate(p.s+f*.15); fx.globalAlpha=Math.max(0,1-d/3); fx.fillStyle=p.c; fx.fillRect(-p.r,-p.r/2,p.r*2,p.r); fx.restore() } }
+function render(t0){
+  const back=t0>T.total-0.4, t=back?0:t0;
+  const ph=t0/T.total; $('stage').style.backgroundPosition=`${ph*720}px ${ph*360}px`; $('map').style.backgroundPosition=`${-ph*480}px ${ph*240}px`;
+  const breathe=1+.02*Math.sin(ph*2*Math.PI*5);
+  const solved=t>=T.solve;
+  $('h1').textContent=solved?`It's ${CAP}!`:"What's the capital of";
+  $('h2').textContent=solved?(TRAP?`Not ${TRAP} 🤯`:'Did you get it? 👇'):flagOf(CODE)+' '+COUNTRY+'?';
+  $('hook').style.transform=`scale(${solved?.85+.15*pop(t-T.solve):1+.04*Math.max(0,Math.sin(t*Math.PI*2*128/60))})`;
+  const slam=t<.3?1.3-.3*(t/.3)**2:1, shakeAmp=t>=.3&&t<.8?26*Math.exp(-(t-.3)*9):0, revAmp=t>=T.solve&&t<T.solve+.6?30*Math.exp(-(t-T.solve)*8):0,
+        tense=t>=4&&t<T.solve?6*Math.abs(Math.sin(t*40)):0, A=shakeAmp+revAmp+tense;
+  $('stage').style.transform=A?`translate(${A*Math.sin(t*90)}px,${A*Math.cos(t*73)}px)`:'none';
+  $('flash').style.opacity=t>=.3&&t<.5?.55*(1-(t-.3)/.2):t>=T.solve&&t<T.solve+.25?.8*(1-(t-T.solve)/.25):0;
+  $('vig').style.opacity=t>=3&&t<T.solve?(t-3)/3*(.6+.4*Math.abs(Math.sin(t*Math.PI))):0;
+  $('shape').style.transform=`scale(${slam*breathe})`; $('shape').classList.toggle('solved',solved);
+  const c=Math.max(1,Math.ceil(6-Math.max(1,t))); $('count').textContent=solved?'✓':c; $('count').style.background=solved?'#2ec27e':'#ff3b3b';
+  const ct=t<1?0:(t-1)%1; $('count').style.transform=`scale(${solved?1:1+.18*(1-pop(ct*1.4))})`;
+  hints(t); dot(t); label(t);
+  const nrev=t<T.rev0?0:Math.min(order.length,Math.floor((t-T.rev0)/((T.rev1-T.rev0)/Math.max(1,order.length)))+1);
+  tiles.forEach((el,i)=>{ const k=order.indexOf(i), on=solved||(i===0&&t>=T.hint[0])||(k>=0&&k<nrev); el.textContent=on?el.dataset.ch:''; el.className='t'+(solved?' solved':on?' on':'');
+    const at=solved?T.solve+i*.05:i===0?T.hint[0]:T.rev0+k*((T.rev1-T.rev0)/order.length); el.style.transform=on?`scale(${.75+.25*pop(t-at)})`:'none' });
+  $('bar').style.width=(solved?0:Math.max(0,1-(t-1)/5)*100)+'%';
+  confetti(t);
+  const e=back?(T.total-t0)/.4:t<T.end?0:Math.min(1,(t-T.end)/.3); $('end').style.opacity=e; $('endcard').style.transform=`scale(${(back?1:.7+.3*pop(t-T.end))*(1+.03*Math.sin(ph*2*Math.PI*12))})`;
+}
+init();
+</script></body></html>
