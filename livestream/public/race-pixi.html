@@ -41,7 +41,7 @@ const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 cv.width = OUT_W; cv.height = OUT_H;
 const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
 
-let engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, camX = 0, camZ = 1, trackLayer, trackSeed = 0, rand;
+let bossFt=-1, engine, balls, statics, spinners, t, finished, raceNo = 0, phase, phaseT, chatLog = [], camY = 0, camX = 0, camZ = 1, trackLayer, trackSeed = 0, rand;
 let thirdT = 0, leader = null, lastEv = -1, board = {races:0, countries:[], players:[], fans:[]}, nextUp = [], toasts = [];
 
 function shuffle(a,r=Math.random){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}   // fair mischen (sort(()=>rand()-0.5) bevorzugt manche Plätze)
@@ -200,11 +200,11 @@ function buildTrack(){
   }
   trackName = used.join(' · ');
   // Schluss (fest): feine Stifte, Trichter, Zielkanal
-  for(let r=0;r<4;r++) for(let c=0;c<11;c++){const x=48+c*56+(r%2?28:0); if(x>=90&&x<=TW-90) T.peg(x,6950+r*80,6,PAL.peg)}
+  /* feines Stifte-Feld vor dem Ziel entfernt (Gemini 10.10.: „Schwamm, der das Tempo schluckt“, Niklas „Beides“) */
   T.noses(6990, 7200, 160);
   // Offener Zieleinlauf (Niklas 08.10.): statt Trichter + engem Kanal ein paar Bumper über die volle Breite, Ziellinie über die ganze Bahn
-  for(let r=0;r<3;r++) for(let c=0;c<4;c++){ const x=125+c*120+(r%2?60:0); if(x<=TW-110) T.peg(x,7380+r*150,16,PAL.bump) }
-  T.noses(7450, 7800, 150);
+  for(let r=0;r<2;r++) for(let c=0;c<4;c++){ const x=125+c*120+(r%2?60:0); if(x<=TW-110) T.peg(x,7420+r*170,16,PAL.bump) }   // 2 statt 3 Reihen: schnellerer Zieleinlauf
+  T.noses(7650, 7800, 150);
   T.wall(TW/2,WORLD_H-20,TW,40);
   placeZones();
   return [S,sp];
@@ -243,6 +243,11 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
   for(const s of statics) if(!s.gate && !s.spin && !s.slide) drawBody(g,s);   // Paddel und Schranken bewegen sich, werden live gezeichnet
 }
 
+function addBoss(){
+  const n=balls.length, b = Bodies.circle(60+(n%12)*44, 100+Math.floor(n/12)*44, R*1.5, {restitution:0.6, friction:0.005, frictionAir:0.006, density:0.003});
+  Object.assign(b,{code:'BOSS', flag:'💀', name:'BOSS', players:[], still:0, trail:[], bot:null, boss:true});
+  balls.push(b); Composite.add(engine.world,b); return b;
+}
 function addBall(code, players, i, bot){
   const pos = i===undefined ? {x:60+rand()*488, y:40} : {x:60+(i%12)*44+rand()*4, y:100+Math.floor(i/12)*44};
   const b = Bodies.circle(pos.x, pos.y, R, {restitution:0.75, friction:0.005, frictionAir:0.004, density:0.002});   // 0.75 = Flummi (Niklas), vorher 0.45
@@ -267,6 +272,7 @@ async function newRace(){
   Composite.add(engine.world, statics);
   balls = [];
   shuffle(lu.slice(),rand).forEach(({code,players,bot},i)=>addBall(code,players,i,bot));
+  addBoss();   // Boss-Kugel (Niklas 10.10. nach Gemini-Runde 2): Gegner für jeden Mitspieler, wer vor ihr im Ziel ist, bekommt +10
   raceN = (board.races||0)+1; chaos = (!OFFLINE && chaosLeft()===0) ? CHAOS[Math.floor(Math.random()*CHAOS.length)] : null;
   if(chaos){ if(chaos.id==='moon') engine.gravity.y=0.75; if(chaos.id==='bounce') for(const b of balls) b.restitution=0.92; sfx.chaos() }
   Events.on(engine,'collisionStart',onHit);
@@ -288,7 +294,7 @@ function assist(bs, tt, nFin){
   const run=bs.filter(b=>!b.done).sort((a,b)=>b.position.y-a.position.y);
   run.forEach((b,i)=>{ const gap=i<3&&run[4]?b.position.y-run[4].position.y:0; b.frictionAir=0.004+Math.min(Math.max(gap-200,0)/800,1)*0.022;
     b.crown = i===0 && !nFin;
-    const want = (b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1)*(b.fx==='shrink'?0.7:1), cur=b.circleRadius/R;
+    const want = (b.boss?1.5:1)*(b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1)*(b.fx==='shrink'?0.7:1), cur=b.circleRadius/R;
     if(Math.abs(want-cur)>0.005){ const f=Math.min(Math.max(want/cur,0.992),1.008); Body.scale(b,f,f) }
     if(b.turboT>0){ b.turboT--; b.frictionAir=0.001; b.force.y += b.mass*0.0011;   // ~85 % mehr Schwerkraft
       if(b.velocity.y>17) Body.setVelocity(b,{x:b.velocity.x,y:17}) }
@@ -336,7 +342,7 @@ function step(){
   if(phase==='race'){ const tb=assist(balls, t, finished.length);
     if(tb){ sfx.turbo(); if(tb.players.length) toast(GLASS?`🔥 TURBO for ${tb.flag} ${short(tb.players[0])}!`:`🔥 TURBO for ${tb.flag} ${tb.name}! (${tb.players[0]})`,'#fb923c',120) }
     for(const [b,z] of zoneStep(balls)){ const Z=ZONES[z.type]||PORTAL; if(z.type==='speed') sfx.boost();
-      if(b.players.length) toast(GLASS?`${Z.icon} ${short(b.players[0])} hit ${Z.name.toLowerCase()}!`:`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
+      if(b.players.length && !PORT) toast(GLASS?`${Z.icon} ${short(b.players[0])} hit ${Z.name.toLowerCase()}!`:`${Z.icon} ${b.players[0]} hit ${Z.name}!`, Z.col, 120) } }
   if(phase==='race') for(const b of balls){ if(b.done || !(b.charge>0) || !b.players.length) continue;
     b.chargeCd=(b.chargeCd||0)-1; if(b.chargeCd>0) continue;
     const why = b.startPush && t>45 ? 'start' : b.still>30 ? 'stuck' : b.position.y>FINISH_Y-1400 ? 'final' : null;
@@ -354,11 +360,12 @@ function step(){
   timeScale += ((slowT>=0 ? 0.4 : 1)-timeScale)*0.2;
   for(const b of balls){
     if(b.done) continue;
+    if(b.position.y>FINISH_Y && b.boss){ b.done=true; b.ft=t; bossFt=t; continue }   // Boss läuft ein, zählt aber nicht als Platz
     if(b.position.y>FINISH_Y){
       b.done=true; b.ft=t; endFx(b); finished.push(b); const k=finished.length; if(k===1) winAt=t;
       if(k<=3) sfx.finish(k);
-      if(b.players.length && phase==='race') { b.pts=ptsFor(k); if(balls.some(x=>x.bot) && !finished.some(x=>x.bot)){ b.beat=true; b.pts+=10 }
-        toast(GLASS?(b.beat?`🏆 ${short(b.players[0])} beat the bots +${b.pts}`:`🏁 ${short(b.players[0])} #${k}  +${b.pts}`):b.beat?`🏆 ${b.players[0]} beat the bots! #${k}  +${b.pts} pts`:`🏁 ${b.flag} ${b.players[0]} #${k}/${balls.length}  +${b.pts} pts`, b.beat||k<=3?'#4ade80':'#e2e8f0', b.beat?240:undefined) }   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
+      if(b.players.length && phase==='race') { b.pts=ptsFor(k); const bs=balls.find(x=>x.boss); if((balls.some(x=>x.bot) && !finished.some(x=>x.bot)) || (bs && !bs.done)){ b.beat=true; b.beatBoss=!!(bs && !bs.done); b.pts+=10 }
+        toast(GLASS?(b.beat?`${b.beatBoss?'💀':'🏆'} ${short(b.players[0])} beat the ${b.beatBoss?'BOSS':'bots'} +${b.pts}`:`🏁 ${short(b.players[0])} #${k}  +${b.pts}`):b.beat?`🏆 ${b.players[0]} beat the bots! #${k}  +${b.pts} pts`:`🏁 ${b.flag} ${b.players[0]} #${k}/${balls.length}  +${b.pts} pts`, b.beat||k<=3?'#4ade80':'#e2e8f0', b.beat?240:undefined) }   // jeder Spieler erfährt seinen Platz (Niklas 06.10.)
       if(k===3) thirdT=t }
     b.still = b.speed<0.25 ? b.still+1 : 0;
     if(b.still>120){Body.setVelocity(b,{x:Math.sign(TW/2-b.position.x)*(3+Math.random()*3),y:-5}); b.still=0}   // zur Mitte schubsen
@@ -374,7 +381,7 @@ function step(){
   if(winAt>=0 && (t-winAt>=20 || finished.length>=2)){ const w=finished[0], s=finished[1], photo=s && s.ft-w.ft<=18;
     say([...(photo?['photo']:[]), 'win-'+w.code, ...(chaos?['double']:[])], 3); winAt=-1; reportHighlight(w, s) }
   if(phase==='podium' && phaseT===60*5 && Math.random()<0.3) say(['what-a-race']);
-  if(phase==='race' && (finished.length===balls.length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
+  if(phase==='race' && (finished.length===balls.filter(x=>!x.boss).length || t>60*150 || (finished.length>=3 && t-thirdT>60*10))){   // Nachzügler nicht ewig abwarten
     phase='podium'; phaseT=0; sfx.fanfare(); toasts=[]; confetti(finished[0]&&finished[0].players.length?160:90);
     for(const b of balls) if(b.players.length && b.charge>0){ carry[b.players[0]]=Math.min(3,(carry[b.players[0]]||0)+b.charge); b.charge=0 }
     const w=finished[0], fin=ranking();
@@ -560,8 +567,8 @@ let winAt = -1, slowT = -1, slowDone = false, timeScale = 1, saidFinal = 0, come
 // ---------- Darstellung ----------
 function flagBall(x,y,r,b,g=ctx){
   g.save(); g.beginPath(); g.arc(x,y,r,0,7); g.closePath(); g.clip();
-  g.fillStyle='#fff'; g.fillRect(x-r,y-r,2*r,2*r);
-  g.font=`${r*2.9}px "Noto Color Emoji"`; g.textAlign='center'; g.textBaseline='middle';
+  g.fillStyle=b.boss?'#e11d48':'#fff'; g.fillRect(x-r,y-r,2*r,2*r);
+  g.font=`${r*(b.boss?1.15:2.9)}px "Noto Color Emoji"`; g.textAlign='center'; g.textBaseline='middle';
   g.fillText(b.flag,x,y+r*0.12);
   const gr=g.createRadialGradient(x-r*0.4,y-r*0.45,r*0.1,x,y,r);
   gr.addColorStop(0,'rgba(255,255,255,0.75)'); gr.addColorStop(0.35,'rgba(255,255,255,0.05)'); gr.addColorStop(1,'rgba(0,0,0,0.35)');
@@ -878,13 +885,13 @@ function draw(){
   const nx = x => Math.min(Math.max(x,camX+115/camZ),camX+(TW-115)/camZ);   // Schild bis 220 px breit: an der Wand nicht abschneiden
   if(GLASS){ { const cd=phase==='countdown';   // Glas-Pillen; am Start nur Mitspieler (Niklas 10.10.: Namen schon im Countdown), keine Bots; überlappende Schilder weglassen, Bessere zuerst
     const taken=[], up=b=>b.position.y-b.circleRadius-14-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0);
-    for(const b of rank) if((b.players.length||b.bot) && b.position.y>camY-40 && b.position.y<camY+H/camZ+40 && !(b.bot&&b.done) && !(cd&&!b.players.length)){
+    for(const b of rank) if((b.players.length||b.bot||b.boss) && b.position.y>camY-40 && b.position.y<camY+H/camZ+40 && !(b.bot&&b.done) && !(cd&&!b.players.length)){
       const me=b.players.length, boo=me&&b.boostT>0&&!b.done, room=(TW-152)/camZ-27, pts=me&&b.done&&b.pts?`  +${b.pts}`:'';
-      const s=boo ? '⚡ '+fitTxt(short(b.players[0],10),24,room-textW('⚡   BOOST',24,'800'))+'  BOOST' : me ? fitTxt(badge(b.players[0])+who(b),24,room-textW(pts,24,'800'))+pts : fitTxt('🤖 '+b.bot,24,room);
+      const s=boo ? '⚡ '+fitTxt(short(b.players[0],10),24,room-textW('⚡   BOOST',24,'800'))+'  BOOST' : me ? fitTxt(badge(b.players[0])+who(b),24,room-textW(pts,24,'800'))+pts : fitTxt(b.boss?'💀 BOSS':'🤖 '+b.bot,24,room);
       ctx.font=`800 24px ${FONT}`; const w=ctx.measureText(s).width+27, x=Math.min(Math.max(b.position.x,camX+w/2+128/camZ),camX+TW/camZ-w/2-24/camZ)   /* links Platz für die Fortschrittsleiste */, box={x:x-w/2,y:up(b)-27,w,h:37};
       if(hit(box,taken)) continue; taken.push(box);
       if(boo){ const tt=(60-b.boostT)/60; pill(s,x,up(b),24,'#0f2a26','#4fe0c0','rgba(255,255,255,0.45)',1.5,0.85+0.15*springB(tt,0.35,0.55)) }
-      else pill(s,x,up(b),24,me?'#fff':BOT_COL,'rgba(18,14,33,0.86)',me?'rgba(255,209,102,0.85)':'rgba(103,232,249,0.45)',me?2.5:1.5) } } }
+      else pill(s,x,up(b),24,me?'#fff':b.boss?'#ff6b6b':BOT_COL,'rgba(18,14,33,0.86)',me?'rgba(255,209,102,0.85)':'rgba(103,232,249,0.45)',me?2.5:1.5) } } }
   else {
   for(const b of balls) if(b.bot && !b.done && b.position.y>camY-40 && b.position.y<camY+H/camZ+40)
     txt('🤖 '+b.bot,Math.min(Math.max(b.position.x,camX+120/camZ),camX+(TW-120)/camZ),b.position.y-b.circleRadius-10-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0),26,BOT_COL,'700','center',200,true);
