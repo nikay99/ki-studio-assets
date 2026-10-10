@@ -6,7 +6,7 @@ Laeuft jede Minute per cron (je Stream eigener Benutzer). Die Kanalseite wird ko
 Aus: Datei NOBROADCAST im Datenordner des Streams anlegen.
 Seit 10.10. im Repo (livestream/ensure-live.py, Stream-Technik-Thread); vorher nur auf der VM unter /opt/marble-local.
 Keine Schluessel, Tokens oder Stream-IDs in diese Datei schreiben (Repo ist oeffentlich)."""
-import calendar, fcntl, json, os, re, subprocess, sys, time, urllib.parse, urllib.request
+import hashlib, calendar, fcntl, json, os, re, subprocess, sys, time, urllib.parse, urllib.request
 
 # Mehrere Streams auf einem Kanal (09.10.): jeder Waechter fasst nur Sendungen an, die an SEINEN Stream-Eingang gebunden sind,
 # und prueft "live?" an der eigenen Sendung (watch-Seite) statt an der Kanalseite /live, die nur eine zeigt.
@@ -258,6 +258,10 @@ def main():
             log('Tags gesetzt (%s, %d Stueck)' % (vid, len(tg)))
         except Exception as ex:
             log('Tags NICHT gesetzt (%s): %s' % (vid, str(ex)[:200]))
+    def thumb_hash():
+        try: return hashlib.md5(open(P['thumb'], 'rb').read()).hexdigest()
+        except OSError: return None
+
     def thumb(vid):
         # Direkt nach dem Anlegen lehnt YouTube das Thumbnail oft mit 403 ab (08.10.) -> gemerkt und jede Minute neu versucht.
         # Ein Versuch kostet 50 API-Einheiten: nach THUMB_FAST Fehlversuchen nur noch alle 30 min, sonst waere das Tageskontingent weg.
@@ -266,7 +270,7 @@ def main():
         n = th.get('n', 0) if th.get('id') == vid else 0
         r = subprocess.run(['/opt/marble-local/set-thumb.py', vid, P['thumb']], capture_output=True, text=True, env=dict(os.environ, BROADCAST_ENV=P['env']))
         if r.returncode == 0:
-            st.pop('thumb', None); save(); log('Thumbnail gesetzt (%s%s)' % (vid, ', Versuch %d' % (n + 1) if n else ''))
+            st.pop('thumb', None); st['thumb_h'] = thumb_hash(); save(); log('Thumbnail gesetzt (%s%s)' % (vid, ', Versuch %d' % (n + 1) if n else ''))
         else:
             st['thumb'] = dict(id=vid, n=n + 1, t=now); save()
             if n == 0 or n + 1 == THUMB_FAST: log('Thumbnail NICHT gesetzt (%s, Versuch %d%s): %s' % (vid, n + 1, ', ab jetzt nur noch alle 30 min' if n + 1 == THUMB_FAST else ', neuer Versuch jede Minute', r.stdout[:160]))
@@ -338,6 +342,8 @@ def main():
     if not sending():
         st['miss'] = 0; save(); return
     vid = st.get('pending') or (st.get('live') or {}).get('id')
+    if vid and not st.get('thumb') and thumb_hash() and thumb_hash() != st.get('thumb_h'):
+        thumb(vid)   # neues Thumbnail im Repo -> auch fuer die laufende Sendung setzen (einmal, 50 Einheiten)
     live = watch_live(vid) if vid else False
     if live is None:   # watch-Seite unklar: nichts tun; nach 5 Minuten blind wenigstens den faelligen Wechsel nicht verpassen
         st['blind'] = st.get('blind', 0) + 1; save(); lv = st.get('live') or {}
