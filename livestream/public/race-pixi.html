@@ -252,8 +252,17 @@ function bakeTrack(){ // statische Teile einmal vorzeichnen (spart viel Rechenze
   for(const s of statics) if(!s.gate && !s.spin && !s.slide) drawBody(g,s);   // Paddel und Schranken bewegen sich, werden live gezeichnet
 }
 
-function addBoss(){
-  const n=balls.length, b = Bodies.circle(60+(n%12)*44, 100+Math.floor(n/12)*44, R*1.5, {restitution:0.6, friction:0.005, frictionAir:0.006, density:0.003});
+// Boss (Niklas 10.10. 09:08Z): nur leicht größer, damit er nicht hängen bleibt; wen er ab Sekunde 3 berührt, der muss zurück an den Start
+const BOSS_K = 1.15, BOSS_GRACE = 60*3, BOSS_HITS_PLAYERS = true, BOSS_GAP = 60*3, BOSS_MAX = 6;   // höchstens alle 3 s ein Treffer, max. 6 pro Rennen (Test: ohne Grenze 25 Treffer)
+let bossHits = 0, bossLastT = -1e9;
+function bossHit(boss, o){
+  if(o.done || o.boss || t<BOSS_GRACE || bossHits>=BOSS_MAX || t-bossLastT<BOSS_GAP || (o.players.length && !BOSS_HITS_PLAYERS) || (o.bossHitT && t-o.bossHitT<60*4)) return;
+  o.bossHitT=t; bossHits++; bossLastT=t; Body.setPosition(o,{x:70+Math.random()*(TW-140), y:140+Math.random()*80}); Body.setVelocity(o,{x:0,y:0}); o.trail=[];
+  if(PX.ready && PX.shake) PX.shake(4);
+  const who=o.players.length?`${short(o.players[0])} (${o.name})`:o.name;
+  toast(`💀 BOSS got ${who}! Back to start`,'#ff6b6b',200) }
+function addBoss(){ bossHits=0; bossLastT=-1e9;
+  const n=balls.length, b = Bodies.circle(60+(n%12)*44, 100+Math.floor(n/12)*44, R*BOSS_K, {restitution:0.6, friction:0.005, frictionAir:0.006, density:0.003});
   Object.assign(b,{code:'BOSS', flag:'💀', name:'BOSS', players:[], still:0, trail:[], bot:null, boss:true});
   balls.push(b); Composite.add(engine.world,b); return b;
 }
@@ -303,7 +312,7 @@ function assist(bs, tt, nFin){
   const run=bs.filter(b=>!b.done).sort((a,b)=>b.position.y-a.position.y);
   run.forEach((b,i)=>{ const gap=i<3&&run[4]?b.position.y-run[4].position.y:0; b.frictionAir=0.004+Math.min(Math.max(gap-200,0)/800,1)*0.022;
     b.crown = i===0 && !nFin;
-    const want = (b.boss?1.5:1)*(b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1)*(b.fx==='shrink'?0.7:1), cur=b.circleRadius/R;
+    const want = (b.boss?BOSS_K:1)*(b.crown ? 1+Math.min(Math.max(gap-120,0)/500,1)*(CROWN_MAX-1) : 1)*(b.fx==='shrink'?0.7:1), cur=b.circleRadius/R;
     if(Math.abs(want-cur)>0.005){ const f=Math.min(Math.max(want/cur,0.992),1.008); Body.scale(b,f,f) }
     if(b.turboT>0){ b.turboT--; b.frictionAir=0.001; b.force.y += b.mass*0.0011;   // ~85 % mehr Schwerkraft
       if(b.velocity.y>17) Body.setVelocity(b,{x:b.velocity.x,y:17}) }
@@ -510,7 +519,7 @@ function whoosh(d=0.4, v=0.25){   // gefiltertes Rauschen, Filter fährt hoch (S
   n.buffer=b; n.connect(f); f.connect(g); g.connect(sfxBus); n.start(t0); n.stop(t0+d+0.02);
 }
 setInterval(()=>hitBudget=6, 250);   // höchstens ~24 Pling-Töne pro Sekunde
-function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(s&&s.peg){ sfx.plink(s.position.y); if(PX.ready){ const o=s===p.bodyA?p.bodyB:p.bodyA; PX.spark((s.position.x+o.position.x)/2,(s.position.y+o.position.y)/2,s.col); if(ARCADE && s.circleRadius>=14 && Math.hypot(o.velocity.x,o.velocity.y)>10) PX.shake(3) } } } }
+function onHit(ev){ if(phase!=='race') return; for(const p of ev.pairs){ if(p.bodyA.boss&&p.bodyB.players) bossHit(p.bodyA,p.bodyB); else if(p.bodyB.boss&&p.bodyA.players) bossHit(p.bodyB,p.bodyA); const s=p.bodyA.isStatic?p.bodyA:p.bodyB.isStatic?p.bodyB:null; if(s&&s.peg){ sfx.plink(s.position.y); if(PX.ready){ const o=s===p.bodyA?p.bodyB:p.bodyA; PX.spark((s.position.x+o.position.x)/2,(s.position.y+o.position.y)/2,s.col); if(ARCADE && s.circleRadius>=14 && Math.hypot(o.velocity.x,o.velocity.y)>10) PX.shake(3) } } } }
 // Musik (Dateien in /var/lib/marble/music), leiser unter den Effekten. Zwei Decks:
 // ruhig = mitsummbare Chiptune + Pixel-Klassiker, dnb = Pixel-DnB nur wenn es um etwas geht (Chaos-Rennen, letzte 5 Minuten der Stunde).
 // Beim Wechsel wird übergeblendet und das andere Deck pausiert, das unterbrochene Stück läuft danach an derselben Stelle weiter.
