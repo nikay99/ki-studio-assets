@@ -312,7 +312,7 @@ if (fs.existsSync(path.join(REPO, '.git')) && process.env.SELF_UPDATE !== '0') {
     if (!remote || remote === now) return;
     // Nur Änderungen an Wortraten/Colony (eigene Ordner, eigene Server)? Dann nur nachziehen, Kugelrennen läuft weiter
     const changed = (await git('diff', '--name-only', 'HEAD', 'origin/main', '--', 'livestream')).split('\n').filter(Boolean);
-    const own = changed.filter(f => !/^livestream\/(words|colony)\//.test(f));
+    const own = changed.filter(f => !/^livestream\/(words|colony|country)\//.test(f));
     const pkgOld = await git('rev-parse', 'HEAD:livestream/package.json');
     await git('reset', '-q', '--hard', 'origin/main');
     if (changed.length && !own.length) { logLine(`update ${remote} (nur words/colony)`); return; }
