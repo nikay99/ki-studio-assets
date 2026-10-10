@@ -35,9 +35,14 @@ function rollDay() { if (st.day !== today()) st = { day: today(), points: {}, wi
 let saveT = null;
 const save = () => { if (!saveT) saveT = setTimeout(() => { saveT = null; fs.writeFile(STATE_FILE, JSON.stringify(st), () => {}); }, 1500); };
 rollDay();
+// Wer hier schon einmal geschrieben hat (über Tage, wie beim Wortraten): nur echte Neue werden begrüßt
+const KNOWN_FILE = path.join(DATA, 'known.json');
+let known = new Set(); try { known = new Set(JSON.parse(fs.readFileSync(KNOWN_FILE, 'utf8'))); } catch {}
+let knownT = null;
+const saveKnown = () => { if (!knownT) knownT = setTimeout(() => { knownT = null; fs.writeFile(KNOWN_FILE, JSON.stringify([...known].slice(-20000)), () => {}); }, 3000); };
 
 // ---------- Runden ----------
-let round = null, recent = [], seen = new Set(), feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
+let round = null, recent = [], feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
 function nextCountry(n) {
   // 2 von 3 Runden bekannte Länder (schnelle Erfolgsmomente), jede 3. ein schwereres
   const tier = n % 3 === 0 ? 2 : 1;
@@ -89,7 +94,7 @@ function onChat(user, text) {
   // Jede Nachricht wird unten als „Live guesses“ sichtbar (Niklas 10.10.: „trys sehen, was Leute geraten haben“)
   const push = f => { feed.push({ id: ++feedId, user, ...f }); if (feed.length > 200) feed = feed.slice(-100); };
   // Neue Mitspieler (heute zum ersten Mal im Chat) werden oben im Handy-Bereich begrüßt, damit sie sehen, dass ihr Chat ankommt
-  if (!seen.has(user)) { seen.add(user); if (seen.size > 5000) seen.clear(); push({ hello: 1 }); }
+  if (!known.has(user)) { known.add(user); saveKnown(); push({ welcome: 1 }); }
   if (round && round.phase === 'guess' && !round.solvers.some(s => s.user === user) && isCorrect(text)) {
     const place = round.solvers.length, ms = Date.now() - round.start;
     const pts = place < PTS.length ? PTS[place] : 3;
