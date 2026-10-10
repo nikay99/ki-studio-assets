@@ -271,7 +271,7 @@ async function newRace(){
   if(raceNo%50===0) reloadPending=true;   // alle 50 Rennen frisch laden (Speicher)
   if(finalMin()) toast(GLASS?'🔥 Final races of the hour!':'🔥 FINAL RACES of the hour – type your country!','#f87171',300);
   rankUps.splice(0,2).forEach(s=>toast(s,'#ffd166',300));
-  t=0; finished=[]; results=[]; slowT=-1; slowDone=false; timeScale=1; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
+  camFollow=null; t=0; finished=[]; results=[]; slowT=-1; slowDone=false; timeScale=1; phase='countdown'; phaseT=0; nextUp=[]; leader=null; winAt=-1; comebackRank={};
   balls.forEach(b=>vload('win-'+b.code));
   if(chaos) say(['chaos',chaos.id,'double'],2);
   else if(finalMin() && saidFinal!==board.hourEnds){ saidFinal=board.hourEnds; say(['final-minutes'],2) }
@@ -548,7 +548,7 @@ async function say(names, rank=1){
 }
 const VOICE = ['off','here-we-go','new-leader','change-top','photo','comeback','finish-coming','chaos','moon','bounce','quake','rocket','double','type-country','own-ball','chat-boost','welcome','new-hour','final-minutes','get-ready','what-a-race'];
 VOICE.forEach(vload);
-let results = [], joinedAt = {}, carry = {};
+let results = [], joinedAt = {}, carry = {}, camFollow = null, camSwitchT = 0;
 const ptsFor = place => Math.max(1, balls.length-place+1)*(chaos?2:1);   // Punkte: jede Kugel hinter dir = 1, Chaos doppelt
 let winAt = -1, slowT = -1, slowDone = false, timeScale = 1, saidFinal = 0, comebackRank = {}, lastWelcome = 0;
 
@@ -794,11 +794,16 @@ function draw(){
   // Zoom nur so weit, dass die ersten 5 Kugeln im Bild bleiben (sonst wirkt das Feld leer), höchstens 1,25; ganz nah nur in der Zeitlupe am Ziel
   const grp=rank.filter(b=>!b.done).slice(0,5), span=grp.length>1 ? grp[0].position.y-grp[grp.length-1].position.y : 0;
   const gx=grp.length ? grp.reduce((a,b)=>a+b.position.x,0)/grp.length : TW/2;
-  const wantZ = ZOOM_OFF || phase!=='race' || t<120 || finished.length ? 1 : timeScale<0.9 ? 1.6 : Math.min(1.25, Math.max(1, 170/Math.max(span,1)));
+  const wantZ = ZOOM_OFF || phase!=='race' || t<120 || finished.length || camFollow ? 1 : timeScale<0.9 ? 1.6 : Math.min(1.25, Math.max(1, 170/Math.max(span,1)));
   camZ += (wantZ-camZ)*0.06;
   const VW=TW/camZ, VH=H/camZ;
   camX += (Math.min(Math.max(gx-VW/2,0),TW-VW)-camX)*0.1; camX=Math.min(Math.max(camX,0),TW-VW);
-  const target=Math.min(Math.max(lead.position.y+(camZ>1.05?lead.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-330/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
+  // Kamera auf den besten Mitspieler (Niklas 10.10. „jo passt“): fährt jemand mit, folgt sie seiner Kugel; Zielgerade (Führender
+  // im letzten Sechstel) oder Zeitlupe → zurück zum Führenden. Wechsel frühestens nach 3 s, damit nichts hin und her springt.
+  const pb=rank.find(b=>b.players.length&&!b.done), wantF = phase==='race' && pb && pb!==lead && lead.position.y<FINISH_Y*0.84 && timeScale>=0.9 ? pb : null;
+  if(wantF!==camFollow && (performance.now()-camSwitchT>3000 || !wantF)){ camFollow=wantF; camSwitchT=performance.now() }
+  const foc = camFollow && !camFollow.done && balls.includes(camFollow) ? camFollow : lead;
+  const target=Math.min(Math.max(foc.position.y+(camZ>1.05?foc.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-330/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*(0.12+0.3*Math.max(0,camZ-1));   // näher dran → Kamera folgt straffer, sonst rutscht der Erste unter den Chat
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   if(PX.ready){ ctx.clearRect(0,0,W,H); PX.draw({pal:PAL, camY, camX, camZ, trackLayer, statics, spinners, balls, rank, phase, R, ballSprite}) } else { ctx.fillStyle=bg; ctx.fillRect(0,0,W,H) }
@@ -867,6 +872,8 @@ function draw(){
     if(GLASS){ /* Glas: „Photo finish“ steht im Kopf statt der Stundenzeile, nicht über den Kugeln */ }
     else { txt('📸 PHOTO FINISH',MID,470,48,'#fde047','700','center',SW,true); txt('SLOW MOTION',MID,504,24,'#fff','700','center',0,true) } ctx.globalAlpha=1 }
   if(phase==='race') drawProgress(rank);
+  if(phase==='race' && camFollow && !camFollow.done){ const pl=rank.indexOf(camFollow)+1; ctx.font=`800 20px ${FONT}`;   // wem die Kamera folgt (oben in der Bahn, nicht über der verfolgten Kugel)
+    pill(`🎥 following ${short(camFollow.players[0],14)} · #${pl}`,MID+34,416,20,BRUTAL?'#111':'#ffd166',BRUTAL?BY:'rgba(18,14,33,0.86)',BRUTAL?BK:'rgba(255,209,102,0.6)') }
   drawColumn(rank); if(GLASS){ if(!PORT){ glassLeft(); glassRight(rank) } glassTop() } else if(!PORT){ drawLeft(); drawRight(rank) }
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
