@@ -851,9 +851,9 @@ function draw(){
     if(b.fxT>0 && !b.done) ctx.drawImage(emojiSprite(ZONES[b.fx].icon,18),b.position.x+r-4,b.position.y-r-18);
   }
   const nx = x => Math.min(Math.max(x,camX+115/camZ),camX+(TW-115)/camZ);   // Schild bis 220 px breit: an der Wand nicht abschneiden
-  if(GLASS){ if(phase!=='countdown'){   // Glas-Pillen, am Start keine (Gemini: Startgitter entrümpeln); überlappende Schilder weglassen, Bessere zuerst
+  if(GLASS){ { const cd=phase==='countdown';   // Glas-Pillen; am Start nur Mitspieler (Niklas 10.10.: Namen schon im Countdown), keine Bots; überlappende Schilder weglassen, Bessere zuerst
     const taken=[], up=b=>b.position.y-b.circleRadius-14-(b.crown&&!b.done&&phase==='race'?b.circleRadius*1.2:0);
-    for(const b of rank) if((b.players.length||b.bot) && b.position.y>camY-40 && b.position.y<camY+H/camZ+40 && !(b.bot&&b.done)){
+    for(const b of rank) if((b.players.length||b.bot) && b.position.y>camY-40 && b.position.y<camY+H/camZ+40 && !(b.bot&&b.done) && !(cd&&!b.players.length)){
       const me=b.players.length, boo=me&&b.boostT>0&&!b.done, room=(TW-152)/camZ-27, pts=me&&b.done&&b.pts?`  +${b.pts}`:'';
       const s=boo ? '⚡ '+fitTxt(short(b.players[0],10),24,room-textW('⚡   BOOST',24,'800'))+'  BOOST' : me ? fitTxt(badge(b.players[0])+who(b),24,room-textW(pts,24,'800'))+pts : fitTxt('🤖 '+b.bot,24,room);
       ctx.font=`800 24px ${FONT}`; const w=ctx.measureText(s).width+27, x=Math.min(Math.max(b.position.x,camX+w/2+128/camZ),camX+TW/camZ-w/2-24/camZ)   /* links Platz für die Fortschrittsleiste */, box={x:x-w/2,y:up(b)-27,w,h:37};
@@ -949,13 +949,13 @@ function drawColumn(rank){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
     const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle=GLASS?'rgba(21,16,38,0.45)':'rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
     if(GLASS){   // Countdown in Glas-Scheibe, darunter EINE Hinweis-Pille über dem Handy-Chat (y < 615)
-      const CY=PORT?546:512;   // Hochformat: Countdown tiefer, damit die Ansage darüber frei bleibt (noch über dem Handy-Chat)
-      if(BRUTAL){ ctx.fillStyle=BK; ctx.beginPath(); ctx.arc(MID+7,CY+7,62,0,7); ctx.fill(); ctx.fillStyle=n>0?'#fff':BL; ctx.beginPath(); ctx.arc(MID,CY,62,0,7); ctx.fill(); ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.stroke() }
-      else { ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,CY,62,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke() }
-      inkOn(()=>txt(n>0?String(n):'GO!',MID,CY+(n>0?26:20),n>0?72:52,n>0?'#fff':BRUTAL?'#111':'#4fe0c0','900','center'));
+      const CY=PORT?616:512, CR=PORT?52:62;   // Hochformat: Countdown unter der Startreihe (Niklas 10.10.: verdeckte Kugeln), noch über dem Handy-Chat
+      if(BRUTAL){ ctx.fillStyle=BK; ctx.beginPath(); ctx.arc(MID+7,CY+7,CR,0,7); ctx.fill(); ctx.fillStyle=n>0?'#fff':BL; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.stroke() }
+      else { ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke() }
+      inkOn(()=>txt(n>0?String(n):'GO!',MID,CY+(n>0?(PORT?22:26):(PORT?16:20)),n>0?(PORT?60:72):(PORT?42:52),n>0?'#fff':BRUTAL?'#111':'#4fe0c0','900','center'));
       const np=mine.length, hint = chaos ? [`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,'#c4b5ff'] : (!np && balls.some(b=>b.bot)) ? ['🤖 Beat the bots! Type your country','#67e8f9']
         : [np ? `⭐ ${np} ${np===1?'PLAYER':'PLAYERS'} IN THIS RACE · chat = ⚡ boost` : '💬 chat = ⚡ boost your ball','#c4b5ff'];
-      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
+      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,PORT?700:652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
     } else {
     txt(n>0?String(n):'GO!',MID,500,72,'#fde047','700','center',0,true);
     if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,640,24,'#c084fc','700','center',SW,true);
@@ -966,7 +966,10 @@ function drawColumn(rank){
     }
   }
   if(phase==='podium'||phase==='loading'){
-    const a=Math.min(phaseT/30,1), w=finished[0]; if(BRUTAL){ ctx.globalAlpha=a; hardBox(CX+10,TRK_Y,CW-20,H-TRK_Y-14,CARDC,18,5,0); ctx.globalAlpha=1 } else if(GLASS){ ctx.fillStyle=`rgba(21,16,38,${0.96*a})`; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=`rgba(255,255,255,${0.12*a})`; ctx.stroke() } else { ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378) }
+    const a=Math.min(phaseT/30,1), w=finished[0]; if(BRUTAL){ /* Niklas 10.10.: keine große helle Fläche mehr – dunkler Schleier über der Bahn, helle Karte nur so groß wie der Inhalt */
+      const tp=(board.countries||[])[0], cp=PORT&&results.length>0, bot=results.length?(cp?534:(PORT?580:590)):(tp&&!(w&&w.players.length)?690:650);
+      ctx.globalAlpha=0.88*a; ctx.fillStyle='#231c47'; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,18); ctx.fill();
+      ctx.globalAlpha=a; hardBox(SL-24,392,SW+48,bot-392,CARDC,18,5,10); ctx.globalAlpha=1 } else if(GLASS){ ctx.fillStyle=`rgba(21,16,38,${0.96*a})`; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=`rgba(255,255,255,${0.12*a})`; ctx.stroke() } else { ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378) }
     ctx.globalAlpha=a; if(GLASS) inkOn(()=>glassPodium(w)); else {
     txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,420,36,chaos?'#c084fc':'#ffd700','700','center');
     // Handy-Layout (Niklas 06.10.): alles Wichtige zwischen Stundenleiste und Chat (y 290–615), innerhalb der mittleren ~490 px
@@ -1014,7 +1017,7 @@ function glassPodium(w){
     txt(b.name,x,526,20,'#f3effc','800','center',132);
     if(b.players.length) txt(short(b.players[0],12),x,550,18,'#ffd166','700','center',132); else if(b.bot) txt('🤖 '+b.bot,x,550,18,BOT_COL,'700','center',132) });
   if(CP) ctx.restore();
-  if(results.length){ const n=Math.min(CP?2:3,results.length), more=CP?0:results.length-n, y0=CP?530:592, rh=CP?32:34, h=n*rh+(more?30:0)+14;
+  if(results.length){ const n=Math.min(CP?2:3,results.length), more=CP?0:results.length-n, y0=CP?(BRUTAL?542:530):592, rh=CP?30:34, h=n*rh+(more?30:0)+14;
     card(SL-16,y0,SW+32,h);
     results.slice(0,n).forEach((x,j)=>{ const ry=y0+30+j*rh, pts=`+${x.pts}${x.beat?' 🏆':''}`;
       txt(`#${x.place}`,SL+2,ry,20,x.place<=3?'#ffd166':'#a99fc6','900','left');
