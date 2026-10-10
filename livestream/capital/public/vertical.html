@@ -62,6 +62,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--paper);color:v
 .sol{display:flex;align-items:center;gap:10px;padding:2px 14px;font-size:28px;font-weight:800;min-width:0;background:var(--card);border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000}
 .sol .m{font-size:30px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sol .p{color:var(--g);font-weight:900}
+.sol .fl{font-weight:900;color:#d13a00}
 .sol.first{background:var(--y)}
 .sol.more,.sol.cta{justify-content:center}
 .sol.all,.sol.cta{grid-column:1/-1}
@@ -197,7 +198,7 @@ function renderSolvers(){
   const m=['🥇','🥈','🥉'], s=S.solvers, box=$('solvers');
   if(String(S.n)!==box.dataset.n){ box.dataset.n=S.n; box.innerHTML=''; lastSolv=0 }
   for(let i=lastSolv;i<Math.min(s.length,3);i++){ const x=s[i], d=document.createElement('div');
-    d.className='sol'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">+${x.pts}</span>`;
+    d.className='sol'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span>${x.streak>=3?`<span class="fl">🔥${x.streak}</span>`:''}<span class="p">${x.mult>1?'⚡':''}+${x.pts}</span>`;
     box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4); sfx.correct(i); if(!i) confetti(540,1000,60) }
   if(s.length>3){ let more=box.querySelector('.more'); if(!more){ more=document.createElement('div'); more.className='sol more'; box.appendChild(more); pop(more,{opacity:0},1,.3) }
     more.textContent=`+${s.length-3} more got it`; if(s.length>lastSolv) sfx.correct(2) }
@@ -237,12 +238,12 @@ setInterval(pollBoard,2000); pollBoard();
 let popQ=[], popBusy=false, feedSince=0, feedFirst=true;
 function showPop(){
   if(popBusy||!popQ.length) return; popBusy=true;
-  const w=popQ.findIndex(x=>x.welcome), x=w>=0?popQ.splice(w,1)[0]:popQ.pop(); if(w<0) popQ=[];
+  const w=popQ.findIndex(x=>x.welcome||x.levelUp||x.streakPop), x=w>=0?popQ.splice(w,1)[0]:popQ.pop(); if(w<0) popQ=[];
   const u=`<span class="u">${esc(x.user)}</span>`;
-  const html=x.welcome?`👋 Welcome <span class="u">${esc(x.user)}!</span> Type the capital`:x.flag&&!x.guess?`${u} ${x.flag} joined`:x.late?`${u} ✓ just too late!`:`${u}: ${esc(x.guess)} <span class="x">✗</span>`;
-  $('chatpop').innerHTML=`<div class="cp2${x.welcome?' w':x.flag&&!x.guess?' f':''}">${html}</div>`; pop($('chatpop').firstChild,{transform:'scale(.6)',opacity:0},.6,.35);
+  const html=x.levelUp?`${x.badge} <span class="u">${esc(x.user)}</span> is now ${esc(x.levelUp)}!`:x.streakPop?`🔥 <span class="u">${esc(x.user)}</span> ${x.streakPop} in a row · +${x.sb} bonus`:x.welcome?`👋 Welcome <span class="u">${esc(x.user)}!</span> Type the capital`:x.flag&&!x.guess?`${u} ${x.flag} joined`:x.late?`${u} ✓ just too late!`:`${u}: ${esc(x.guess)} <span class="x">✗</span>`;
+  $('chatpop').innerHTML=`<div class="cp2${x.welcome||x.levelUp||x.streakPop?' w':x.flag&&!x.guess?' f':''}">${html}</div>`; pop($('chatpop').firstChild,{transform:'scale(.6)',opacity:0},.6,.35);
   if(x.welcome) bell(PENTA[4],.4,.06);
-  setTimeout(()=>{ const el=$('chatpop').firstChild; if(el) el.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}); setTimeout(()=>{popBusy=false;showPop()},220) }, x.welcome?3200:1600);
+  setTimeout(()=>{ const el=$('chatpop').firstChild; if(el) el.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}); setTimeout(()=>{popBusy=false;showPop()},220) }, x.welcome||x.levelUp||x.streakPop?3200:1600);
 }
 async function pollFeed(){
   try{
@@ -253,4 +254,5 @@ async function pollFeed(){
 }
 setInterval(pollFeed,700); pollFeed();
 </script>
+<script src="/gami-ui.js"></script>
 </body></html>
