@@ -37,9 +37,9 @@ PROFILES = {
                     thumb='/opt/marble/country/thumbnail.jpg', runjson=False, slot=20,
                     latency='ultraLow',   # Niklas 10.10. 09:35Z: "sehr niedrig" (beim Raten zaehlt die Bildverzoegerung)
                     remind=['🗺️ Know the country? Type its name in the chat – everyone who is right scores!']),
-    # Guess the Capital (vorbereitet 10.10., erst nach Niklas' Ja eingerichtet)
-    'capital': dict(D='/var/lib/marble-capital', env='/etc/marble/broadcast-capital.env', user='capital', stream=('capital', 'capital-key'),
-                    prefix='Guess the Capital', title='Guess the Capital 🔴 LIVE – type it in chat!', meta='/opt/marble/capital/broadcast.json',
+    # Guess the Capital (Niklas 10.10. 11:22Z "geh live"); sendet ueber den Colony-Eingang (Niklas 11:28Z "nimm einfach den key von dem chat colony spiel")
+    'capital': dict(D='/var/lib/marble-capital', env='/etc/marble/broadcast-capital.env', user='capital', stream=('capital', 'capital-key', 'colony', 'colony-key'),
+                    prefix='Guess the Capital', title='Guess the Capital of the Country 🔴 LIVE – type it in chat!', meta='/opt/marble/capital/broadcast.json',
                     thumb='/opt/marble/capital/thumbnail.jpg', runjson=False, slot=40, latency='ultraLow',
                     remind=['🏛️ Know the capital? Type it in the chat – everyone who is right scores!']),
 }
