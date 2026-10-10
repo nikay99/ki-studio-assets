@@ -22,8 +22,8 @@ const CHAT_BOTS = /^(nightbot|streamelements|moobot|fossabot)$/i;
 const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^\S{0,16}\s*(Type your|Every chat message|Points add up|Know the country|The fastest answer)/u;
 const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''));
 
-// Zeiten wie beim Wortraten (Bild hängt hinter dem Chat): Tipps nach 8 / 18 / 28 s, Buchstaben ab 14 s alle 5 s
-const ROUND_MS = 47000, SHOW_MS = 8000, HINTS_AT = [8000, 18000, 28000], FIRST_REVEAL = 14000, REVEAL_EVERY = 5000;
+// Zeiten (Bild hängt hinter dem Chat): Runde 65 s, Tipps nach 12 / 26 / 40 s, Buchstaben ab 20 s alle 6 s
+const ROUND_MS = 65000, SHOW_MS = 8000, HINTS_AT = [12000, 26000, 40000], FIRST_REVEAL = 20000, REVEAL_EVERY = 6000;   // Niklas 10.10.: mehr Zeit (vorher 47 s)
 const PTS = [10, 7, 5];
 
 // ---------- Tageszustand ----------
@@ -102,7 +102,7 @@ function onChat(user, text) {
     st.points[user] = (st.points[user] || 0) + pts;
     if (place === 0) { st.wins[user] = (st.wins[user] || 0) + 1; if (!st.fastest || ms < st.fastest.ms) st.fastest = { user, ms, word: round.q.shown }; }
     save(); push({ ok: 1, pts });
-    if (place === 0) round.end = Math.min(round.end, Date.now() + 12000);
+    if (place === 0) round.end = Math.min(round.end, Date.now() + 15000);
     return;
   }
   if (round && round.phase !== 'guess' && isCorrect(text)) return push({ late: 1 });   // richtig, aber Bild hing hinterher
