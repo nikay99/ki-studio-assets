@@ -78,6 +78,14 @@ h1{font-size:68px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#ff
 .rec{font-size:30px;font-weight:800}
 #how{font-size:30px;font-weight:800;color:#fff;text-align:center}
 #how b{background:var(--y);color:#111;padding:0 10px;border:3px solid #111;border-radius:6px}
+#guessbox{width:100%;padding:16px 22px 14px}
+#guessbox .label{background:var(--c)}
+#feed{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.g{display:flex;align-items:center;gap:8px;min-width:0;font-size:27px;font-weight:800;padding:4px 12px;background:#fff;border:4px solid #111;border-radius:10px;box-shadow:4px 4px 0 #000;white-space:nowrap}
+.g .u{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;opacity:.6;font-weight:700}
+.g .x{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.g.no .x{text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:#ff4b72}
+.g.ok{background:var(--l)}.g.late{background:var(--y)}.g.fl{background:var(--card)}
 canvas#fx{position:absolute;inset:0;pointer-events:none}
 </style></head>
 <body><div id="stage">
@@ -93,6 +101,7 @@ canvas#fx{position:absolute;inset:0;pointer-events:none}
     <div id="head"><div class="live"><i></i>LIVE</div><h1>Guess the Country</h1></div>
     <div class="box" id="topbox"><div class="label">Top today</div><div id="top"></div></div>
     <div id="how"><b>type the country</b> in chat · <b>!country</b> for your flag</div>
+    <div class="box" id="guessbox"><div class="label">Live guesses</div><div id="feed"><div class="g fl"><span class="x">Waiting for the first guess…</span></div></div></div>
   </div>
   <canvas id="fx" width="1080" height="1920"></canvas>
 </div>
@@ -131,11 +140,21 @@ function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627',
 let SHAPES=null, S=null, lastN=0, shownN=0, lastSolv=0, ver=null, tileEls=[], revSet=new Set(), lastHints=0;
 fetch('shapes.json').then(r=>r.json()).then(j=>{SHAPES=j; $('world').setAttribute('d',j.world)});
 
-function tileSize(words){const row=Math.max(...words.map(w=>w.length));
-  let s=Math.floor((860-(row-1)*9)/row); s=Math.min(words.length>1?72:92,s); return Math.max(44,s)}
+// Kachelgröße + Zeilen: größte Kachel, bei der der Name in höchstens 2 Zeilen à 860 px passt (Niklas 10.10.: zweizeilige Namen
+// schoben sich über Tipps und Zeitbalken). Braucht der Name mehr Höhe als die Standard-118 px, rücken Karte und Tipps nach oben.
+const TILES_TOP=822, TILES_H=118, MAP_TOP=340, MAP_H=370, HINTS_TOP=728;
+function rowsAt(words,s){const gap=9, wg=22; let rows=1, w=0;
+  for(const x of words){const ww=x.length*s+(x.length-1)*gap; if(w && w+wg+ww>860){rows++; w=ww} else w+=(w?wg:0)+ww; if(ww>860) return 9}
+  return rows}
+function tileSize(words){ for(let s=92;s>=40;s--){ const r=rowsAt(words,s); if(r===1 && s>=58) return {s,rows:1}; if(r<=2 && s<=66) return {s,rows:r} } return {s:40,rows:2} }
+function layout(sz){
+  const h=Math.round(sz.rows*sz.s*1.12+(sz.rows-1)*10), d=Math.max(0,h-TILES_H);
+  $('map').style.height=(MAP_H-d)+'px'; $('shape').style.height=(MAP_H-d-40)+'px';
+  $('hints').style.top=(HINTS_TOP-d)+'px'; $('tiles').style.top=(TILES_TOP-d)+'px'; $('tiles').style.height=Math.max(h,TILES_H)+'px';
+}
 function buildTiles(){
   const words=[]; let cur=[]; S.tiles.forEach((ch,i)=>{ if(ch===' '){words.push(cur);cur=[]} else cur.push(i) }); words.push(cur);
-  const sz=tileSize(words); tileEls=[]; revSet=new Set();
+  const T=tileSize(words.map(w=>w.map(()=>0))), sz=T.s; layout(T); tileEls=[]; revSet=new Set();
   $('tiles').innerHTML=words.map(w=>`<div class="word">${w.map(i=>`<div class="t" data-i="${i}" style="width:${sz}px;height:${Math.round(sz*1.12)}px;font-size:${Math.round(sz*.6)}px"></div>`).join('')}</div>`).join('');
   $('tiles').querySelectorAll('.t').forEach(el=>tileEls[+el.dataset.i]=el);
   [...$('tiles').querySelectorAll('.t')].forEach((el,k)=>pop(el,{transform:'translateY(24px) scale(.9)',opacity:0},1,.45,k*30));
@@ -199,5 +218,21 @@ async function pollBoard(){
   }catch{}
 }
 setInterval(pollBoard,2000); pollBoard();
+
+// Live-Rateversuche (neueste oben, max. 8, damit es unten in die Bühne passt): falsch = durchgestrichen, richtig = „got it ✓“ ohne die Lösung zu verraten
+let feedSince=0, feedItems=[];
+async function pollFeed(){
+  try{
+    const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json();
+    if(feedSince===0 && f.last>0){ feedSince=f.last; return }   // nach Neuladen keine alten Nachrichten nachspielen
+    if(!f.feed.length) return; feedSince=f.last;
+    for(const x of f.feed){ feedItems.unshift(x) } feedItems=feedItems.slice(0,8);
+    $('feed').innerHTML=feedItems.map(x=>{
+      const [cls,txt]=x.ok?['ok','got it ✓ +'+x.pts]:x.late?['late','right, too late ⏱']:x.flag&&!x.guess?['fl',x.flag+' joined']:['no',(x.flag?x.flag+' ':'')+x.guess];
+      return `<div class="g ${cls}" data-id="${x.id}"><span class="u">${esc(x.user)}</span><span class="x">${esc(txt)}</span></div>`}).join('');
+    for(const x of f.feed){ const el=$('feed').querySelector(`[data-id="${x.id}"]`); if(el) pop(el,{transform:'translateY(-14px) scale(.9)',opacity:0},.8,.35) }
+  }catch{}
+}
+setInterval(pollFeed,700); pollFeed();
 </script>
 </body></html>

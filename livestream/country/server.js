@@ -13,6 +13,7 @@ const VERSION = String(Date.now());
 fs.mkdirSync(DATA, { recursive: true });
 
 const GAME = JSON.parse(fs.readFileSync(path.join(__dirname, 'countries-game.json'), 'utf8'));   // [ISO2, Hauptstadt, Kontinent, Stufe 1 = bekannt]
+const DISPLAY = { CF: 'Central African Republic', DO: 'Dominican Republic' };
 const BYCODE = Object.fromEntries(COUNTRY_LIST.map(c => [c[0], c]));
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const BAD = /fuck|shit|cunt|nigg|fag|retard|whore|slut|bitch|pussy|dick|porn|hitler|nazi|kkk|rape|wichs|fotze|hure|schlampe|hurensohn|nutte/i;
@@ -36,13 +37,15 @@ const save = () => { if (!saveT) saveT = setTimeout(() => { saveT = null; fs.wri
 rollDay();
 
 // ---------- Runden ----------
-let round = null, recent = [], msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
+let round = null, recent = [], feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
 function nextCountry(n) {
   // 2 von 3 Runden bekannte Länder (schnelle Erfolgsmomente), jede 3. ein schwereres
   const tier = n % 3 === 0 ? 2 : 1;
   const pool = GAME.filter(g => g[3] === tier && !recent.includes(g[0]));
-  const [code, capital, continent] = pool[Math.floor(Math.random() * pool.length)];
-  const [, name, al] = BYCODE[code];
+  // FORCE=ZA,MK nur für lokale Vorschauen: diese Länder der Reihe nach
+  const forced = (process.env.FORCE || '').split(',').filter(Boolean);
+  const [code, capital, continent] = forced.length ? GAME.find(g => g[0] === forced[(n - 1) % forced.length]) : pool[Math.floor(Math.random() * pool.length)];
+  const [, n0, al] = BYCODE[code], name = DISPLAY[code] || n0;   // Anzeige ohne Abkürzungspunkte (Kacheln kennen nur Buchstaben)
   return { code, name, shown: name.toUpperCase(), w: norm(name).replace(/ /g, ''), alias: [...new Set([norm(name), ...al.map(norm)])], capital, continent, hard: tier === 2 };
 }
 function startRound() {
@@ -83,19 +86,25 @@ function isCorrect(text) {
 }
 function onChat(user, text) {
   msgCount++; rollDay();
+  // Jede Nachricht wird unten als „Live guesses“ sichtbar (Niklas 10.10.: „trys sehen, was Leute geraten haben“)
+  const push = f => { feed.push({ id: ++feedId, user, ...f }); if (feed.length > 200) feed = feed.slice(-100); };
   if (round && round.phase === 'guess' && !round.solvers.some(s => s.user === user) && isCorrect(text)) {
     const place = round.solvers.length, ms = Date.now() - round.start;
     const pts = place < PTS.length ? PTS[place] : 3;
     round.solvers.push({ user, pts, ms, flag: st.flags[user] || '' });
     st.points[user] = (st.points[user] || 0) + pts;
     if (place === 0) { st.wins[user] = (st.wins[user] || 0) + 1; if (!st.fastest || ms < st.fastest.ms) st.fastest = { user, ms, word: round.q.shown }; }
-    save();
+    save(); push({ ok: 1, pts });
     if (place === 0) round.end = Math.min(round.end, Date.now() + 12000);
     return;
   }
+  if (round && round.phase !== 'guess' && isCorrect(text)) return push({ late: 1 });   // richtig, aber Bild hing hinterher
+  if (round && round.solvers.some(s => s.user === user)) return;                        // hat schon, kein Spoiler
   // eigene Flagge für die Bestenliste nur mit „!“ (z. B. !germany), sonst wäre jeder Rateversuch ein Flaggenwechsel
   const cmd = /^\s*!/.test(text) ? norm(text) : '';
-  if (cmd) for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(cmd)) { if (st.flags[user] !== code) { st.flags[user] = code; save(); } break; }
+  if (cmd) { for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(cmd)) { if (st.flags[user] !== code) { st.flags[user] = code; save(); push({ flag: flagOf(code) }); } break; } return; }
+  const g = norm(text).toUpperCase();
+  if (g && !BAD.test(g.replace(/ /g, ''))) push({ guess: g.length > 16 ? g.slice(0, 15) + '…' : g, flag: st.flags[user] ? flagOf(st.flags[user]) : '' });
 }
 
 function board() {
@@ -123,6 +132,7 @@ http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/api/state') return send(res, 200, view());
   if (u.pathname === '/api/board') return send(res, 200, board());
+  if (u.pathname === '/api/feed') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: feedId, feed: feed.filter(f => f.id > since).slice(-20) }); }
   if (u.pathname === '/api/status') return send(res, 200, { chatStatus, msgCount, round: round && round.n });
   if (u.pathname === '/api/music') return fs.readdir(path.join(process.env.MUSIC_DIR || '/var/lib/marble/music'), (e, f) => send(res, 200, (f || []).filter(x => /\.(mp3|ogg)$/.test(x))));
   if (u.pathname.startsWith('/music/')) { const f = path.join(process.env.MUSIC_DIR || '/var/lib/marble/music', path.basename(decodeURIComponent(u.pathname))); return fs.readFile(f, (e, b) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': 'audio/mpeg' }); res.end(b); }); }
