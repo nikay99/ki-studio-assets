@@ -34,7 +34,7 @@ PX.init = async (canvas, outW, outH, sc, geo) => {
   app = new PIXI.Application();
   await app.init({ canvas, width: outW, height: outH, antialias: true, autoStart: false, background: '#000000', preference: 'webgl', powerPreference: 'high-performance' });
   dotTex = PIXI.Texture.from(softDot); PX.hardTex = PIXI.Texture.from(hardDot); coneTex = PIXI.Texture.from(cone);
-  root = new PIXI.Container(); root.scale.set(sc); root.x = geo.OX || 0; app.stage.addChild(root);   // OX: Hochformat schiebt die Spalte nach links
+  root = new PIXI.Container(); root.scale.set(sc); root.x = geo.OX || 0; root.y = geo.OY || 0; app.stage.addChild(root);   // OX: Hochformat schiebt die Spalte nach links
   bgSprite = new PIXI.Sprite(); root.addChild(bgSprite);
   lights = new PIXI.Container(); root.addChild(lights);
   col = new PIXI.Container(); col.x = geo.CX; root.addChild(col);
@@ -69,6 +69,7 @@ function background(pal) {   // Verlauf einmal pro Palette als Textur
   const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, pal.bg[0]); gr.addColorStop(1, pal.bg[1]);
   g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
   bgSprite.texture = PIXI.Texture.from(c); bgSprite.width = PX.W; bgSprite.height = PX.H;
+  app.renderer.background.color = pal.bg[0];   // Hochformat: Ränder oben/unten in Hintergrundfarbe
 }
 
 // Bahn: die vorgezeichnete Strecke (trackLayer) in Streifen als Texturen (WebGL-Höchstmaß 8192 px Höhe)
