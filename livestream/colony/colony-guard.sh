@@ -6,7 +6,7 @@
 # Seit 10.10. (Guess the Capital): läuft Colony nicht (von Hand pausiert), pausiert er stattdessen Capital (/var/lib/marble-capital).
 set -u
 C=/var/lib/marble-colony; S=$C/guard.state; LOG=$C/guard.log
-DROP_MAX=${DROP_MAX:-30}; CPU_MAX=${CPU_MAX:-88}
+DROP_MAX=${DROP_MAX:-30}; CPU_MAX=${CPU_MAX:-95}   # 95 seit 10.10. 11:52Z (Niklas), vorher 88
 [ -d $C ] || exit 0
 last(){ tac "$1" 2>/dev/null | grep -m1 "^$2=" | cut -d= -f2; }
 read -r _ a b c d e f g _ < /proc/stat; t1=$((a+b+c+d+e+f+g)); i1=$((d+e)); sleep 5
