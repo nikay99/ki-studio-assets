@@ -66,12 +66,14 @@ CATEGORY = '24'          # Unterhaltung (fuer videos.update mit Tags noetig)
 RTMP = 'a.rtmp.youtube.com/live2'
 # EIN Stream rotierend (Niklas 10.10. 15:56Z Karte „1 Stream rotierend“, 16:03Z „rotation umbauen“): ab ROT_FROM sendet nur noch
 # eines der Quiz-Spiele; an jedem festen Termin (ROT_TIMES, ohne Versatz) wechselt das Spiel. Niklas 16:04Z „gleich zwei offline“:
-# Word sofort allein (Block 10.10. 13:30 UTC), dann Country (22:30), dann Capital (11.10. 05:30); jeder weitere 3er-Tag um eine Stelle
-# verschoben, damit jedes Spiel in 3 Tagen jede Uhrzeit bekommt.
+# Word sofort allein (Block 10.10. 13:30 UTC), danach jeden Tag alle drei, jedes Spiel in 3 Tagen zu jeder Uhrzeit.
 # Nicht dran: Sendung beenden (bleibt oeffentlich als Archiv), Dateien PAUSE + PAUSE.rot, ffmpeg aus. Dran: PAUSE weg, neue Sendung.
-ROTATION = ('words', 'country', 'capital')
-ROT_ANCHOR = calendar.timegm((2026, 10, 10, 13, 30, 0))   # erster rotierender Block = ROTATION[0]; „Tag“ = 3 Bloecke ab 13:30 UTC
-ROT_FROM = ROT_ANCHOR
+# Niklas 16:09Z: jeder Wiener Tag soll alle drei Spiele haben -> „Tag“ beginnt 22:30 UTC (00:30 Wien), Reihenfolge je Tag um eins
+# verschoben: So 11.10. Country 00:30, Capital 07:30, Word 15:30; Mo Capital, Word, Country; Di Word, Country, Capital; ...
+# Vor ROT_ANCHOR (Sa 10.10. ab 13:30 UTC) laeuft nur Word.
+ROTATION = ('country', 'capital', 'words')
+ROT_FROM = calendar.timegm((2026, 10, 10, 13, 30, 0))
+ROT_ANCHOR = calendar.timegm((2026, 10, 10, 22, 30, 0))   # Tag 0, erster Block = ROTATION[0]
 
 def log(msg):
     with open(LOG, 'a') as f:
@@ -162,6 +164,7 @@ def next_slot(now, slot=None):
 def rotation_game(now):
     """Welches Quiz-Spiel ist im rotierenden Betrieb gerade dran? None vor ROT_FROM."""
     if now < ROT_FROM: return None
+    if now < ROT_ANCHOR: return 'words'
     s = last_slot(now, 0)
     d = (s - ROT_ANCHOR) // 86400                      # Tag (beginnt zur Uhrzeit von ROT_ANCHOR)
     off = (s - ROT_ANCHOR) - d * 86400
