@@ -34,8 +34,9 @@ const inkOn = f => { const pb=BINK; BINK=true; try{ f() } finally { BINK=pb } };
 // Hochformat (Niklas 09.10. „country umbauen auf 9:16“): ?portrait=1 zeigt nur die 9:16-Spalte, auf 720x1280 vergrößert; Seitenleisten entfallen
 const PORT = Q.get('portrait')==='1';
 const OUT_W = +(Q.get('w')||(PORT?720:1280)), OUT_H = PORT ? Math.round(OUT_W*16/9) : Math.round(OUT_W*H/W);   // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
-const OY = 0, OB = 0;   // Rand oben/unten (Hochformat 10.10. kurz 110/40, dann „mehr Platz fürs Race“: stattdessen kompakter Kopf, siehe portHeader)
-const SC = (OUT_H-OY-OB)/H, OX = PORT ? Math.round((OUT_W-CW*SC)/2 - CX*SC) : 0;   // Hochformat: Spalte (608x1080) in 720x1280, mittig
+// Hochformat (Niklas 10.10. „falsch gecentered“): 3 % Rand je Seite, damit Kästen samt hartem Schatten am Handy ganz im Bild sind; 40 px oben → Laufband unter YouTubes Kanalzeile
+const SC = PORT ? Math.min(OUT_H/H, OUT_W*0.94/CW) : OUT_H/H, OY = PORT ? 40 : 0;
+const OX = PORT ? Math.round((OUT_W-CW*SC)/2 - CX*SC) : 0;   // Hochformat: Spalte (608x1080) in 720x1280, mittig
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 cv.width = OUT_W; cv.height = OUT_H;
 const NAME = Object.fromEntries(COUNTRY_LIST.map(c=>[c[0],c[1]]));
@@ -629,7 +630,7 @@ function chip(x,y,s,i){ if(BRUTAL){ ctx.fillStyle=[BY,'#e8e8e8',BO][i]||'#fff'; 
   txt(s,x+19,y-3,20,i<3?'#22182e':'#a99fc6','900','center') }
 // Mitte wie Wortraten: Kopf ohne dunklen Balken (gleicher Hintergrund wie die Seiten), alles zentriert,
 // darunter die Bahn als abgerundete Glas-Karte. Handy: Kopf bleibt in y 128–378, Bahn ab 386.
-const TRK_Y=PORT?274:386;   // Hochformat (Niklas 10.10. „mehr Platz fürs Race, weniger Blabla oben“): Kopf nur Laufband + 2 Zeilen
+const TRK_Y=PORT?274:386, PDY2=PORT?TRK_Y+14-392:0;   // PDY2: Sieger/Stundenehrung im Hochformat direkt unter den Kopf   // Hochformat (Niklas 10.10. „mehr Platz fürs Race, weniger Blabla oben“): Kopf nur Laufband + 2 Zeilen
 function glassFrame(){ ctx.save(); ctx.beginPath(); ctx.rect(CX,0,CW,H); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.clip('evenodd');
   glassSide(CX,CW); ctx.restore();
   if(BRUTAL){ ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,18); ctx.stroke(); return }
@@ -709,7 +710,7 @@ function chargeRing(x,y,r,n){ for(let j=0;j<3;j++){ const a0=-Math.PI/2+j*2*Math
 // Ansage wie eine iOS-Mitteilung: Symbol im getönten Kreis, Text hell, Name hervorgehoben; erscheint mit Feder
 function glassToast(o){
   const m=o.s.match(/^([\u{1F1E6}-\u{1F1FF}]{2}|\p{Extended_Pictographic}\uFE0F?)\s*(.*)$/u), icon=m?m[1]:'💬', rest=m?m[2]:o.s, col=gc(o.col);
-  const sc=0.92+0.08*spring(o.t/60,0.35), y=452, H2=58, size=26;
+  const sc=0.92+0.08*spring(o.t/60,0.35), y=!PORT?452:phase==='countdown'?628:380, H2=58, size=26;
   ctx.save(); ctx.translate(MID,y); ctx.scale(sc,sc); ctx.translate(-MID,-y);
   const maxW=SW-H2-24; let size2=size; ctx.font=`700 ${size2}px ${FONT}`; while(size2>20 && ctx.measureText(rest).width>maxW){ size2--; ctx.font=`700 ${size2}px ${FONT}` }
   const s=fitTxt(rest,size2,maxW,'700');
@@ -826,7 +827,7 @@ function draw(){
   const pb=rank.find(b=>b.players.length&&!b.done), wantF = phase==='race' && pb && pb!==lead && lead.position.y<FINISH_Y*0.84 && timeScale>=0.9 ? pb : null;
   if(wantF!==camFollow && (performance.now()-camSwitchT>3000 || !wantF)){ camFollow=wantF; camSwitchT=performance.now() }
   const foc = camFollow && !camFollow.done && balls.includes(camFollow) ? camFollow : lead;
-  const target=Math.min(Math.max(foc.position.y+(camZ>1.05?foc.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-330/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
+  const target=Math.min(Math.max(foc.position.y+(camZ>1.05?foc.velocity.y*4:0)-H*(PORT?0.48:0.54)/camZ,-(PORT?84:330)/camZ),WORLD_H-VH+330/camZ);   // +360: Ziel und Auslauf bleiben über dem Chat   // Handy (Niklas 06.10.): Chat verdeckt unten ab ~y 615 → Geschehen in die obere Hälfte; -120: Startgitter direkt unter dem Aufruf-Balken   // Kamera immer auf dem Ersten (Niklas)
   camY += (target-camY)*(0.12+0.3*Math.max(0,camZ-1));   // näher dran → Kamera folgt straffer, sonst rutscht der Erste unter den Chat
   const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,PAL.bg[0]); bg.addColorStop(1,PAL.bg[1]);
   if(PX.ready){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,OUT_W,OUT_H); ctx.restore(); PX.draw({pal:PAL, camY, camX, camZ, trackLayer, statics, spinners, balls, rank, phase, R, ballSprite}) } else { ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=bg; ctx.fillRect(0,0,OUT_W,OUT_H); ctx.restore() }
@@ -901,7 +902,7 @@ function draw(){
 }
 // Fortschrittsleiste links in der Spalte (Niklas 06.10. „Sichtbarkeit“): alle Kugeln von Start bis Ziel, Spieler mit Flagge und Namen.
 // Liegt über der linken Bahnwand, also auch im Hochformat sichtbar, und verdeckt keine Kugel.
-const PB_X = CX+64, PB_TOP = 396, PB_BOT = 600;   // Handy zeigt nur die mittleren ~490 px der Spalte, Chat verdeckt unten
+const PB_X = CX+64, PB_TOP = PORT?TRK_Y+30:396, PB_BOT = PORT?680:600;   // Handy zeigt nur die mittleren ~490 px der Spalte, Chat verdeckt unten
 function drawProgress(rank){
   if(GLASS) return glassProgress(rank);
   const yOf = b => PB_TOP + Math.min(1, Math.max(0, (b.position.y-100)/(FINISH_Y-100))) * (PB_BOT-PB_TOP);
@@ -972,13 +973,13 @@ function drawColumn(rank){
     const n=secs(START_WAIT-phaseT), mine=balls.filter(b=>b.players.length);
     const oy=Math.max(378,Math.round((320-camY)*camZ)); ctx.fillStyle=GLASS?'rgba(21,16,38,0.45)':'rgba(5,6,18,0.5)'; ctx.fillRect(CX,oy,CW,H-oy);   // Kugeln am Start nicht abdunkeln
     if(GLASS){   // Countdown in Glas-Scheibe, darunter EINE Hinweis-Pille über dem Handy-Chat (y < 615)
-      const CY=PORT?616:512, CR=PORT?52:62;   // Hochformat: Countdown unter der Startreihe (Niklas 10.10.: verdeckte Kugeln), noch über dem Handy-Chat
+      const CY=PORT?482:512, CR=PORT?52:62;   // Hochformat: Countdown unter der Startreihe (Niklas 10.10.: verdeckte Kugeln), noch über dem Handy-Chat
       if(BRUTAL){ ctx.fillStyle=BK; ctx.beginPath(); ctx.arc(MID+7,CY+7,CR,0,7); ctx.fill(); ctx.fillStyle=n>0?'#fff':BL; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.stroke() }
       else { ctx.fillStyle='rgba(18,14,33,0.88)'; ctx.beginPath(); ctx.arc(MID,CY,CR,0,7); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=n>0?'rgba(255,255,255,0.18)':'rgba(79,224,192,0.7)'; ctx.stroke() }
       inkOn(()=>txt(n>0?String(n):'GO!',MID,CY+(n>0?(PORT?22:26):(PORT?16:20)),n>0?(PORT?60:72):(PORT?42:52),n>0?'#fff':BRUTAL?'#111':'#4fe0c0','900','center'));
       const np=mine.length, hint = chaos ? [`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,'#c4b5ff'] : (!np && balls.some(b=>b.bot)) ? ['🤖 Beat the bots! Type your country','#67e8f9']
         : [np ? `⭐ ${np} ${np===1?'PLAYER':'PLAYERS'} IN THIS RACE · chat = ⚡ boost` : '💬 chat = ⚡ boost your ball','#c4b5ff'];
-      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,PORT?700:652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
+      ctx.font=`800 24px ${FONT}`; pill(hint[0],MID,PORT?568:652,Math.min(24,Math.floor(24*SW/ctx.measureText(hint[0]).width)),hint[1],'rgba(124,92,255,0.22)','rgba(155,130,255,0.5)');
     } else {
     txt(n>0?String(n):'GO!',MID,500,72,'#fde047','700','center',0,true);
     if(chaos) txt(`🌀 CHAOS RACE: ${chaos.name} · WIN x2`,MID,640,24,'#c084fc','700','center',SW,true);
@@ -992,8 +993,8 @@ function drawColumn(rank){
     const a=Math.min(phaseT/30,1), w=finished[0]; if(BRUTAL){ /* Niklas 10.10.: keine große helle Fläche mehr – dunkler Schleier über der Bahn, helle Karte nur so groß wie der Inhalt */
       const tp=(board.countries||[])[0], cp=PORT&&results.length>0, bot=results.length?(cp?534:(PORT?580:590)):(tp&&!(w&&w.players.length)?690:650);
       ctx.globalAlpha=0.88*a; ctx.fillStyle='#231c47'; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,18); ctx.fill();
-      ctx.globalAlpha=a; hardBox(SL-24,392,SW+48,bot-392,CARDC,18,5,10); ctx.globalAlpha=1 } else if(GLASS){ ctx.fillStyle=`rgba(21,16,38,${0.96*a})`; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=`rgba(255,255,255,${0.12*a})`; ctx.stroke() } else { ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378) }
-    ctx.globalAlpha=a; if(GLASS) inkOn(()=>glassPodium(w)); else {
+      ctx.globalAlpha=a; ctx.save(); ctx.translate(0,PDY2); hardBox(SL-24,392,SW+48,bot-392,CARDC,18,5,10); ctx.restore(); ctx.globalAlpha=1 } else if(GLASS){ ctx.fillStyle=`rgba(21,16,38,${0.96*a})`; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle=`rgba(255,255,255,${0.12*a})`; ctx.stroke() } else { ctx.fillStyle=`rgba(5,6,18,${0.82*a})`; ctx.fillRect(CX,378,CW,H-378) }
+    ctx.save(); ctx.translate(0,PDY2); ctx.globalAlpha=a; if(GLASS) inkOn(()=>glassPodium(w)); else {
     txt(chaos?'🌀 CHAOS WIN x2':'🏆 WINNER',MID,420,36,chaos?'#c084fc':'#ffd700','700','center');
     // Handy-Layout (Niklas 06.10.): alles Wichtige zwischen Stundenleiste und Chat (y 290–615), innerhalb der mittleren ~490 px
     if(w){ bulbRing(MID,478,56,14); ctx.drawImage(ballSprite(w,40),MID-43,478-43); txt(w.name,MID,560,38,'#fff','700','center',SW);
@@ -1008,12 +1009,12 @@ function drawColumn(rank){
     if(results.length){ results.slice(0,3).forEach((x,j)=>txt(`${x.flag} ${x.user} #${x.place}/${balls.length}  +${x.pts} pts${x.beat?' 🏆':''}`,MID,ry+j*30,24,x.place<=3?'#4ade80':'#e2e8f0','700','center',SW));
       if(results.length>3) txt(`+${results.length-3} more players`,MID,ry+3*34,22,'#94a3b8','700','center') }
     else if(top) txt(`Most wins today: ${flagOf(top[0])} ${NAME[top[0]]||top[0]} (${top[1]})`,MID,640,22,'#94a3b8','700','center',SW); }
-    ctx.globalAlpha=1;
+    ctx.globalAlpha=1; ctx.restore();
   }
   drawConfetti();
   // Stundensieger-Ehrung (12 s nach dem Stundenwechsel)
   if(champShow && Date.now()-champShow.at<12000){ const c=champShow, a=Math.min(1,(Date.now()-c.at)/400,(12000-(Date.now()-c.at))/600);
-    ctx.globalAlpha=a; if(GLASS) inkOn(()=>glassChamp(c,(Date.now()-c.at)/1000)); else {
+    ctx.globalAlpha=a; if(GLASS){ ctx.save(); ctx.translate(0,PDY2); inkOn(()=>glassChamp(c,(Date.now()-c.at)/1000)); ctx.restore() } else {
     box(SL-10,384,SW+20,236,'rgba(30,20,4,0.95)',20,'#ffd700');
     txt('👑 NATION OF THE HOUR 👑',MID,418,28,'#ffd700','700','center',SW-20);
     ctx.drawImage(flagSprite(c.code,34),MID-37,430); txt(NAME[c.code]||c.code,MID,544,36,'#fff','700','center',SW-20);
