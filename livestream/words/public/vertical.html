@@ -64,11 +64,20 @@ h1{font-size:72px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#ff
 .row .n{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.row .p{font-weight:900}
 #how{font-size:30px;font-weight:800;color:#fff;text-align:center}
 #how b{background:var(--y);color:#111;padding:0 10px;border:3px solid #111;border-radius:6px}
+/* Chat-Echo (10.10.): jede Nachricht kurz als Aufkleber über dem Rätsel, neue Leute werden begrüßt – im Handy-Ausschnitt */
+#chatpop{position:absolute;top:334px;left:110px;right:110px;height:62px;display:flex;justify-content:center;pointer-events:none;z-index:2}
+#chatpop .cp2{display:inline-flex;align-items:center;gap:10px;max-width:860px;font-size:30px;font-weight:900;color:#111;white-space:nowrap;overflow:hidden;
+  padding:6px 20px;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000;transform:rotate(1.5deg)}
+#chatpop .cp2 .u{max-width:420px;overflow:hidden;text-overflow:ellipsis}
+#chatpop .cp2.w{background:var(--p);transform:rotate(-1.5deg)}
+#chatpop .cp2.f{background:var(--c)}
+#chatpop .cp2 .x{color:#d22}
 canvas#fx{position:absolute;inset:0;pointer-events:none}
 </style></head>
 <body><div id="stage">
   <div id="cat"></div>
   <div id="emojiw"><div id="emoji"></div></div>
+  <div id="chatpop"></div>
   <div id="tiles"></div>
   <div id="timer"><div id="bar"></div></div>
   <div id="solvers"></div>
@@ -155,7 +164,7 @@ async function poll(){
       fitEmoji(); pop($('emoji'),{transform:'scale(.6)',opacity:0},.7,.45); buildTiles(); sfx.start() }
     updateTiles(); renderSolvers();
     if(s.phase==='show' && shownN!==s.n){ shownN=s.n; if(s.solvers.length){ sfx.end(); confetti(540,700,80) } else sfx.miss() }
-    const box2=$('solvers'); let cta=box2.querySelector('.cta'); const ctaTxt=s.phase==='guess'?(s.solvers.length?'':'💬 Type your guess in chat'):(s.solvers.length?'':''); if(ctaTxt){ if(!cta){cta=document.createElement('div');cta.className='sol cta';box2.prepend(cta)} cta.textContent=ctaTxt } else if(cta) cta.remove();
+    const box2=$('solvers'); let cta=box2.querySelector('.cta'); const ctaTxt=s.phase==='guess'?(s.solvers.length?'':(s.flagRound?'💬 Type the country in chat':s.rebus?'💬 like ☀️+🌻 = SUNFLOWER · type it in chat':'💬 Type your guess in chat')):(s.solvers.length?'':''); if(ctaTxt){ if(!cta){cta=document.createElement('div');cta.className='sol cta';box2.prepend(cta)} cta.textContent=ctaTxt } else if(cta) cta.remove();
     const left=s.phase==='guess'?Math.max(0,(s.end-s.now)/(s.end-s.start)):0; $('bar').style.width=(left*100)+'%'; $('bar').className=left<.3?'low':'';
   }catch{}
 }
@@ -168,6 +177,26 @@ async function pollBoard(){
   }catch{}
 }
 setInterval(pollBoard,2000); pollBoard();
+
+// ---------- Chat-Echo: Begrüßung zuerst, sonst nur die neueste Nachricht (keine Warteschlange, die hinterherhinkt) ----------
+let popQ=[], popBusy=false, feedFirst=true;
+function showPop(){
+  if(popBusy||!popQ.length) return; popBusy=true;
+  const w=popQ.findIndex(x=>x.welcome), x=w>=0?popQ.splice(w,1)[0]:popQ.pop(); if(w<0) popQ=[];
+  const u=`<span class="u">${esc(x.user)}</span>`;
+  const html=x.welcome?`👋 Welcome ${u}! Type your guess`:x.flag?`${u} ${x.flag} joined`:x.late?`${u} ✓ just too late!`:`${u}: ${esc(x.guess)} <span class="x">✗</span>`;
+  $('chatpop').innerHTML=`<div class="cp2${x.welcome?' w':x.flag?' f':''}">${html}</div>`; pop($('chatpop').firstChild,{transform:'scale(.6)',opacity:0},.6,.35);
+  if(x.welcome) bell(PENTA[4],.4,.06);
+  setTimeout(()=>{ const el=$('chatpop').firstChild; if(el) el.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}); setTimeout(()=>{popBusy=false;showPop()},220) }, x.welcome?3200:1600);
+}
+async function pollFeed(){
+  try{
+    const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last;
+    if(feedFirst){ feedFirst=false; return }   // nach einem Neuladen keine alten Nachrichten abspielen
+    for(const x of f.feed) if(!x.ok) popQ.push(x); popQ=popQ.slice(-12); showPop();
+  }catch{}
+}
+setInterval(pollFeed,700); pollFeed();
 
 </script>
 </body></html>

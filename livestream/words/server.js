@@ -34,6 +34,11 @@ function rollDay() { if (st.day !== today()) { st = { day: today(), points: {}, 
 let saveT = null;
 const save = () => { if (!saveT) saveT = setTimeout(() => { saveT = null; fs.writeFile(STATE_FILE, JSON.stringify(st), () => {}); }, 1500); };
 rollDay();
+// Wer zum ersten Mal schreibt, wird im Bild begrüßt (Niklas 10.10.: neue Zuschauer schnell abholen); bleibt über Tage gespeichert
+const KNOWN_FILE = path.join(DATA, 'known.json');
+let known = new Set(); try { known = new Set(JSON.parse(fs.readFileSync(KNOWN_FILE, 'utf8'))); } catch {}
+let knownT = null;
+const saveKnown = () => { if (!knownT) knownT = setTimeout(() => { knownT = null; fs.writeFile(KNOWN_FILE, JSON.stringify([...known].slice(-20000)), () => {}); }, 5000); };
 
 // ---------- Runden ----------
 let round = null, recent = [], deck = [], feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
@@ -90,6 +95,7 @@ function isCorrect(text) {
 function onChat(user, text) {
   msgCount++;
   rollDay();
+  if (!known.has(user)) { known.add(user); saveKnown(); feed.push({ id: ++feedId, user, welcome: 1 }); }
   // Jede Nachricht bekommt eine sichtbare Rückmeldung (Niklas 09.10.: sonst wirkt der Chat „tot“)
   const late = round && round.phase !== 'guess' && isCorrect(text);
   if (round && round.phase === 'guess' && !round.solvers.some(s => s.user === user) && isCorrect(text)) {
