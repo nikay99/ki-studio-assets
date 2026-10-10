@@ -3,7 +3,9 @@
 # Verliert einer der beiden Bilder (drop_frames steigt um mehr als DROP_MAX pro Minute), sendet er zu langsam
 # (speed < 0.97) oder ist die CPU 3 Minuten in Folge über CPU_MAX %, pausiert der Wächter die Colony
 # (Datei PAUSE + ffmpeg beenden). Selbst gesetzte Pausen hebt er nach 10 ruhigen Minuten wieder auf; von Hand: rm /var/lib/marble-colony/PAUSE. Werte landen in guard.log.
-# Seit 10.10. (Guess the Capital): läuft Colony nicht (von Hand pausiert), pausiert er stattdessen Capital (/var/lib/marble-capital).
+# Seit 10.10. 12:22Z (Niklas): die Quiz-Streams (Word, Country, Capital) haben Vorrang. Reihenfolge der Opfer: Colony, dann das
+# Kugelrennen (/var/lib/marble/PAUSE, run.sh beendet dann ffmpeg und Chrome), Capital nur als letzte Notbremse.
+# Hat der Wächter Capital pausiert, das Kugelrennen aber nicht, tauscht er: Capital wieder an, Kugelrennen aus.
 set -u
 C=/var/lib/marble-colony; S=$C/guard.state; LOG=$C/guard.log
 DROP_MAX=${DROP_MAX:-30}; CPU_MAX=${CPU_MAX:-95}   # 95 seit 10.10. 11:52Z (Niklas), vorher 88
@@ -37,15 +39,25 @@ for s in "${MS%x}" "${WS%x}" "${GS%x}"; do [ -n "$s" ] && awk "BEGIN{exit !($s>0
 [ "$CPU" -gt "$CPU_MAX" ] && HOT=$((HOT+1)) || HOT=0
 [ "$HOT" -ge 3 ] && WHY="CPU $CPU % seit 3 Min."
 # Selbst gesetzte Pause nach 10 ruhigen Minuten wieder aufheben (eine von Hand gesetzte PAUSE ohne PAUSE.guard bleibt)
-P=/var/lib/marble-capital
-if [ -z "$WHY" ] && { [ -f $C/PAUSE.guard ] || [ -f $P/PAUSE.guard ]; }; then QUIET=$((QUIET+1)); else QUIET=0; fi
-if [ "$QUIET" -ge 10 ]; then [ -f $C/PAUSE.guard ] && rm -f $C/PAUSE $C/PAUSE.guard; [ -f $P/PAUSE.guard ] && rm -f $P/PAUSE $P/PAUSE.guard; QUIET=0; echo "$(date -u +%FT%TZ) Pause aufgehoben (10 Min. ruhig)" >> $LOG; fi
+P=/var/lib/marble-capital; R=/var/lib/marble
+# Tausch: Capital vom Wächter pausiert, Kugelrennen läuft → Kugelrennen pausieren, Capital wieder an
+if [ -f $P/PAUSE.guard ] && [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ]; then
+  cat $P/PAUSE > $R/PAUSE 2>/dev/null || echo "Tausch mit Capital" > $R/PAUSE; touch $R/PAUSE.guard; rm -f $P/PAUSE $P/PAUSE.guard
+  echo "$(date -u +%FT%TZ) Tausch: Capital wieder an, Kugelrennen pausiert (Quiz hat Vorrang)" >> $LOG
+fi
+if [ -z "$WHY" ] && { [ -f $C/PAUSE.guard ] || [ -f $R/PAUSE.guard ] || [ -f $P/PAUSE.guard ]; }; then QUIET=$((QUIET+1)); else QUIET=0; fi
+if [ "$QUIET" -ge 10 ]; then
+  # immer nur eine Stufe zurück, wichtigste zuerst: Capital, dann Kugelrennen, dann Colony
+  for X in $P $R $C; do [ -f $X/PAUSE.guard ] && { rm -f $X/PAUSE $X/PAUSE.guard; echo "$(date -u +%FT%TZ) Pause aufgehoben: $X (10 Min. ruhig)" >> $LOG; break; }; done
+  QUIET=0
+fi
 printf 'PM=%s PW=%s PG=%s HOT=%s QUIET=%s\n' "${M:-0}" "${W:-0}" "${G:-0}" "$HOT" "$QUIET" > $S
 echo "$(date -u +%FT%TZ) cpu=$CPU marble_drop=${M:--} words_drop=${W:--} country_drop=${G:--} speed=${MS:--}/${WS:--}/${GS:--} colony_fps=${K:--}${WHY:+ PAUSE: $WHY}" >> $LOG
 tail -n 3000 $LOG > $LOG.tmp && mv $LOG.tmp $LOG
-# Opfer: zuerst Colony; ist Colony schon pausiert (z. B. von Hand), dann Capital
+# Opfer: zuerst Colony, dann Kugelrennen, Capital nur wenn beide schon aus sind (Word und Country nie)
 V=""; U=""
 if [ ! -f $C/PAUSE ]; then V=$C; U=colony
+elif [ ! -f $R/PAUSE ] && [ ! -f $R/NOGUARD ]; then V=$R; U=marble
 elif [ -d $P ] && [ ! -f $P/PAUSE ] && [ ! -f $P/NOGUARD ]; then V=$P; U=capital; fi
 if [ -n "$WHY" ] && [ -n "$V" ] && [ ! -f $C/NOGUARD ]; then
   echo "$WHY" > $V/PAUSE; chown $U:$U $V/PAUSE 2>/dev/null

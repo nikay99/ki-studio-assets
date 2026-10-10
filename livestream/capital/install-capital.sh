@@ -52,7 +52,7 @@ RestartSec=10
 WantedBy=multi-user.target
 EOS
 
-# Last: colony-guard.sh pausiert bei Engpass zuerst Colony, dann Capital (Kugelrennen, Wortraten, Country geschützt)
+# Last: colony-guard.sh pausiert bei Engpass zuerst Colony, dann das Kugelrennen, Capital nur als letzte Notbremse (Niklas 10.10. 12:22Z)
 systemctl daemon-reload
 systemctl enable capital-server capital-stream
 systemctl start capital-server || true
