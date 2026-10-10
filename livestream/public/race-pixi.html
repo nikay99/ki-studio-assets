@@ -34,7 +34,7 @@ const inkOn = f => { const pb=BINK; BINK=true; try{ f() } finally { BINK=pb } };
 // Hochformat (Niklas 09.10. „country umbauen auf 9:16“): ?portrait=1 zeigt nur die 9:16-Spalte, auf 720x1280 vergrößert; Seitenleisten entfallen
 const PORT = Q.get('portrait')==='1';
 const OUT_W = +(Q.get('w')||(PORT?720:1280)), OUT_H = PORT ? Math.round(OUT_W*16/9) : Math.round(OUT_W*H/W);   // Ausgabe 1280x720 spart ~55 % Rechenzeit gegenüber 1080p
-const OY = PORT ? 110 : 0, OB = PORT ? 40 : 0;   // Hochformat (Niklas 10.10. „bisschen tiefer alles“): oben Platz für YouTubes Kanalname/Zuschauerzahl, unten etwas Luft über dem Chat-Feld
+const OY = 0, OB = 0;   // Rand oben/unten (Hochformat 10.10. kurz 110/40, dann „mehr Platz fürs Race“: stattdessen kompakter Kopf, siehe portHeader)
 const SC = (OUT_H-OY-OB)/H, OX = PORT ? Math.round((OUT_W-CW*SC)/2 - CX*SC) : 0;   // Hochformat: Spalte (608x1080) in 720x1280, mittig
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 cv.width = OUT_W; cv.height = OUT_H;
@@ -442,7 +442,8 @@ async function pollChat(){
         nextUp = nextUp.filter(x=>x.user!==e.user); nextUp.push({user:e.user, code:e.code});
         if(e.greet) toast(greetText(e),'#fde047'); else toast(GLASS?(e.back?`👋 ${short(e.user)} is back!`:`${flag} ${short(e.user)} is in the next race!`):e.back?`👋 welcome back ${e.user}! ${flag} in the next race`:`${flag} ${e.user} is IN the next race!`, '#fde047'); chatLog=chatLog.filter(c=>c.user!==e.user); chatLog.unshift({user:e.user,flag,txt:'next race'});
       }
-      sfx.join(); if(Date.now()-lastWelcome>30000){ lastWelcome=Date.now(); say(['welcome']) }
+      sfx.join(); if(Date.now()-lastWelcome>30000){ lastWelcome=Date.now();   // Niklas 10.10.: Sprecher begrüßt das Land („Welcome, Austria!“), Wiederkehrer mit „Welcome back!“; ohne Clip der allgemeine
+        const wl=(e.greet&&e.greet.kind==='back')||e.back ? 'welcome-back' : 'welcome-'+e.code; vload(wl).then(ok=>say([ok?wl:'welcome'])) }
     }
     chatLog = chatLog.slice(0,6); lastEv = Math.max(lastEv, r.last);
   }catch{}
@@ -628,13 +629,32 @@ function chip(x,y,s,i){ if(BRUTAL){ ctx.fillStyle=[BY,'#e8e8e8',BO][i]||'#fff'; 
   txt(s,x+19,y-3,20,i<3?'#22182e':'#a99fc6','900','center') }
 // Mitte wie Wortraten: Kopf ohne dunklen Balken (gleicher Hintergrund wie die Seiten), alles zentriert,
 // darunter die Bahn als abgerundete Glas-Karte. Handy: Kopf bleibt in y 128–378, Bahn ab 386.
-const TRK_Y=386;
+const TRK_Y=PORT?274:386;   // Hochformat (Niklas 10.10. „mehr Platz fürs Race, weniger Blabla oben“): Kopf nur Laufband + 2 Zeilen
 function glassFrame(){ ctx.save(); ctx.beginPath(); ctx.rect(CX,0,CW,H); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.clip('evenodd');
   glassSide(CX,CW); ctx.restore();
   if(BRUTAL){ ctx.lineWidth=5; ctx.strokeStyle=BK; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,18); ctx.stroke(); return }
   ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.roundRect(CX+10,TRK_Y,CW-20,H-TRK_Y-14,30); ctx.stroke() }
+// Hochformat-Kopf (Niklas 10.10. „mehr Platz fürs Race, weniger Blabla oben“): Laufband (glassTop) + eine Zeile Rennen/Top 3/Stunde + eine Zeile Aufruf.
+// Titel und LIVE entfallen (stehen in der YouTube-App ohnehin). Alles unter der App-Leiste (y > ~118).
+function portHeader(rank){
+  const y1=182, rh=34, fin=finalMin();
+  ctx.save(); ctx.letterSpacing='1.5px'; ctx.font=`900 19px ${FONT}`;
+  const a=`RACE #${raceNo}`, aw=ctx.measureText(a).width+22, tl=(fin?'🔥 ':'👑 ')+hourLeft(), hl=(board.hour||[])[0], bw=ctx.measureText(tl).width+22+(hl?52:0);
+  if(BRUTAL){ hardBox(SL-24,y1,aw,rh,'#fff',7,3,4,BK); hardBox(SR+24-bw,y1,bw,rh,fin?BP:BY,7,3,4,BK) }
+  else { card(SL-24,y1,aw,rh); card(SR+24-bw,y1,bw,rh) }
+  ctx.fillStyle=BRUTAL?BK:'#f3effc'; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillText(a,SL-24+aw/2,y1+24);
+  ctx.textAlign='left'; ctx.fillText(tl,SR+24-bw+11,y1+24); ctx.restore();
+  if(hl){ ctx.drawImage(flagSprite(hl[0],10),SR+24-50,y1+5); txt(String(hl[1]),SR+24-26,y1+24,18,BRUTAL?'#111':'#ffd166','900','left') }
+  rank.slice(0,3).forEach((b,i)=>{ const x=MID-62+i*48; ctx.drawImage(ballSprite(b,14),x,y1) });
+  // Aufruf-Zeile: Zeitlupe > Chaos > Champion (8-s-Wechsel) > „type your country“
+  const y2=226, h2=40, cl=chaosLeft(), chaosLine = chaos ? `🌀 CHAOS: ${chaos.name} · WIN x2` : (!OFFLINE && cl>0 && cl<=3) ? `🌀 CHAOS RACE ${cl===1?'NEXT':'in '+cl}! · WIN x2` : null;
+  const rg=board.reigning, champ = rg && !fin && Math.floor(Date.now()/8000)%2;
+  const [s,fill] = timeScale<0.9 ? ['📸 PHOTO FINISH · slow motion',BY] : chaosLine ? [chaosLine,BC] : champ ? [`🏆 Champion: ${rg.user} · ${rg.pts} pts`,BC] : ['🎯 Type your COUNTRY = your own ball!',BP];
+  if(BRUTAL) hardBox(SL-24,y2,SW+48,h2,fill,10,4,6,SHC); else card(SL-24,y2,SW+48,h2);
+  inkOn(()=>txt(s,MID,y2+28,24,'#fff','900','center',SW+30));
+}
 function glassHeader(rank){
-  glassFrame();
+  glassFrame(); if(PORT) return portHeader(rank);
   if(BRUTAL){ ctx.save(); ctx.translate(MID,147); ctx.rotate(-0.05); hardBox(-56,-21,112,42,'#ff3b3b',10,4,6,SHC); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-28,0,6,0,7); ctx.fill();
       ctx.font=`900 22px ${FONT}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('LIVE',10,1); ctx.restore();
     ctx.save(); ctx.letterSpacing='-1.5px'; ctx.font=`900 52px ${FONT}`; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; let fs=52; while(fs>36 && ctx.measureText('Country Marble Race').width>SW+40){ fs--; ctx.font=`900 ${fs}px ${FONT}` }
@@ -706,7 +726,7 @@ const hit=(a,l)=>l.some(b=>a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h);
 // und einer feinen Farblinie (Lila → Pink → Mint), die langsam wandert. Liegt am Handy unter der Statusleiste, nur Schmuck fürs 16:9-Bild.
 let tickX=0, tickLast=0;
 function glassTop(){
-  const x0=PORT?CX+10:48, x1=PORT?CX+CW-10:W-48, y0=30, h=76,   /* Hochformat: Leiste nur so breit wie die Spalte */ now=performance.now(); const dt=tickLast?Math.min(100,now-tickLast):16; tickLast=now;
+  const x0=PORT?CX+10:48, x1=PORT?CX+CW-10:W-48, y0=PORT?116:30, h=PORT?58:76,   /* Hochformat: Leiste nur so breit wie die Spalte */ now=performance.now(); const dt=tickLast?Math.min(100,now-tickLast):16; tickLast=now;
   card(x0,y0,x1-x0,h,BY); const pb=BINK; BINK=true;
   // Farblinie unten an der Leiste
   const sh=(now/40)%(x1-x0), g=ctx.createLinearGradient(x0-sh,0,x0-sh+2*(x1-x0),0);
@@ -714,7 +734,8 @@ function glassTop(){
   if(!BRUTAL){ ctx.save(); ctx.beginPath(); ctx.roundRect(x0,y0,x1-x0,h,28); ctx.clip(); ctx.globalAlpha=0.9; ctx.fillStyle=g; ctx.fillRect(x0,y0+h-3,x1-x0,3); ctx.restore() }
   // links: Etikett
   const lab=PORT?'⭐ TOP':'⭐ TOP PLAYERS'; ctx.save(); ctx.letterSpacing='2px'; ctx.font=`800 21px ${FONT}`; const lw=ctx.measureText(lab).width+36; ctx.restore();
-  if(BRUTAL) label(lab,x0+18+lw/2,y0+50,'#111','center');
+  const lx=x0+(PORT?56:18);   /* Hochformat: links liegt die Krone der YouTube-App */
+  if(BRUTAL) label(lab,lx+lw/2,y0+h/2+12,'#111','center');
   else { ctx.fillStyle='rgba(124,92,255,0.28)'; ctx.beginPath(); ctx.roundRect(x0+18,y0+18,lw,38,19); ctx.fill(); ctx.strokeStyle='rgba(155,130,255,0.55)'; ctx.lineWidth=1.5; ctx.stroke();
   label(lab,x0+18+lw/2,y0+44,'#e6e0ff','center') }
   // rechts: Rennen heute
@@ -722,14 +743,14 @@ function glassTop(){
   txt(rs,x1-26,y0+46,22,'#a99fc6','700','right');
   // Mitte: Laufband (Länder mit den meisten Siegen heute)
   // Laufband = Spieler statt Länder (Niklas 10.10.: „dass die Leute sich mehr auf dem Bildschirm sehen“): Tagespunkte mit Platz und Abzeichen
-  const L0=x0+18+lw+24, L1=x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
+  const L0=x0+(PORT?56:18)+lw+24, L1=x1-26-rw-30, list=(board.ticker||board.points||[]).slice(0,20), MED=['🥇','🥈','🥉'];
   const items=list.length? [...(board.reigning?[`🏆 Champion: ${board.reigning.user}`]:[]), ...list.map(([u,n],i)=>`${MED[i]||'#'+(i+1)} ${badge(u)}${u}  ${n} pts`), ...newFaces.map(u=>`👋 welcome ${u}!`)] : ['🎯 Type your COUNTRY in the chat to get your own ball','⚡ Chat during the race to boost it','🏆 Every race scores points'];
   const sep='     ·     ', line=items.join(sep)+sep; ctx.font=`700 24px ${FONT}`; const lwid=ctx.measureText(line).width;
   tickX=(tickX+dt*0.045)%lwid;
   ctx.save(); ctx.beginPath(); ctx.rect(L0,y0+4,L1-L0,h-8); ctx.clip();
   const fade=(a,b,c0,c1)=>{ const gg=ctx.createLinearGradient(a,0,b,0); gg.addColorStop(0,c0); gg.addColorStop(1,c1); return gg };
   ctx.fillStyle=BRUTAL?BK:'#f3effc'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  for(let x=L0-tickX; x<L1; x+=lwid) ctx.fillText(line,x,y0+47);
+  for(let x=L0-tickX; x<L1; x+=lwid) ctx.fillText(line,x,y0+h/2+9);
   ctx.restore();
   // weiche Ränder des Laufbands (Text läuft unter Glas aus statt hart abgeschnitten)
   const fc=BRUTAL?(BDARK?'254,212,57':'255,210,63'):'30,24,56';
