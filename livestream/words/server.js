@@ -13,6 +13,7 @@ const PORT = +process.env.PORT || 8090;
 const PUB = path.join(__dirname, 'public');
 const VERSION = String(Date.now());
 fs.mkdirSync(DATA, { recursive: true });
+const gami = require('../gami.js')(DATA);   // gemeinsame Level/Serien/Bonusrunde (Niklas 10.10.)
 
 const WORDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'words.json'), 'utf8'));
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -64,7 +65,7 @@ function startRound() {
   // Reihenfolge des Aufdeckens: nie mehr als gut die Hälfte, Leerzeichen sind immer sichtbar
   const idx = letters.map((ch, i) => i).filter(i => /[A-Z]/.test(letters[i])).sort(() => Math.random() - 0.5);
   const maxReveal = Math.max(1, Math.floor(idx.length * 0.6));
-  round = { n, q, letters, order: idx.slice(0, maxReveal), revealed: [], start: Date.now(), end: Date.now() + ROUND_MS, solvers: [], phase: 'guess' };
+  round = { n, q, letters, order: idx.slice(0, maxReveal), revealed: [], start: Date.now(), end: Date.now() + ROUND_MS, solvers: [], ...gami.roundStart(), phase: 'guess' };
   st.rounds = n; save();
 }
 function tick() {
@@ -102,11 +103,12 @@ function onChat(user, text) {
   const late = round && round.phase !== 'guess' && isCorrect(text);
   if (round && round.phase === 'guess' && !round.solvers.some(s => s.user === user) && isCorrect(text)) {
     const place = round.solvers.length, ms = Date.now() - round.start;
-    const pts = place < PTS.length ? PTS[place] : 3;
-    round.solvers.push({ user, pts, ms, flag: st.flags[user] || '' });
+    const gm = gami.award(user, place < PTS.length ? PTS[place] : 3, round), pts = gm.pts;
+    round.solvers.push({ user, pts, ms, flag: st.flags[user] || '', b: gm.badge, streak: gm.streak, sb: gm.sb, mult: gm.mult });
     st.points[user] = (st.points[user] || 0) + pts;
     if (place === 0) { st.wins[user] = (st.wins[user] || 0) + 1; if (!st.fastest || ms < st.fastest.ms) st.fastest = { user, ms, word: round.q.shown }; }
     feed.push({ id: ++feedId, user, ok: 1, pts, place }); save();
+    if (gm.up) feed.push({ id: ++feedId, user, levelUp: gm.up[0], badge: gm.up[2] }); else if (gm.streak >= 3) feed.push({ id: ++feedId, user, streakPop: gm.streak, sb: gm.sb, badge: gm.badge });
     if (place === 0) round.end = Math.min(round.end, Date.now() + 12000);   // nach dem ersten Treffer noch 12 s für alle anderen
   } else if (late) {
     feed.push({ id: ++feedId, user, late: 1 });   // richtig, aber nach Rundenende (Bildverzögerung) – freundlich quittieren
@@ -128,7 +130,7 @@ function onChat(user, text) {
 function board() {
   rollDay();
   const top = Object.entries(st.points).sort((a, b) => b[1] - a[1]).slice(0, 10)
-    .map(([u, p]) => ({ user: u, pts: p, wins: st.wins[u] || 0, flag: st.flags[u] ? flagOf(st.flags[u]) : '' }));
+    .map(([u, p]) => ({ user: u, pts: p, wins: st.wins[u] || 0, flag: (gami.badge(u) + ' ' + (st.flags[u] ? flagOf(st.flags[u]) : '')).trim() }));
   return { top, players: Object.keys(st.points).length, rounds: st.rounds, fastest: st.fastest, streak: st.streak };
 }
 function view() {
@@ -137,7 +139,7 @@ function view() {
     v: VERSION, now: Date.now(), n: r.n, phase: r.phase, cat: r.q.c, emoji: r.q.e, rebus: r.q.r || null, flagRound: !!r.q.flag,
     tiles: r.letters.map((ch, i) => ch === ' ' ? ' ' : (show || r.revealed.includes(i)) ? ch : ''),
     end: r.end, start: r.start, showEnd: r.showEnd || 0,
-    solvers: r.solvers.map(s => ({ ...s, flag: s.flag ? flagOf(s.flag) : '' })),
+    solvers: r.solvers.map(s => ({ ...s, flag: ((s.b || '') + ' ' + (s.flag ? flagOf(s.flag) : '')).trim() })), gami: gami.info(r),
     answer: show ? r.q.shown : null,
   };
 }
@@ -146,6 +148,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.
 const send = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
+  if (u.pathname === '/gami-ui.js') return fs.readFile(path.join(__dirname, '..', 'gami-ui.js'), (e, b) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' }); res.end(b); });
   if (u.pathname === '/api/state') return send(res, 200, view());
   if (u.pathname === '/api/board') return send(res, 200, board());
   if (u.pathname === '/api/feed') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: feedId, feed: feed.filter(f => f.id > since) }); }
@@ -175,7 +178,7 @@ if (process.env.DEMO === '1') {
 }
 // Selbst-Update: Das Repo wird auf dem N95 alle 3 Min. gezogen. Ändert sich eine Datei des Wortratens, beendet sich der Server,
 // systemd startet ihn neu, und die Seite lädt bei neuer Version selbst neu.
-const WATCH = ['server.js', 'words.json', 'public/index.html', 'public/vertical.html', '../chat.js'].map(f => path.join(__dirname, f));
+const WATCH = ['server.js', 'words.json', 'public/index.html', 'public/vertical.html', '../chat.js', '../gami.js', '../gami-ui.js'].map(f => path.join(__dirname, f));
 const mtimes = () => WATCH.map(f => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } }).join();
 const M0 = mtimes(); setInterval(() => { if (mtimes() !== M0) { console.log('Dateien geändert, Neustart'); save(); setTimeout(() => process.exit(0), 2000); } }, 60000);
 console.log('Wortraten auf http://127.0.0.1:' + PORT);

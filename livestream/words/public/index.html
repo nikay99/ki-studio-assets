@@ -246,7 +246,7 @@ function renderSolvers(){
   const m=['🥇','🥈','🥉'], s=S.solvers, box=$('solvers');
   if(String(S.n)!==box.dataset.n){ box.dataset.n=S.n; box.innerHTML=''; lastSolv=0 }
   for(let i=lastSolv;i<Math.min(s.length,3);i++){ const x=s[i], d=document.createElement('div');
-    d.className='sol glass'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">+${x.pts}</span>`;
+    d.className='sol glass'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span>${x.streak>=3?`<span class="fl">🔥${x.streak}</span>`:''}<span class="p">${x.mult>1?'⚡':''}+${x.pts}</span>`;
     box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4); sfx.correct(i); if(!i) confetti(960,650,60) }
   if(s.length>3){ let more=box.querySelector('.more'); if(!more){ more=document.createElement('div'); more.className='sol more'; box.appendChild(more); pop(more,{opacity:0},1,.3) }
     more.textContent=`+${s.length-3} more got it`; if(s.length>lastSolv) sfx.correct(2) }
@@ -290,4 +290,5 @@ async function pollFeed(){
 }
 setInterval(pollFeed,700);
 </script>
+<script src="/gami-ui.js"></script>
 </body></html>
