@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Guess the Country Short</title>
+<style>
+/* Quiz-Short aus dem Spiel „Guess the Country“ (Marketing-Test 10.10.). Bild 1080×1920, zeitgesteuert über render(t) (Sekunden),
+   damit render-short.js jedes Bild einzeln aufnehmen kann. Shorts-Safe-Zone: x 60–940, y 180–1560 (unten Titel, rechts Knöpfe). */
+@font-face{font-family:Inter;src:url(../../words/public/fonts/InterVariable.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--paper:#1f3a4d;--dot:#2f5670;--card:#f8f4eb;--y:#fed439;--p:#ff7b9c;--c:#61d4f5;--l:#b6f36a;--o:#ff8a3d;--sea:#d9f1fb}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper);font-family:Inter,"Noto Color Emoji",sans-serif;cursor:none;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;inset:0;background-image:radial-gradient(var(--dot) 2.4px,transparent 2.4px);background-size:36px 36px}
+.b{border:6px solid #111;box-shadow:10px 10px 0 #000;border-radius:18px}
+#hook{position:absolute;top:200px;left:60px;width:880px;display:flex;flex-direction:column;align-items:center;gap:14px}
+#hook .l1,#hook .l2{font-weight:900;color:#111;text-transform:uppercase;letter-spacing:-.02em;line-height:1;white-space:nowrap}
+#hook .l1{font-size:76px;background:var(--y);padding:10px 26px 14px;transform:rotate(-2deg)}
+#hook .l2{font-size:64px;background:var(--p);padding:8px 24px 12px;transform:rotate(1.5deg)}
+#map{position:absolute;top:440px;left:60px;width:880px;height:580px;overflow:hidden;background:var(--sea);
+  background-image:radial-gradient(#b4e2f3 2px,transparent 2px);background-size:24px 24px}
+#shape{position:absolute;left:40px;top:30px;width:788px;height:508px}
+#shape .sh{fill:#000}#shape .fg{fill:var(--y);stroke:#111;stroke-width:5;stroke-linejoin:round}
+#shape.solved .fg{fill:var(--l)}
+#count{position:absolute;top:400px;left:820px;width:150px;height:150px;border-radius:50%;background:#ff3b3b;color:#fff;font-weight:900;font-size:96px;
+  display:flex;align-items:center;justify-content:center;border:7px solid #111;box-shadow:8px 8px 0 #000;z-index:3}
+#mini{display:block;width:100%;height:104px;background:#fff;border:3px solid #111;border-radius:6px;margin-top:4px}#mini .land{fill:#c9c2b4}#mini .pt{fill:#ff3b3b;stroke:#111;stroke-width:2.5}#mini .ring{fill:none;stroke:#ff3b3b;stroke-width:4}
+#flag{position:absolute;left:24px;top:24px;font-size:150px;line-height:1;background:#fff;border:6px solid #111;border-radius:16px;box-shadow:8px 8px 0 #000;padding:6px 20px;opacity:0;z-index:2}
+#hints{position:absolute;top:1052px;left:60px;width:880px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.hint{height:160px;display:flex;flex-direction:column;justify-content:center;padding:0 16px;background:#e7e2d6;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000;white-space:nowrap;overflow:hidden}
+.hint .k{font-size:22px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.hint .v{font-size:40px;font-weight:900;overflow:hidden;text-overflow:ellipsis}
+.hint.open{background:var(--c)}
+#tiles{position:absolute;top:1240px;left:60px;width:880px;height:130px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:10px 22px}
+.word{display:flex;gap:10px}
+.t{display:flex;align-items:center;justify-content:center;font-weight:900;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000;color:#111}
+.t.on{background:var(--y)}.t.solved{background:var(--l)}
+#timer{position:absolute;top:1400px;left:70px;width:860px;height:30px;background:var(--card);border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;overflow:hidden}
+#bar{height:100%;background:var(--p)}
+#cta{position:absolute;top:1462px;left:60px;width:880px;text-align:center;font-size:40px;font-weight:900;color:#fff}
+#cta b{background:var(--y);color:#111;padding:2px 14px;border:4px solid #111;border-radius:8px}
+#end{position:absolute;inset:0;background:rgba(15,30,42,.82);display:flex;align-items:center;justify-content:center;opacity:0;z-index:5}
+#endcard{width:880px;padding:50px 40px 56px;background:var(--card);display:flex;flex-direction:column;align-items:center;gap:30px;text-align:center}
+.live{display:inline-flex;align-items:center;gap:14px;background:#ff3b3b;color:#fff;font-weight:900;font-size:52px;padding:8px 26px;border:6px solid #111;border-radius:12px;box-shadow:8px 8px 0 #000;transform:rotate(-3deg)}
+.live i{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid #111}
+#endcard h2{font-size:82px;font-weight:900;line-height:1.02;letter-spacing:-.03em;color:#111}
+#endcard .arrow{font-size:52px;font-weight:900;background:var(--y);padding:8px 24px;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000}
+#endcard .games{font-size:36px;font-weight:800;color:#333}
+canvas{position:absolute;inset:0;z-index:4;pointer-events:none}
+</style></head>
+<body><div id="stage">
+  <div id="hook"><div class="b l1" id="h1">Guess this country</div><div class="b l2" id="h2">in 5 sec 🔴</div></div>
+  <div class="b" id="map"><svg id="shape" viewBox="0 0 820 335" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="flag"></div></div>
+  <div id="count">5</div>
+  <div id="hints"></div>
+  <div id="tiles"></div>
+  <div id="timer"><div id="bar"></div></div>
+  <div id="cta">💬 <b>comment</b> your answer!</div>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+  <div id="end"><div class="b" id="endcard"><div class="live"><i></i>LIVE 24/7</div><h2>Play live with the chat</h2>
+    <div class="arrow">→ link in description</div><div class="games">Guess the Country · Guess the Word</div></div></div>
+</div>
+<script>
+// Ablauf (Sekunden): 0 Umriss + Hook, 1–6 Countdown 5…1 mit Tipps (2,0 Kontinent / 3,2 Karte / 4,4 Hauptstadt) und Buchstaben,
+// 6 Auflösung mit Flagge, 10 Endkarte, Ende 15
+const P=new URLSearchParams(location.search), CODE=P.get('c')||'JP', NAME=(P.get('n')||'Japan').toUpperCase(), CAP=P.get('cap')||'Tokyo', CONT=P.get('cont')||'Asia';
+const T={hint:[2.0,3.2,4.4], rev0:2.5, rev1:5.5, solve:6.0, end:10.0, total:15.0};
+const $=id=>document.getElementById(id), flagOf=c=>String.fromCodePoint(...[...c].map(x=>0x1F1E6+x.charCodeAt(0)-65));
+const pop=x=>x<=0?0:x>=1.2?1:1-Math.exp(-7*x)*Math.cos(12*x);       // Feder: 0 → 1 mit kleinem Überschwingen
+let SH=null, tiles=[], order=[];
+async function init(){
+  SH=await (await fetch('../public/shapes.json')).json();
+  const s=SH.shapes[CODE];
+  // Umriss eng einpassen (eigene viewBox um die Form, nicht das ganze Spielfeld)
+  const [x,y,w,h]=s.box, pad=24; $('shape').setAttribute('viewBox',`${x-pad} ${y-pad} ${w+2*pad+10} ${h+2*pad+10}`);
+  $('shape').innerHTML=`<path class="sh" transform="translate(10 10)" d="${s.d}"/><path class="fg" d="${s.d}"/>`;
+  const words=NAME.split(' '), n=Math.max(...words.map(w=>w.length)); let sz=Math.min(104,Math.floor((880-(NAME.replace(/ /g,'').length-1)*10-(words.length-1)*22)/NAME.replace(/ /g,'').length));
+  if(sz<58) sz=Math.min(80,Math.floor((880-(n-1)*10)/n));
+  let k=0; $('tiles').innerHTML=words.map(w=>`<div class="word">${[...w].map(()=>`<div class="t" data-i="${k++}" style="width:${sz}px;height:${Math.round(sz*1.12)}px;font-size:${Math.round(sz*.6)}px"></div>`).join('')}</div>`).join('');
+  tiles=[...document.querySelectorAll('.t')]; const letters=NAME.replace(/ /g,'');
+  // feste Aufdeck-Reihenfolge (Hälfte der Buchstaben), damit jedes Rendern gleich aussieht
+  order=[...letters].map((_,i)=>i).sort((a,b)=>((a*7919)%13)-((b*7919)%13)).slice(0,Math.floor(letters.length/2));
+  tiles.forEach((el,i)=>el.dataset.ch=letters[i]);
+  $('flag').textContent=flagOf(CODE);
+  window.READY=true;
+}
+function hints(t){
+  const it=[['🌍 Continent',CONT,T.hint[0]],['📍 Location','MAP',T.hint[1]],['🏛️ Capital',CAP,T.hint[2]]];
+  const rp=(t%1.4)/1.4, d=SH.shapes[CODE].dot, map=`<svg id="mini" viewBox="0 0 360 180"><path class="land" d="${SH.world}"/><circle class="ring" cx="${d[0]}" cy="${d[1]}" r="${4+16*rp}" style="opacity:${1-rp}"/><circle class="pt" cx="${d[0]}" cy="${d[1]}" r="9"/></svg>`;
+  $('hints').innerHTML=it.map(([k,v,at])=>{ const o=t>=at, s=o?.8+.2*pop(t-at):1; return `<div class="hint ${o?'open':''}" style="transform:scale(${s})"><div class="k">${k}</div>${o&&v==='MAP'?map:`<div class="v">${o?v:'🔒'}</div>`}</div>`}).join('');
+}
+// Konfetti deterministisch (feste Zufallsfolge), damit Einzelbilder zusammenpassen
+const fx=$('fx').getContext('2d'); const R=(i=>()=>(i=(i*16807)%2147483647)/2147483647)(42);
+const parts=[...Array(120)].map((_,i)=>({a:-Math.PI/2+(R()-.5)*2.4,v:14+R()*16,c:['#ff5d8d','#7c5cff','#2ec4a6','#ffb627','#5ab4ff'][i%5],r:5+R()*6,s:R()*6}));
+function confetti(t){ fx.clearRect(0,0,1080,1920); const d=t-T.solve; if(d<0||d>3) return;
+  for(const p of parts){ const f=d*30, x=540+Math.cos(p.a)*p.v*f*.97, y=730+Math.sin(p.a)*p.v*f+.19*f*f; fx.save(); fx.translate(x,y); fx.rotate(p.s+f*.15); fx.globalAlpha=Math.max(0,1-d/3); fx.fillStyle=p.c; fx.fillRect(-p.r,-p.r/2,p.r*2,p.r); fx.restore() } }
+function render(t0){
+  // Loop: die letzten 0,4 s blendet die Endkarte aus und darunter steht schon das erste Bild
+  const back=t0>T.total-0.4, t=back?0:t0;
+  // ständige leichte Bewegung (Punkteraster wandert, Umriss atmet), periodisch über 15 s, damit der Loop nahtlos ist
+  const ph=t0/T.total; $('stage').style.backgroundPosition=`${ph*720}px ${ph*360}px`; $('map').style.backgroundPosition=`${-ph*480}px ${ph*240}px`;
+  const breathe=1+.02*Math.sin(ph*2*Math.PI*5);
+  const solved=t>=T.solve;
+  // Hook oben; nach der Auflösung wird er zur Antwort
+  $('h1').textContent=solved?`It's ${NAME}!`:'Guess this country'; $('h2').textContent=solved?'Did you get it? 👇':'in 5 sec 🔴';
+  $('hook').style.transform=`scale(${t<0.05?1:solved?.85+.15*pop(t-T.solve):1})`;
+  $('shape').style.transform=`scale(${(.6+.4*pop(t+0.6))*breathe})`; $('shape').classList.toggle('solved',solved);
+  const c=Math.max(1,Math.ceil(6-Math.max(1,t))); $('count').textContent=solved?'✓':c; $('count').style.background=solved?'#2ec27e':'#ff3b3b';
+  const ct=t<1?0:(t-1)%1; $('count').style.transform=`scale(${solved?1:1+.18*(1-pop(ct*1.4))})`;
+  hints(t);
+  const nrev=t<T.rev0?0:Math.min(order.length,Math.floor((t-T.rev0)/((T.rev1-T.rev0)/order.length))+1);
+  tiles.forEach((el,i)=>{ const k=order.indexOf(i), on=solved||(k>=0&&k<nrev); el.textContent=on?el.dataset.ch:''; el.className='t'+(solved?' solved':on?' on':'');
+    const at=solved?T.solve+i*.05:T.rev0+k*((T.rev1-T.rev0)/order.length); el.style.transform=on?`scale(${.75+.25*pop(t-at)})`:'none' });
+  $('bar').style.width=(solved?0:Math.max(0,1-(t-1)/5)*100)+'%';
+  $('flag').style.opacity=solved?1:0; $('flag').style.transform=`rotate(-5deg) scale(${solved?.3+.7*pop(t-T.solve):0})`;
+  confetti(t);
+  const e=back?(T.total-t0)/.4:t<T.end?0:Math.min(1,(t-T.end)/.3); $('end').style.opacity=e; $('endcard').style.transform=`scale(${(back?1:.7+.3*pop(t-T.end))*(1+.015*Math.sin(ph*2*Math.PI*6))})`;
+}
+init();
+</script></body></html>
