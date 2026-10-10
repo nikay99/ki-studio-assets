@@ -14,7 +14,7 @@ const hardDot = (() => {   // harter runder Punkt (Neo-Brutalism: Schatten, Konf
   const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
   g.fillStyle = '#fff'; g.beginPath(); g.arc(32, 32, 31, 0, 7); g.fill(); return c;
 })();
-let BR = false;   // Neo-Brutalism (Niklas 09.10. 22:02Z): flach, harte Schatten, schwarze Konturen, kein Leuchten
+let BR = false, AR = false, shakeA = 0, leadRing;   // AR = Arcade Pop: weiches Licht, aber ohne Bloom, Scheinwerfer und Schwebelichter   // Neo-Brutalism (Niklas 09.10. 22:02Z): flach, harte Schatten, schwarze Konturen, kein Leuchten
 let app, root, bgSprite, bgKey = '', lights, col, world, glowC, trackC, dyn, trails, shadows, ballsC, sparksC, bloom;
 let dotTex, coneTex, trackFor = null, sparks = [], lightList = [], halos, fx, beams, beamList = [], spot, rings, seenDone = new WeakSet();
 let frameT = 0, slowN = 0;
@@ -30,7 +30,7 @@ const cone = (() => {   // Lichtkegel (oben schmal, unten breit, weich auslaufen
 })();
 
 PX.init = async (canvas, outW, outH, sc, geo) => {
-  Object.assign(PX, geo); BR = !!geo.brutal;
+  Object.assign(PX, geo); AR = !!geo.arcade; BR = !!geo.brutal && !AR;
   app = new PIXI.Application();
   await app.init({ canvas, width: outW, height: outH, antialias: true, autoStart: false, background: '#000000', preference: 'webgl', powerPreference: 'high-performance' });
   dotTex = PIXI.Texture.from(softDot); PX.hardTex = PIXI.Texture.from(hardDot); coneTex = PIXI.Texture.from(cone);
@@ -48,8 +48,10 @@ PX.init = async (canvas, outW, outH, sc, geo) => {
   spot = new PIXI.Sprite(coneTex); spot.anchor.set(0.5, 1); spot.blendMode = 'add'; spot.alpha = 0;   // Spotlicht von oben auf den Führenden
   trails.blendMode = 'add'; sparksC.blendMode = 'add';
   glowC = new PIXI.Container(); glowC.addChild(trackC, dyn, trails, sparksC);   // nur Bahn, Spuren und Funken leuchten, Kugeln bleiben scharf
-  world.addChild(spot, glowC, shadows, halos, ballsC, fx, rings);
+  leadRing = new PIXI.Sprite(PIXI.Texture.from(ringTex())); leadRing.anchor.set(0.5); leadRing.blendMode = 'add'; leadRing.visible = false;
+  world.addChild(spot, glowC, shadows, halos, leadRing, ballsC, fx, rings);
   if (BR) { lights.visible = false; beams.visible = false; spot.visible = false; halos.visible = false; trails.visible = false; fx.blendMode = 'normal'; sparksC.blendMode = 'normal' }
+  else if (AR) { lights.visible = false; beams.visible = false; spot.visible = false }   // Gemini: kein Bloom/Blur, keine Lichter übers ganze Bild
   else if (PIXI.filters && PIXI.filters.AdvancedBloomFilter) {
     bloom = new PIXI.filters.AdvancedBloomFilter({ threshold: 0.6, bloomScale: 0.55, brightness: 1.0, blur: 4, quality: 4 });
     glowC.filters = [bloom];
@@ -102,6 +104,12 @@ PX.spark = (x, y, col) => {   // Funken, wenn eine Kugel einen Stift trifft
   }
 };
 
+PX.shake = n => { shakeA = Math.max(shakeA, n) };
+function ringTex() {   // Leuchtring unter Platz 1 (einmal vorgezeichnet)
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(64, 64, 28, 64, 64, 62); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.9)'); gr.addColorStop(0.7, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return c;
+}
 PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, rank, phase, R, ballSprite}
   background(st.pal); setTrack(st.trackLayer);
   const now = performance.now(), cols = [hex(st.pal.peg), hex(st.pal.ramp), hex(st.pal.paddle)];
@@ -111,6 +119,7 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
     L.s.alpha = 0.03 + 0.05 * (1 + Math.sin(now * L.sp * 0.06 + L.ph)) / 2;
   }
   const Z = st.camZ || 1; world.scale.set(Z); world.x = -(st.camX || 0) * Z; world.y = -st.camY * Z;   // Kamera mit Zoom
+  if (shakeA > 0.3) { world.x += (Math.random() - 0.5) * 2 * shakeA; world.y += (Math.random() - 0.5) * 2 * shakeA; shakeA *= 0.82 } else shakeA = 0;   // kurzes Bildwackeln (Arcade)
   // Leistungs-Sicherung: läuft die Darstellung länger zu langsam (< 24 Bilder/s), Leuchten abschalten
   const dt = now - frameT; frameT = now; if (bloom && glowC.filters && !/noguard/.test(location.search)) { slowN = dt > 42 ? slowN + 1 : Math.max(0, slowN - 2); if (slowN > 150) { glowC.filters = null; console.log('Pixi: Leuchten aus (zu langsam)') } }
   beamList.forEach(B => { const a = Math.sin(now / 3200 + B.ph) * 0.35; B.s.x = B.x; B.s.y = -40; B.s.rotation = a; B.s.width = 260; B.s.height = PX.H * 1.25; B.s.tint = cols[B.k]; B.s.alpha = 0.07 });
@@ -118,7 +127,8 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
   dyn.clear();
   for (const s of st.spinners.concat(st.statics.filter(s => s.gate))) {
     const v = s.vertices;
-    if (BR) { dyn.poly(v.flatMap(p => [p.x + 5, p.y + 5])).fill(0x000000); dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col)).stroke({ width: 3.5, color: 0x111111, join: 'round' }) }
+    if (AR) dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col)).stroke({ width: 2, color: 0x07080d, join: 'round' });
+    else if (BR) { dyn.poly(v.flatMap(p => [p.x + 5, p.y + 5])).fill(0x000000); dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col)).stroke({ width: 3.5, color: 0x111111, join: 'round' }) }
     else dyn.poly(v.flatMap(p => [p.x, p.y])).fill(hex(s.col));
   }
   // Kugeln, Schatten und Lichtspuren
@@ -133,10 +143,12 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
     const k = 0.5 + 0.5 * Math.sin(now / 500 + i); s.x = b.position.x; s.y = b.position.y; s.width = s.height = b.circleRadius * (3.6 + 0.6 * k); s.tint = 0xffd166; s.alpha = 0.32 + 0.18 * k });
   // Spotlicht auf den Führenden
   const lead = st.phase === 'race' ? st.rank.find(b => !b.done) : null;
+  leadRing.visible = !!(AR && lead); if (AR && lead) { const k = 0.5 + 0.5 * Math.sin(now / 260); leadRing.x = lead.position.x; leadRing.y = lead.position.y; leadRing.width = leadRing.height = lead.circleRadius * (3.3 + 0.5 * k); leadRing.tint = 0xffc93c; leadRing.alpha = 0.55 + 0.35 * k }
   if (lead) { spot.x += ((lead.position.x) - spot.x) * 0.2; spot.y = lead.position.y + lead.circleRadius * 1.5; spot.width = 230; spot.height = 700; spot.tint = 0xfff1d0; spot.alpha += (0.16 - spot.alpha) * 0.1 } else spot.alpha *= 0.9;
   // Zieleinlauf: Feuerwerk – Sieger groß mit Druckwelle, jede Spieler-Kugel kleiner
   st.balls.forEach(b => { if (!b.done || seenDone.has(b)) return; seenDone.add(b);
     const first = st.rank[0] === b && st.balls.filter(x => x.done).length === 1;
+    if (first && AR) shakeA = Math.max(shakeA, 6);
     if (first || b.players.length) burst(b.position.x, b.position.y, first ? 110 : 40, first ? [0xffd700, 0xffffff, cols[1], cols[2]] : [0xffd166, cols[1]], first) });
   rings.clear(); fxRings = fxRings.filter(R => { R.t++; const k = R.t / 40; rings.circle(R.x, R.y, 20 + k * 260).stroke({ width: 10 * (1 - k), color: BR ? 0x111111 : 0xfff1d0, alpha: 0.8 * (1 - k) }); return R.t < 40 });
   const nTrail = vis.reduce((n, b) => n + Math.min(b.trail.length, 14), 0);
@@ -152,7 +164,12 @@ PX.draw = st => {   // st: {pal, camY, trackLayer, statics, spinners, balls, ran
     if (BR) { sh.x = b.position.x + r * 0.3; sh.y = b.position.y + r * 0.3; sh.width = sh.height = r * 2; sh.alpha = 1 }   // harter Versatz-Schatten
     else { sh.x = b.position.x + r * 0.25; sh.y = b.position.y + r * 0.45; sh.width = sh.height = r * 2.9; sh.alpha = 0.55 }
     const tc = top.get(b), speed = Math.hypot(b.velocity.x, b.velocity.y);
-    if (!BR && (tc || speed > 6 || b.turboT > 0)) b.trail.forEach((p, j) => {   // Lichtspur: Top 3 in Gold/Silber/Bronze, schnelle Kugeln in der Bahnfarbe
+    if (AR) { if ((tc || b.turboT > 0 || b.boostT > 0) && speed > 3) b.trail.forEach((p, j) => {   // Arcade: schmale helle Lichtspur nur Top 3 + Boost/Turbo, keine Schmier-Wolken
+      const t = trails.children[ti++], k = (j + 1) / b.trail.length;
+      t.visible = true; t.x = p.x; t.y = p.y; t.width = t.height = r * (0.3 + 0.9 * k);
+      t.tint = b.boostT > 0 || b.turboT > 0 ? 0x22d3ee : tc; t.alpha = 0.55 * k * k;
+    }) }
+    else if (!BR && (tc || speed > 6 || b.turboT > 0)) b.trail.forEach((p, j) => {   // Lichtspur: Top 3 in Gold/Silber/Bronze, schnelle Kugeln in der Bahnfarbe
       const t = trails.children[ti++], k = (j + 1) / b.trail.length;
       t.visible = true; t.x = p.x; t.y = p.y; t.width = t.height = r * (0.8 + 1.4 * k) * (tc ? 1.25 : 1);
       t.tint = b.turboT > 0 ? 0xfb923c : tc || cols[1]; t.alpha = (tc ? 0.38 : 0.2) * k;
