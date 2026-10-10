@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Guess the Country LIVE</title>
+<style>
+/* Länderraten im Hochformat 9:16, gleiche Bühne und gleicher Neo-Brutalism-Look wie das Wortraten (words/public/vertical.html).
+   Handy-sichtbar: x 110–970, y 240–1090 (oben Kanalname, ab ~1090 der Chat). Alles Spielwichtige liegt dort; Titel + Bestenliste darunter. */
+@font-face{font-family:Inter;src:url(fonts/InterVariable.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#111;--paper:#1f3a4d;--dot:#2f5670;--card:#f8f4eb;--y:#fed439;--p:#ff7b9c;--c:#61d4f5;--l:#b6f36a;--o:#ff8a3d;--g:#0a6b42;--sea:#d9f1fb}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--paper);color:var(--ink);
+  font-family:Inter,system-ui,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;background:var(--paper);
+  background-image:radial-gradient(var(--dot) 2.4px,transparent 2.4px);background-size:36px 36px}
+.box{background:var(--card);border:6px solid #111;border-radius:16px;box-shadow:10px 10px 0 #000}
+.label{display:inline-block;font-size:24px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;background:#fff;color:#111;
+  padding:4px 14px;border:4px solid #111;border-radius:8px;box-shadow:4px 4px 0 #111;margin-bottom:14px}
+
+#cat{position:absolute;top:250px;left:110px;right:110px;display:flex;align-items:center;justify-content:center;gap:16px}
+#cat .cp{display:inline-flex;align-items:center;gap:12px;font-size:42px;font-weight:900;text-transform:uppercase;color:#111;white-space:nowrap;
+  padding:8px 24px 10px 18px;background:var(--l);border:6px solid #111;border-radius:14px;box-shadow:8px 8px 0 #000;transform:rotate(-1.5deg)}
+#cat .len,#cat .hard{font-size:26px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;background:var(--card);border:5px solid #111;white-space:nowrap;
+  padding:5px 12px;border-radius:10px;box-shadow:6px 6px 0 #000;transform:rotate(2deg)}
+#cat .hard{background:var(--o);transform:rotate(-2deg)}
+
+/* Umriss-Feld */
+#map{position:absolute;top:340px;left:110px;width:860px;height:370px;overflow:hidden;background:var(--sea);
+  background-image:radial-gradient(#b4e2f3 2px,transparent 2px);background-size:24px 24px}
+#shape{position:absolute;left:20px;top:14px;width:808px;height:330px}
+#shape .sh{fill:#000}
+#shape .fg{fill:var(--y);stroke:#111;stroke-width:5;stroke-linejoin:round;transition:fill .4s}
+#shape.solved .fg{fill:var(--l)}
+#mini{position:absolute;right:12px;bottom:12px;width:250px;height:125px;background:#fff;border:5px solid #111;border-radius:10px;box-shadow:5px 5px 0 #000;display:none}
+#mini svg{width:100%;height:100%}
+#mini .land{fill:#c9c2b4}
+#mini .ring{fill:none;stroke:#ff3b3b;stroke-width:4;animation:ring 1.4s ease-out infinite;transform-box:fill-box;transform-origin:center}
+#mini .pt{fill:#ff3b3b;stroke:#111;stroke-width:2.5}
+@keyframes ring{0%{transform:scale(.3);opacity:1}100%{transform:scale(2.2);opacity:0}}
+#flag{position:absolute;left:18px;top:14px;font-size:120px;line-height:1;background:#fff;border:6px solid #111;border-radius:14px;box-shadow:8px 8px 0 #000;padding:4px 18px;display:none;transform:rotate(-4deg)}
+
+/* Tipps mit Countdown */
+#hints{position:absolute;top:728px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.hint{height:76px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000;overflow:hidden;white-space:nowrap}
+.hint .k{font-size:19px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.hint .v{font-size:29px;font-weight:900;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.hint.lock{background:#e7e2d6;color:#555}
+.hint.open{background:var(--c)}
+
+#tiles{position:absolute;top:822px;left:110px;right:110px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:10px 22px;height:118px}
+.word{display:flex;gap:9px}
+.t{display:flex;align-items:center;justify-content:center;font-weight:900;letter-spacing:-.02em;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000;color:#111}
+.t.on{background:var(--y)}
+.t.solved{background:var(--l)}
+
+#timer{position:absolute;top:956px;left:120px;right:120px;height:26px;background:var(--card);border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;overflow:hidden}
+#bar{height:100%;width:100%;background:var(--p);transition:width .3s linear}
+#bar.low{background:var(--o)}
+
+#solvers{position:absolute;top:1000px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.sol{display:flex;align-items:center;gap:10px;padding:2px 14px;font-size:28px;font-weight:800;min-width:0;background:var(--card);border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000}
+.sol .m{font-size:30px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sol .p{color:var(--g);font-weight:900}
+.sol.first{background:var(--y)}
+.sol.more,.sol.cta{justify-content:center}
+.sol.all,.sol.cta{grid-column:1/-1}
+.sol.cta{background:var(--p)}
+
+#low{position:absolute;top:1150px;left:110px;right:110px;display:flex;flex-direction:column;align-items:center;gap:26px}
+#head{display:flex;align-items:center;justify-content:center;gap:18px}
+.live{display:inline-flex;align-items:center;gap:10px;background:#ff3b3b;color:#fff;font-weight:900;font-size:28px;letter-spacing:.06em;
+  padding:5px 16px;border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;transform:rotate(-4deg)}
+.live i{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #111;animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
+h1{font-size:68px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#fff;text-shadow:5px 5px 0 #ff4b72;white-space:nowrap}
+#topbox{width:100%;padding:18px 26px 14px;background:var(--y)!important}
+.row{display:flex;align-items:center;gap:12px;font-size:32px;font-weight:800;padding:5px 0}
+.row .r{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:900;background:#fff;border:3px solid #111;border-radius:6px;flex:none}
+.row .n{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.row .p{font-weight:900}
+.rec{font-size:30px;font-weight:800}
+#how{font-size:30px;font-weight:800;color:#fff;text-align:center}
+#how b{background:var(--y);color:#111;padding:0 10px;border:3px solid #111;border-radius:6px}
+canvas#fx{position:absolute;inset:0;pointer-events:none}
+</style></head>
+<body><div id="stage">
+  <div id="cat"></div>
+  <div class="box" id="map"><svg id="shape" viewBox="0 0 820 335" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="mini"><svg viewBox="0 0 360 180"><path class="land" id="world"/><circle class="ring" id="ring" r="9"/><circle class="pt" id="pt" r="7"/></svg></div>
+    <div id="flag"></div></div>
+  <div id="hints"></div>
+  <div id="tiles"></div>
+  <div id="timer"><div id="bar"></div></div>
+  <div id="solvers"></div>
+  <div id="low">
+    <div id="head"><div class="live"><i></i>LIVE</div><h1>Guess the Country</h1></div>
+    <div class="box" id="topbox"><div class="label">Top today</div><div id="top"></div></div>
+    <div id="how"><b>type the country</b> in chat · <b>!country</b> for your flag</div>
+  </div>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+</div>
+<script>
+const fit=()=>{const s=Math.min(innerWidth/1080,innerHeight/1920);document.getElementById('stage').style.transform=`scale(${s})`};addEventListener('resize',fit);fit();
+const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const flagOf=c=>String.fromCodePoint(...[...c].map(x=>0x1F1E6+x.charCodeAt(0)-65));
+
+// Federn wie beim Wortraten (Dämpfung + Antwortzeit als CSS linear()-Kurve)
+const springCache={};
+function spring(damping=1,response=.4){
+  const k=damping+'/'+response; if(springCache[k]) return springCache[k];
+  const w=2*Math.PI/response, z=damping, pts=[]; let dur=0;
+  const x=t=>{ if(z<1){const wd=w*Math.sqrt(1-z*z);return 1-Math.exp(-z*w*t)*(Math.cos(wd*t)+(z*w/wd)*Math.sin(wd*t))} return 1-Math.exp(-w*t)*(1+w*t) };
+  for(let t=0;t<3;t+=1/120){ if(t>.1 && Math.abs(1-x(t))<.001 && Math.abs(1-x(t+.05))<.001){dur=t;break} dur=t }
+  for(let i=0;i<=60;i++) pts.push(+x(dur*i/60).toFixed(4));
+  return springCache[k]={easing:`linear(${pts.join(',')})`,duration:dur*1000};
+}
+const pop=(el,from,d=.8,r=.38,delay=0)=>{const s=spring(d,r);el.animate([from,{transform:'none',opacity:1}],{duration:s.duration,easing:s.easing,delay,fill:'backwards'})};
+
+// Ton (Pentatonik-Glocken wie beim Wortraten)
+const AC=new (window.AudioContext||window.webkitAudioContext)(), master=AC.createGain(); master.gain.value=.9; master.connect(AC.destination);
+function bell(f,d=.5,v=.14,at=0){const t=AC.currentTime+at;for(const [m,vv] of [[1,1],[2.01,.35],[3.02,.12]]){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f*m;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*vv,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05)}}
+const PENTA=[523.25,587.33,659.25,783.99,880,1046.5];
+const sfx={reveal:i=>bell(PENTA[i%PENTA.length],.35,.07), hint:()=>{bell(659.25,.4,.09);bell(987.77,.5,.07,.08)},
+  correct:p=>{const b=[1046.5,880,783.99][Math.min(p,2)];bell(b,.6,.14);bell(b*1.5,.7,.08,.07)},
+  start:()=>[0,2,4].forEach((n,i)=>bell(PENTA[n],.5,.08,i*.08)), end:()=>[0,2,4,5].forEach((n,i)=>bell(PENTA[n],.9,.1,i*.09)), miss:()=>bell(392,.8,.08)};
+const music=new Audio(); music.volume=.32; let mlist=[], mi=0;
+async function nextSong(){ try{ if(!mlist.length) mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
+music.onended=nextSong; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
+
+const fx=$('fx').getContext('2d'); let parts=[];
+function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627','#5ab4ff'];for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,v=8+Math.random()*12;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:cols[i%5],r:Math.random()*5+4,a:Math.random()*6,l:80+Math.random()*40})}}
+(function loop(){fx.clearRect(0,0,1080,1920);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=.15;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
+
+let SHAPES=null, S=null, lastN=0, shownN=0, lastSolv=0, ver=null, tileEls=[], revSet=new Set(), lastHints=0;
+fetch('shapes.json').then(r=>r.json()).then(j=>{SHAPES=j; $('world').setAttribute('d',j.world)});
+
+function tileSize(words){const row=Math.max(...words.map(w=>w.length));
+  let s=Math.floor((860-(row-1)*9)/row); s=Math.min(words.length>1?72:92,s); return Math.max(44,s)}
+function buildTiles(){
+  const words=[]; let cur=[]; S.tiles.forEach((ch,i)=>{ if(ch===' '){words.push(cur);cur=[]} else cur.push(i) }); words.push(cur);
+  const sz=tileSize(words); tileEls=[]; revSet=new Set();
+  $('tiles').innerHTML=words.map(w=>`<div class="word">${w.map(i=>`<div class="t" data-i="${i}" style="width:${sz}px;height:${Math.round(sz*1.12)}px;font-size:${Math.round(sz*.6)}px"></div>`).join('')}</div>`).join('');
+  $('tiles').querySelectorAll('.t').forEach(el=>tileEls[+el.dataset.i]=el);
+  [...$('tiles').querySelectorAll('.t')].forEach((el,k)=>pop(el,{transform:'translateY(24px) scale(.9)',opacity:0},1,.45,k*30));
+}
+function updateTiles(){
+  let k=0;
+  S.tiles.forEach((ch,i)=>{ const el=tileEls[i]; if(!el||!ch||revSet.has(i)) return; revSet.add(i); el.textContent=ch; el.classList.add('on');
+    if(S.phase==='guess'){ pop(el,{transform:'scale(.7)'},.7,.35); sfx.reveal(revSet.size) } });
+  if(S.phase==='show' && !$('tiles').dataset.solved){ $('tiles').dataset.solved=S.n; tileEls.forEach((el,i)=>{ if(!el) return; el.textContent=S.tiles[i]; el.classList.add('solved'); pop(el,{transform:'scale(.86)'},.65,.4,(k++)*45) }) }
+}
+function drawShape(){
+  const sh=SHAPES.shapes[S.code]; if(!sh) return;
+  $('shape').classList.remove('solved');
+  $('shape').innerHTML=`<path class="sh" transform="translate(9 9)" d="${sh.d}"/><path class="fg" d="${sh.d}"/>`;
+  const [x,y]=sh.dot; for(const id of ['pt','ring']){ $(id).setAttribute('cx',x); $(id).setAttribute('cy',y) }
+  $('mini').style.display='none'; $('flag').style.display='none';
+  pop($('shape'),{transform:'scale(.7) rotate(-6deg)',opacity:0},.62,.55);
+}
+function renderHints(){
+  const h=S.hints, el=S.now-S.start, secs=t=>Math.max(1,Math.ceil((t-el)/1000));
+  const items=[['🌍 Continent',h.continent,S.hintsAt[0]],['📍 Location',h.map?'see the map':null,S.hintsAt[1]],['🏛️ Capital',h.capital,S.hintsAt[2]]];
+  $('hints').innerHTML=items.map(([k,v,t])=>`<div class="hint ${v?'open':'lock'}"><div class="k">${k}</div><div class="v">${v?esc(v):'🔒 in '+secs(t)+'s'}</div></div>`).join('');
+  const n=(h.continent?1:0)+(h.map?1:0)+(h.capital?1:0);
+  if(n>lastHints && S.phase==='guess'){ const box=$('hints').children[n-1]; pop(box,{transform:'scale(.8)'},.6,.4); sfx.hint() }
+  if(h.map && $('mini').style.display==='none'){ $('mini').style.display='block'; pop($('mini'),{transform:'translateY(40px)',opacity:0},.75,.45) }
+  lastHints=n;
+}
+function renderSolvers(){
+  const m=['🥇','🥈','🥉'], s=S.solvers, box=$('solvers');
+  if(String(S.n)!==box.dataset.n){ box.dataset.n=S.n; box.innerHTML=''; lastSolv=0 }
+  for(let i=lastSolv;i<Math.min(s.length,3);i++){ const x=s[i], d=document.createElement('div');
+    d.className='sol'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">+${x.pts}</span>`;
+    box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4); sfx.correct(i); if(!i) confetti(540,1000,60) }
+  if(s.length>3){ let more=box.querySelector('.more'); if(!more){ more=document.createElement('div'); more.className='sol more'; box.appendChild(more); pop(more,{opacity:0},1,.3) }
+    more.textContent=`+${s.length-3} more got it`; if(s.length>lastSolv) sfx.correct(2) }
+  if(!s.length && S.phase==='show' && !box.querySelector('.all')){ const d=document.createElement('div'); d.className='sol more all'; d.textContent='Nobody got it – next one is easier'; box.appendChild(d); pop(d,{opacity:0},1,.3) }
+  lastSolv=s.length;
+  let cta=box.querySelector('.cta'); const t=S.phase==='guess'&&!s.length?'💬 Type the country in chat':'';
+  if(t){ if(!cta){cta=document.createElement('div');cta.className='sol cta';box.prepend(cta)} cta.textContent=t } else if(cta) cta.remove();
+}
+async function poll(){
+  try{
+    if(!SHAPES) return;
+    const s=await (await fetch('/api/state',{cache:'no-store'})).json();
+    if(ver && s.v!==ver) return location.reload(); ver=s.v; S=s;
+    if(s.n!==lastN){ lastN=s.n; lastHints=0; delete $('tiles').dataset.solved;
+      $('cat').innerHTML=`<div class="cp"><span>🗺️</span>Which country?</div><div class="len">${s.tiles.filter(c=>c!==' ').length} letters</div>${s.hard?'<div class="hard">Hard</div>':''}`;
+      drawShape(); buildTiles(); sfx.start() }
+    renderHints(); updateTiles(); renderSolvers();
+    if(s.phase==='show' && shownN!==s.n){ shownN=s.n; $('shape').classList.add('solved');
+      $('flag').textContent=flagOf(s.answer.flag); $('flag').style.display='block'; pop($('flag'),{transform:'scale(.3) rotate(-30deg)',opacity:0},.55,.5);
+      if(s.solvers.length){ sfx.end(); confetti(540,520,80) } else sfx.miss() }
+    const left=s.phase==='guess'?Math.max(0,(s.end-s.now)/(s.end-s.start)):0; $('bar').style.width=(left*100)+'%'; $('bar').className=left<.3?'low':'';
+  }catch{}
+}
+setInterval(poll,300); poll();
+async function pollBoard(){
+  try{
+    const b=await (await fetch('/api/board',{cache:'no-store'})).json();
+    $('top').innerHTML=b.top.slice(0,5).map((x,i)=>`<div class="row"><span class="r">${i+1}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">${x.pts}</span></div>`).join('')||'<div class="rec">Be the first to score</div>';
+  }catch{}
+}
+setInterval(pollBoard,2000); pollBoard();
+</script>
+</body></html>
