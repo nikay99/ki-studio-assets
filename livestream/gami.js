@@ -17,7 +17,7 @@ module.exports = function create(ownDataDir, opts = {}) {
   try { fs.mkdirSync(dir, { recursive: true }); fs.accessSync(dir, fs.constants.W_OK); } catch { dir = path.join(ownDataDir, 'gami'); fs.mkdirSync(dir, { recursive: true }); }
   const FILE = path.join(dir, 'gami.json');
   const everyMs = opts.bonusEveryMs || BONUS_EVERY_MS;
-  let db = { seq: 0, nextBonusAt: 0, players: {} }, mtime = 0, saveT = null;
+  let db = { seq: 0, nextBonusAt: 0, players: {}, names: {} }, mtime = 0, saveT = null;
 
   function load(force) {
     try { const m = fs.statSync(FILE).mtimeMs; if (!force && m === mtime) return; mtime = m; db = { ...db, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch {}
@@ -32,8 +32,12 @@ module.exports = function create(ownDataDir, opts = {}) {
   load(true);
   if (!db.nextBonusAt) { db.nextBonusAt = Date.now() + everyMs; }
 
-  const P = u => db.players[u] || (db.players[u] = { pts: 0, streak: 0, last: 0, best: 0, rounds: 0 });
-  const badge = u => LEVELS[levelOf((db.players[u] || {}).pts || 0)][2];
+  // Schlüssel eines Spielers = YouTube-Kanal-ID (bleibt bei Namenswechsel gleich); ohne ID der Anzeigename.
+  // Bekannte Namenswechsel: neuer Name → frühere Namen, deren Stand beim ersten Auftreten der Kanal-ID übernommen wird.
+  const ALIASES = { NikayStudio: ['Nikay99'] };
+  const key = u => db.names[u] || u;
+  const P = u => { const k = key(u); return db.players[k] || (db.players[k] = { pts: 0, streak: 0, last: 0, best: 0, rounds: 0 }); };
+  const badge = u => LEVELS[levelOf((db.players[key(u)] || {}).pts || 0)][2];
 
   return {
     LEVELS, dir,
@@ -52,6 +56,15 @@ module.exports = function create(ownDataDir, opts = {}) {
       const sb = streakBonus(p.streak), mult = round.bonus ? 2 : 1, pts = (base + sb) * mult;
       p.pts += pts; const after = levelOf(p.pts); save();
       return { pts, sb, mult, streak: p.streak, badge: LEVELS[after][2], level: LEVELS[after][0], up: after > before ? LEVELS[after] : null, total: p.pts };
+    },
+    // Bei jeder Chat-Nachricht vor der Auswertung aufrufen: ordnet Anzeigename und Kanal-ID zu, übernimmt alte Namens-Einträge einmalig.
+    seen(name, cid) {
+      if (!cid) return; load();
+      if (db.names[name] !== cid) { db.names[name] = cid; save(); }
+      if (!db.players[cid]) for (const old of [name, ...(ALIASES[name] || [])]) {
+        if (old !== cid && db.players[old]) { db.players[cid] = db.players[old]; delete db.players[old]; save(); break; }
+      }
+      if (db.players[cid] && db.players[cid].name !== name) { db.players[cid].name = name; save(); }
     },
     badge(u) { load(); return badge(u); },
     // Fürs Bild: Countdown bis zur nächsten Bonusrunde

@@ -164,7 +164,7 @@ http.createServer((req, res) => {
 }).listen(PORT, '127.0.0.1');
 
 if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), status: s => { chatStatus = s; },
-  onMessage: m => { const name = String(m.user).replace(/^@/, ''); if (CHAT_BOTS.test(name) || isHint(m)) return; onChat(cleanName(name.slice(0, 20)), m.text); } });
+  onMessage: m => { const name = String(m.user).replace(/^@/, ''); if (CHAT_BOTS.test(name) || isHint(m)) return; const nm = cleanName(name.slice(0, 20)); gami.seen(nm, m.channelId); onChat(nm, m.text); } });
 
 // Test-Zuschauer (DEMO=1): raten mal falsch, mal richtig
 if (process.env.DEMO === '1') {
