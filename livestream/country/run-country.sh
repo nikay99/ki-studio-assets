@@ -7,7 +7,7 @@ set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-country}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/country.env ] && . /etc/marble/country.env
 # 24 fps wie die anderen Streams; Bildschirm läuft mit derselben Rate, FPS/VBIT in country.env überschreibbar
-VBIT="${VBIT:-2500k}"; FPS="${FPS:-30}"; RW=720; RH=1280   # 30 fps seit 10.10. 13:40Z (Niklas, Kugelrennen aus), 11:45–13:39Z 15
+VBIT="${VBIT:-4500k}"; FPS="${FPS:-30}"; RW="${RW:-1080}"; RH="${RH:-1920}"   # 30 fps seit 10.10. 13:40Z (Niklas, Kugelrennen aus), 11:45–13:39Z 15   # 1080x1920 mit 4,5 Mbit/s seit 11.10. (Niklas „alle auf 1080p“; Capital-Test 08:39Z: CPU 41-46 %)
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:96 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
@@ -15,7 +15,7 @@ cleanup(){ pkill -P $$ 2>/dev/null; kill $(jobs -p) 2>/dev/null; }
 trap cleanup EXIT
 
 HW=none
-if [ -e /dev/dri/renderD128 ] && ffmpeg -hide_banner -loglevel error -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc=size=720x1280:rate=30 -t 1 -vf format=nv12,hwupload -c:v h264_vaapi -f null - 2>/dev/null; then HW=vaapi; fi
+if [ -e /dev/dri/renderD128 ] && ffmpeg -hide_banner -loglevel error -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc=size=${RW}x${RH}:rate=30 -t 1 -vf format=nv12,hwupload -c:v h264_vaapi -f null - 2>/dev/null; then HW=vaapi; fi
 log "Kodierung: $HW"
 # Bildschirm wie beim Kugelrennen: wenn möglich auf der Intel-Grafik (sway ohne Monitor + Xwayland als :96), dann rechnet
 # Chrome auf der GPU statt ~1,5 Kerne in Software. Klappt das nicht, Xvfb. GPU_DISPLAY=0 schaltet es ab.

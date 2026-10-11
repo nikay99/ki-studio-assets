@@ -5,7 +5,7 @@
 set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-words}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/words.env ] && . /etc/marble/words.env
-VBIT="${VBIT:-2500k}"; FPS="${FPS:-30}"; RW=720; RH=1280; PAGE="${PAGE:-vertical.html}"  # 24 fps (Niklas 09.10.); hochkant 9:16 seit 09.10. (Niklas), PAGE=index.html = alte Querfassung (dann RW/RH tauschen)
+VBIT="${VBIT:-4500k}"; FPS="${FPS:-30}"; RW="${RW:-1080}"; RH="${RH:-1920}"; PAGE="${PAGE:-vertical.html}"  # 24 fps (Niklas 09.10.); hochkant 9:16 seit 09.10. (Niklas), PAGE=index.html = alte Querfassung (dann RW/RH tauschen)   # 1080x1920 mit 4,5 Mbit/s seit 11.10. (Niklas „alle auf 1080p“; Capital-Test 08:39Z: CPU 41-46 %)
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:98 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
