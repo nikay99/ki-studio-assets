@@ -17,7 +17,9 @@ module.exports = function create(ownDataDir, opts = {}) {
   try { fs.mkdirSync(dir, { recursive: true }); fs.accessSync(dir, fs.constants.W_OK); } catch { dir = path.join(ownDataDir, 'gami'); fs.mkdirSync(dir, { recursive: true }); }
   const FILE = path.join(dir, 'gami.json');
   const everyMs = opts.bonusEveryMs || BONUS_EVERY_MS;
-  let db = { seq: 0, nextBonusAt: 0, players: {}, names: {} }, mtime = 0, saveT = null;
+  // Zähler und Bonus-Takt je Spiel: alle drei Server laufen dauernd, auch wenn nur eines auf Sendung ist (Stream-Technik 11.10.)
+  const GAME = path.basename(ownDataDir);
+  let db = { seqs: {}, nextBonus: {}, players: {}, names: {} }, mtime = 0, saveT = null;
 
   function load(force) {
     try { const m = fs.statSync(FILE).mtimeMs; if (!force && m === mtime) return; mtime = m; db = { ...db, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch {}
@@ -30,7 +32,7 @@ module.exports = function create(ownDataDir, opts = {}) {
     }, 1500);
   }
   load(true);
-  if (!db.nextBonusAt) { db.nextBonusAt = Date.now() + everyMs; }
+  db.seqs = db.seqs || {}; db.nextBonus = db.nextBonus || {};
 
   // Schlüssel eines Spielers = YouTube-Kanal-ID (bleibt bei Namenswechsel gleich); ohne ID der Anzeigename.
   // Bekannte Namenswechsel: neuer Name → frühere Namen, deren Stand beim ersten Auftreten der Kanal-ID übernommen wird.
@@ -43,15 +45,16 @@ module.exports = function create(ownDataDir, opts = {}) {
     LEVELS, dir,
     // Beim Start jeder Runde aufrufen. Liefert { seq, bonus }.
     roundStart() {
-      load(); db.seq++;
-      const bonus = Date.now() >= db.nextBonusAt;
-      if (bonus) db.nextBonusAt = Date.now() + everyMs;
-      save(); return { seq: db.seq, bonus };
+      load(); const seq = db.seqs[GAME] = (db.seqs[GAME] || 0) + 1;
+      if (!db.nextBonus[GAME]) db.nextBonus[GAME] = Date.now() + everyMs;
+      const bonus = Date.now() >= db.nextBonus[GAME];
+      if (bonus) db.nextBonus[GAME] = Date.now() + everyMs;
+      save(); return { seq, bonus };
     },
     // Richtige Antwort: base = normale Punkte. Liefert die tatsächlichen Punkte und Anzeigewerte.
     award(user, base, round) {
       load(); const p = P(user), before = levelOf(p.pts);
-      p.streak = p.last === round.seq - 1 || p.last === round.seq ? p.streak + 1 : 1; p.last = round.seq; p.rounds++;
+      p.streak = p.lastG === GAME && (p.last === round.seq - 1 || p.last === round.seq) ? p.streak + 1 : 1; p.last = round.seq; p.lastG = GAME; p.rounds++;
       p.best = Math.max(p.best, p.streak);
       const sb = streakBonus(p.streak), mult = round.bonus ? 2 : 1, pts = (base + sb) * mult;
       p.pts += pts; const after = levelOf(p.pts); save();
@@ -68,7 +71,7 @@ module.exports = function create(ownDataDir, opts = {}) {
     },
     badge(u) { load(); return badge(u); },
     // Fürs Bild: Countdown bis zur nächsten Bonusrunde
-    info(round) { load(); return { bonus: !!(round && round.bonus), nextAt: db.nextBonusAt, now: Date.now(), levels: LEVELS.map(l => [l[0], l[1], l[2]]) }; },
+    info(round) { load(); return { bonus: !!(round && round.bonus), nextAt: db.nextBonus[GAME] || 0, now: Date.now(), levels: LEVELS.map(l => [l[0], l[1], l[2]]) }; },
   };
 };
 module.exports.LEVELS = LEVELS; module.exports.streakBonus = streakBonus;
