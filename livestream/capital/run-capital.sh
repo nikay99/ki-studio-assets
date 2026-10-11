@@ -7,7 +7,7 @@ set -u
 DATA_DIR="${DATA_DIR:-/var/lib/marble-capital}"; mkdir -p "$DATA_DIR"
 [ -f /etc/marble/capital.env ] && . /etc/marble/capital.env
 # 24 fps wie die anderen Streams; Bildschirm läuft mit derselben Rate, FPS/VBIT in capital.env überschreibbar
-VBIT="${VBIT:-2500k}"; FPS="${FPS:-30}"; RW="${RW:-720}"; RH="${RH:-1280}"   # RW/RH/VBIT in capital.env: 1080p-Test = RW=1080 RH=1920 VBIT=4500k (Niklas 11.10.)   # 30 fps seit 10.10. 13:40Z (Niklas, Kugelrennen aus), 11:45–13:39Z 15
+VBIT="${VBIT:-4500k}"; FPS="${FPS:-30}"; RW="${RW:-1080}"; RH="${RH:-1920}"   # RW/RH/VBIT in capital.env: 1080p-Test = RW=1080 RH=1920 VBIT=4500k (Niklas 11.10.)   # 30 fps seit 10.10. 13:40Z (Niklas, Kugelrennen aus), 11:45–13:39Z 15
 CHROME="${CHROME:-$(command -v google-chrome || command -v chromium)}"
 export DISPLAY=:95 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$DATA_DIR/xdg}"; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
 log(){ echo "$(date -u +%FT%TZ) $*" | tee -a "$DATA_DIR/log.txt"; }
