@@ -44,7 +44,10 @@ const saveKnown = () => { if (!knownT) knownT = setTimeout(() => { knownT = null
 
 // ---------- Runden ----------
 let round = null, recent = [], deck = [], feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
+// Quiz-Short „Answer: LIVE on our stream“ (A/B-Test 11.10.): das Rätsel 🖊️+🍸 = PENGUIN kommt alle ~20 Runden (13 Wort-Runden) vor
+const FEATURED = WORDS.find(x => x.w === 'penguin'); let sinceFeatured = 6;
 function nextWord() {
+  if (FEATURED && ++sinceFeatured >= 13) { sinceFeatured = 0; return FEATURED; }
   if (!deck.length) deck = WORDS.map((_, i) => i).sort(() => Math.random() - 0.5);
   return WORDS[deck.pop()];
 }
