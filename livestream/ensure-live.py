@@ -277,7 +277,8 @@ def main():
 
     def remind(vid):
         # eigener Chat-Hinweis je Sendung (Nightbot kann bei mehreren Streams auf einem Kanal nicht unterscheiden). Aus: Datei NOCHATBOT
-        if os.path.exists(D + '/NOCHATBOT') or now - st.get('remind_t', 0) < REMIND_S: return
+        # AUS seit 11.10. 11:20Z (Niklas: Bot spammt, leerer Chat wirkt leerer): Chat-Hinweise nur noch, wenn Datei CHATBOT im Datenordner liegt
+        if os.path.exists(D + '/NOCHATBOT') or not os.path.exists(D + '/CHATBOT') or now - st.get('remind_t', 0) < REMIND_S: return
         st['remind_t'] = now; save()   # auch bei Fehler erst in REMIND_S wieder versuchen (Kontingent)
         try:
             lv = st.get('live') or {}
