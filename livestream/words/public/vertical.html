@@ -73,6 +73,8 @@ h1{font-size:72px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#ff
 #chatpop .cp2.w{background:var(--p);transform:rotate(-1.5deg)}
 #chatpop .cp2.f{background:var(--c)}
 #chatpop .cp2 .x{color:#d22}
+#how{min-height:40px;transition:opacity .35s}
+#how.out{opacity:0}
 canvas#fx{position:absolute;inset:0;pointer-events:none}
 </style></head>
 <body><div id="stage">
@@ -85,7 +87,7 @@ canvas#fx{position:absolute;inset:0;pointer-events:none}
   <div id="low">
     <div id="head"><div class="live"><i></i>LIVE</div><h1>Guess the Word</h1></div>
     <div class="box" id="topbox"><div class="label">Top today</div><div id="top"></div></div>
-    <div id="how"><b>type the word</b> in chat · <b>!country</b> for your flag</div>
+    <div id="how"></div>
   </div>
   <canvas id="fx" width="1080" height="1920"></canvas>
 </div>
@@ -170,6 +172,18 @@ async function poll(){
   }catch{}
 }
 setInterval(poll,300); poll();
+
+// ---------- Erklär-Zeile unter der Tabelle: wechselt alle 17 s, unterbricht das Spiel nicht (Niklas 12.10.: Spiel besser erklären) ----------
+const FLAGEX=['brazil','germany','japan','france','india','mexico','italy'];
+const TIPS=[
+  ()=>'<b>everyone who is right scores</b> · fastest gets the most',
+  ()=>`type <b>!${FLAGEX[Math.floor(Math.random()*FLAGEX.length)]}</b> for your flag in the list`,
+  ()=>'<b>⚡ bonus round</b> every ~10 min · double points',
+  ()=>'<b>solve the emoji puzzle</b> · letters appear as time runs out',
+];
+let tipI=0;
+function nextTip(){ const h=$('how'); h.classList.add('out'); setTimeout(()=>{ h.innerHTML=TIPS[tipI++%TIPS.length](); h.classList.remove('out') },350) }
+$('how').innerHTML=TIPS[tipI++%TIPS.length](); setInterval(nextTip,17000);
 
 async function pollBoard(){
   try{
