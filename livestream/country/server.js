@@ -26,7 +26,7 @@ const OWN_CHANNEL = 'UCG6xEYtopZcK66gz_biiIIA', HINT = /^\S{0,16}\s*(Type your|E
 const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''));
 
 // Zeiten (Bild hängt hinter dem Chat): Runde 65 s, Tipps nach 12 / 26 / 40 s, Buchstaben ab 20 s alle 6 s
-const ROUND_MS = 65000, SHOW_MS = 8000, HINTS_AT = [12000, 26000, 40000], FIRST_REVEAL = 20000, REVEAL_EVERY = 6000;   // Niklas 10.10.: mehr Zeit (vorher 47 s)
+const ROUND_MS = 48000, SHOW_MS = 6000, HINTS_AT = [9000, 19000, 30000], FIRST_REVEAL = 15000, REVEAL_EVERY = 4000;   // Niklas 12.10.: Runden zu langsam (vorher 65 s)
 const PTS = [10, 7, 5];
 
 // ---------- Tageszustand ----------
@@ -106,7 +106,7 @@ function onChat(user, text) {
     if (place === 0) { st.wins[user] = (st.wins[user] || 0) + 1; if (!st.fastest || ms < st.fastest.ms) st.fastest = { user, ms, word: round.q.shown }; }
     save(); push({ ok: 1, pts });
     if (gm.up) push({ levelUp: gm.up[0], badge: gm.up[2] }); else if (gm.streak >= 3) push({ streakPop: gm.streak, sb: gm.sb, badge: gm.badge });
-    if (place === 0) round.end = Math.min(round.end, Date.now() + 15000);
+    if (place === 0) round.end = Math.min(round.end, Date.now() + 10000);
     return;
   }
   if (round && round.phase !== 'guess' && isCorrect(text)) return push({ late: 1 });   // richtig, aber Bild hing hinterher
