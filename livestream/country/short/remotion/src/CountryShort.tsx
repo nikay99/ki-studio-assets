@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring, delayRender, continueRender, staticFile} from 'remotion';
 
-const T = {hint: [2.0, 3.2, 4.4], rev0: 2.5, rev1: 5.5, nv0: .5, nv1: 1.5, solve: 6.0, end: 10.0, total: 15.0, intro: 0};
+const T = {hint: [2.0, 3.2, 4.4], rev0: 2.5, rev1: 5.5, nv0: .5, nv1: 1.5, solve: 6.0, end: 10.0, total: 15.0, intro: 1.2};
 const C = {paper: '#1f3a4d', dot: '#2f5670', card: '#f8f4eb', y: '#fed439', p: '#ff7b9c', c: '#61d4f5', l: '#b6f36a', o: '#ff8a3d', sea: '#d9f1fb', red: '#ff3b3b'};
 const flagOf = (c: string) => String.fromCodePoint(...[...c].map(x => 0x1F1E6 + x.charCodeAt(0) - 65));
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -40,10 +40,10 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
   const ph = frame / (T.total * fps);
 
   // ---- Hook-Text ----
-  const h1 = solved ? `It's ${COUNTRY}!` : 'Guess this country';
+  const h1 = solved ? `It's ${COUNTRY}!` : intro ? (nv ? 'NO VOWELS. NO MERCY 😬' : "BET YOU CAN'T NAME IT 😏") : 'Guess this country';
   const h1fs = Math.min(76, Math.floor(830 / (h1.length * .62)));
-  const gl = 0;
-  const h2 = solved ? 'Did you get it? 👇' : (nv ? 'no vowels 🔴' : 'in 5 sec 🔴');
+  const gl = intro && Math.floor(t * 24) % 3 === 0 ? 9 : intro ? 4 : 0;
+  const h2 = solved ? 'Did you get it? 👇' : intro ? 'WHICH COUNTRY?' : (nv ? 'no vowels 🔴' : 'in 5 sec 🔴');
   const slam = t < .3 ? 1.3 - .3 * (t / .3) ** 2 : 1;
   const hookScale = solved ? .85 + .15 * pop(T.solve) : 1 + .04 * Math.max(0, Math.sin(t * Math.PI * 2 * 128 / 60));
   const introIn = spring({frame: Math.round(t * fps), fps, config: {damping: 9, stiffness: 220, mass: .6}});
@@ -81,7 +81,13 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
   const arrowK = clamp((te - T.end - .3) / .4);
   const wob = arrowK >= 1 ? Math.abs(Math.sin(te * 7)) : 0;
   const ringT = ((te - T.end - .7) % .8) / .8;
-  const ARROW = 'M360 1085 C480 1170 370 1290 225 1323';
+  const ARROW = 'M430 1070 C640 1130 340 1290 178 1334';
+  const ang = Math.atan2(1334 - 1290, 178 - 340) * 180 / Math.PI;       // Richtung der Pfeilspitze
+  const ease = (x: number) => 1 - Math.pow(1 - x, 3);
+  const drawK = ease(arrowK), headK = clamp((te - T.end - .65) / .3);
+  const nudge = arrowK >= 1 && headK >= 1 ? 16 * Math.abs(Math.sin((te - T.end) * 6.5)) : 0;
+  const ux = Math.cos(ang * Math.PI / 180), uy = Math.sin(ang * Math.PI / 180);
+  const HEAD = 'M74 0 L-34 -70 Q-52 -46 -30 -22 L-48 0 L-30 22 Q-52 46 -34 70 Z';
 
   const cx = (el: number, a: number) => (a);
   void cx;
@@ -100,7 +106,7 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
         <div style={{position: 'absolute', top: 385, left: 60, width: 880, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, transform: `scale(${hookScale})`}}>
           <div style={{...box(), fontSize: h1fs, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '-.02em', lineHeight: 1, whiteSpace: 'nowrap', background: C.y,
             padding: '10px 26px 14px', transform: `rotate(-2deg) scale(${intro ? .4 + .6 * introIn : 1})`, textShadow: gl ? `${gl}px 0 ${C.red},${-gl}px 0 ${C.c}` : 'none'}}>{h1}</div>
-          <div style={{...box(), fontSize: 72, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '-.02em', lineHeight: 1, whiteSpace: 'nowrap', background: C.p,
+          <div style={{...box(), fontSize: Math.min(72, Math.floor(830 / (h2.length * .62))), fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '-.02em', lineHeight: 1, whiteSpace: 'nowrap', background: C.p,
             padding: '8px 24px 12px', transform: `rotate(1.5deg) scale(${solved ? 1 : .6 + .4 * clamp(introIn)})`}}>{h2}</div>
         </div>
 
@@ -166,11 +172,22 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
           <div style={{fontSize: 50, fontWeight: 900, background: C.y, padding: '8px 24px', border: '5px solid #111', borderRadius: 12, boxShadow: '6px 6px 0 #000', color: '#111', whiteSpace: 'nowrap'}}>TAP MY PROFILE PIC ↙ LIVE</div>
           <div style={{fontSize: 36, fontWeight: 800, color: '#333'}}>Guess the Country · Word · Capital</div>
         </div>
-        <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: 1080, height: 1920, pointerEvents: 'none', transform: arrowK >= 1 ? `translate(${-16 * wob}px,${12 * wob}px)` : undefined}}>
-          <path d={ARROW} fill="none" stroke="#000" strokeWidth={62} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - arrowK} />
-          <path d={ARROW} fill="none" stroke={C.red} strokeWidth={38} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - arrowK} />
-          {arrowK >= 1 ? <g><path fill="#000" stroke="#000" strokeWidth={26} strokeLinejoin="round" d="M118 1346 L216 1256 L242 1388 Z" /><path fill={C.red} stroke={C.red} strokeWidth={8} strokeLinejoin="round" d="M126 1346 L218 1266 L238 1380 Z" /></g> : null}
-          {arrowK >= 1 && te > T.end + .7 ? <circle cx={98} cy={1400} r={56 + 70 * ringT} fill="none" stroke={C.red} strokeWidth={12} opacity={1 - ringT} /> : null}
+        <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: 1080, height: 1920, pointerEvents: 'none', overflow: 'visible'}}>
+          <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff6a5c" /><stop offset="1" stopColor="#e01616" /></linearGradient></defs>
+          {[0, 1].map(i => { const rt = ((te - T.end - .8 - i * .45) % 1.1) / 1.1; return arrowK >= 1 && rt >= 0 ? <circle key={i} cx={98} cy={1400} r={62 + 90 * rt} fill="none" stroke={i ? '#ffd23a' : C.red} strokeWidth={16 - 10 * rt} opacity={1 - rt} /> : null; })}
+          <g transform={`translate(${ux * nudge} ${uy * nudge})`}>
+            <g transform="translate(12 14)" opacity={.55}>
+              <path d={ARROW} fill="none" stroke="#000" strokeWidth={66} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
+              <g transform={`translate(178 1334) rotate(${ang}) scale(${headK})`}><path d={HEAD} fill="#000" stroke="#000" strokeWidth={34} strokeLinejoin="round" /></g></g>
+            <path d={ARROW} fill="none" stroke="#fff" strokeWidth={74} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
+            <path d={ARROW} fill="none" stroke="#111" strokeWidth={58} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
+            <path d={ARROW} fill="none" stroke="url(#ag)" strokeWidth={40} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
+            <path d={ARROW} fill="none" stroke="rgba(255,255,255,.55)" strokeWidth={9} strokeLinecap="round" transform="translate(-6 -8)" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
+            {headK > 0 ? <g transform={`translate(178 1334) rotate(${ang}) scale(${.4 + .6 * Math.min(1.25, spring({frame: Math.round((te - T.end - .65) * fps), fps, config: {damping: 7, stiffness: 260, mass: .6}}))})`}>
+              <path d={HEAD} fill="#fff" stroke="#fff" strokeWidth={46} strokeLinejoin="round" />
+              <path d={HEAD} fill="#111" stroke="#111" strokeWidth={30} strokeLinejoin="round" />
+              <path d={HEAD} fill="url(#ag)" stroke="url(#ag)" strokeWidth={12} strokeLinejoin="round" /></g> : null}
+          </g>
         </svg>
       </AbsoluteFill>
     </AbsoluteFill>
