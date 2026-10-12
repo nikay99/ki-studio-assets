@@ -84,7 +84,8 @@ export const CapitalShort: React.FC<P> = ({code, country, cap, trap, d, capx, ca
   const arrowK = clamp((te - T.end - .3) / .4);
   const wob = arrowK >= 1 ? Math.abs(Math.sin(te * 7)) : 0;
   const ringT = ((te - T.end - .7) % .8) / .8;
-  const ARROW = 'M360 1085 C480 1170 370 1290 225 1323';
+  // Position aus Niklas' Handyfoto (12.10. 22:28, Shorts-Feed schneidet das 9:16-Bild seitlich an, Skalierung 0,941): Profilbild-Mitte im Video bei x≈138, y≈1552, Radius ≈49
+  const ARROW = 'M380 1085 C520 1200 380 1370 250 1425';
 
   const cx = (el: number, a: number) => (a);
   void cx;
@@ -182,8 +183,8 @@ export const CapitalShort: React.FC<P> = ({code, country, cap, trap, d, capx, ca
         <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: 1080, height: 1920, pointerEvents: 'none', transform: arrowK >= 1 ? `translate(${-16 * wob}px,${12 * wob}px)` : undefined}}>
           <path d={ARROW} fill="none" stroke="#000" strokeWidth={62} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - arrowK} />
           <path d={ARROW} fill="none" stroke={C.red} strokeWidth={38} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - arrowK} />
-          {arrowK >= 1 ? <g><path fill="#000" stroke="#000" strokeWidth={26} strokeLinejoin="round" d="M118 1346 L216 1256 L242 1388 Z" /><path fill={C.red} stroke={C.red} strokeWidth={8} strokeLinejoin="round" d="M126 1346 L218 1266 L238 1380 Z" /></g> : null}
-          {arrowK >= 1 && te > T.end + .7 ? <circle cx={98} cy={1400} r={56 + 70 * ringT} fill="none" stroke={C.red} strokeWidth={12} opacity={1 - ringT} /> : null}
+          {arrowK >= 1 ? <g><path fill="#000" stroke="#000" strokeWidth={26} strokeLinejoin="round" d="M170 1494 L212 1372 L296 1470 Z" /><path fill={C.red} stroke={C.red} strokeWidth={8} strokeLinejoin="round" d="M180 1484 L218 1388 L284 1460 Z" /></g> : null}
+          {arrowK >= 1 && te > T.end + .7 ? <circle cx={138} cy={1552} r={58 + 70 * ringT} fill="none" stroke={C.red} strokeWidth={12} opacity={1 - ringT} /> : null}
         </svg>
       </AbsoluteFill>
     </AbsoluteFill>
