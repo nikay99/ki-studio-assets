@@ -17,6 +17,7 @@ def put(f,at,gain,peak_at=None):
     if peak_at is not None: i=int(peak_at*SR)-int(np.argmax(np.abs(s).max(1)))
     i=max(0,i); n=min(len(s),len(out)-i); out[i:i+n]+=s[:n]
 put('slam.mp3',0,0.9,peak_at=0.3)
+put('pop.mp3',1.2,0.75)   # Hook-Wechsel (Niklas 12.10.)
 for t in [1,2,3,4,5]: put('tick.mp3',t,0.45+0.1*(t-1))
 for t in [2.0,3.2,4.4]: put('pop.mp3',t,0.6)
 n=int(sys.argv[2]); [put('pop.mp3',2.5+k*3.0/n,0.35) for k in range(n)]
