@@ -28,6 +28,8 @@ const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''
 // Zeiten wie bei Guess the Country: Runde 65 s, Tipps nach 12 / 26 / 40 s, Buchstaben ab 20 s alle 6 s, nach erstem Treffer noch 15 s
 const ROUND_MS = 65000, SHOW_MS = 9000, HINTS_AT = [12000, 26000, 40000], FIRST_REVEAL = 20000, REVEAL_EVERY = 6000;
 const PTS = [10, 7, 5];
+// Zuschauer-Hilfe nur im Bild (Niklas 12.10.): !hint holt den nächsten Tipp früher, wenn mehrere verschiedene Zuschauer ihn tippen
+const HINT_MIN_MS = 5000, HINT_GAP_MS = 6000, HELP_GAP_MS = 20000;
 
 // ---------- Tageszustand ----------
 const STATE_FILE = path.join(DATA, 'state.json');
@@ -63,7 +65,7 @@ function startRound() {
   const letters = [...q.shown];
   const idx = letters.map((ch, i) => i).filter(i => i > 0 && /[A-Z]/.test(letters[i])).sort(() => Math.random() - 0.5);
   const maxReveal = Math.max(1, Math.floor(idx.length * 0.5));
-  round = { n, q, letters, order: idx.slice(0, maxReveal), revealed: [], start: Date.now(), end: Date.now() + ROUND_MS, solvers: [], ...gami.roundStart(), phase: 'guess', hints: 0, wrong: {} };
+  round = { n, q, letters, order: idx.slice(0, maxReveal), revealed: [], start: Date.now(), end: Date.now() + ROUND_MS, solvers: [], ...gami.roundStart(), phase: 'guess', hints: 0, forced: 0, hintVotes: new Set(), lastUnlock: Date.now(), wrong: {} };
   st.rounds = n; save();
 }
 function tick() {
@@ -71,7 +73,8 @@ function tick() {
   const now = Date.now();
   if (round.phase === 'guess') {
     const el = now - round.start;
-    round.hints = HINTS_AT.filter(t => el >= t).length;
+    round.hints = Math.max(HINTS_AT.filter(t => el >= t).length, round.forced);
+    checkHintVotes();
     if (el >= FIRST_REVEAL) round.revealed = round.order.slice(0, Math.min(round.order.length, Math.floor((el - FIRST_REVEAL) / REVEAL_EVERY) + 1));
     if (now >= round.end) finish();
   } else if (round.phase === 'show' && now >= round.showEnd) startRound();
@@ -91,8 +94,20 @@ function isCorrect(text) {
   if (t.replace(/ /g, '') === q.w || q.alias.includes(t)) return true;
   return t.split(' ').length <= 5 && q.alias.some(a => (' ' + t + ' ').includes(' ' + a + ' '));
 }
+// !hint: so viele verschiedene Zuschauer wie nötig (2, bei viel Chat 3) → der nächste Tipp kommt sofort, danach neu zählen
+const activeChat = {};   // Name → letzter Chat-Zeitpunkt
+function hintNeed() { const t = Date.now(); return Object.values(activeChat).filter(x => t - x < 120000).length > 5 ? 3 : 2; }
+function checkHintVotes() {
+  const r = round; if (!r || r.phase !== 'guess' || r.hints >= 3) return;
+  const now = Date.now();
+  if (r.hintVotes.size >= hintNeed() && now - r.start >= HINT_MIN_MS && now - r.lastUnlock >= HINT_GAP_MS) {
+    r.forced = r.hints + 1; r.hints = r.forced; r.hintVotes = new Set(); r.lastUnlock = now; feedPush({ hintOpen: 1 });
+  }
+}
+let lastHelp = 0;
+function feedPush(f) { feed.push({ id: ++feedId, user: '', ...f }); if (feed.length > 200) feed = feed.slice(-100); }
 function onChat(user, text) {
-  msgCount++; rollDay();
+  msgCount++; rollDay(); activeChat[user] = Date.now();
   const push = f => { feed.push({ id: ++feedId, user, ...f }); if (feed.length > 200) feed = feed.slice(-100); };
   if (!known.has(user)) { known.add(user); saveKnown(); push({ welcome: 1 }); }
   if (round && round.phase === 'guess' && !round.solvers.some(s => s.user === user) && isCorrect(text)) {
@@ -107,8 +122,16 @@ function onChat(user, text) {
     return;
   }
   if (round && round.phase !== 'guess' && isCorrect(text)) return push({ late: 1 });
-  if (round && round.solvers.some(s => s.user === user)) return;
   const cmd = /^\s*!/.test(text) ? norm(text) : '';
+  if (cmd === 'help') { if (Date.now() - lastHelp > HELP_GAP_MS) { lastHelp = Date.now(); push({ help: 1 }); } return; }
+  if (round && round.solvers.some(s => s.user === user)) return;
+  if (cmd === 'hint') {
+    if (round && round.phase === 'guess' && round.hints < 3 && !round.hintVotes.has(user)) {
+      round.hintVotes.add(user); checkHintVotes();
+      if (round.hintVotes.size) push({ hintVote: round.hintVotes.size, need: hintNeed() });
+    }
+    return;
+  }
   if (cmd) { for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(cmd)) { if (st.flags[user] !== code) { st.flags[user] = code; save(); push({ flag: flagOf(code) }); } break; } return; }
   const g = norm(text).toUpperCase();
   if (g && !BAD.test(g.replace(/ /g, ''))) {
@@ -143,6 +166,7 @@ const WORDS_PUB = path.join(__dirname, '../words/public');
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/gami-ui.js') return fs.readFile(path.join(__dirname, '..', 'gami-ui.js'), (e, b) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' }); res.end(b); });
+  if (process.env.DEMO === '1' && u.pathname === '/api/say') { onChat(u.searchParams.get('u') || 'tester', u.searchParams.get('t') || ''); return send(res, 200, { ok: 1 }); }   // nur für Vorschauen
   if (u.pathname === '/api/state') return send(res, 200, view());
   if (u.pathname === '/api/board') return send(res, 200, board());
   if (u.pathname === '/api/feed') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: feedId, feed: feed.filter(f => f.id > since).slice(-20) }); }

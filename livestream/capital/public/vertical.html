@@ -28,9 +28,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--paper);color:v
 #cat .tricky{background:var(--p)}
 
 /* Umriss-Feld */
-#map{position:absolute;top:356px;left:110px;width:860px;height:354px;overflow:hidden;background:var(--sea);
+#map{position:absolute;top:356px;left:110px;width:860px;height:294px;overflow:hidden;background:var(--sea);
   background-image:radial-gradient(#b4e2f3 2px,transparent 2px);background-size:24px 24px}
-#shape{position:absolute;left:20px;top:10px;width:808px;height:320px;overflow:visible}
+#shape{position:absolute;left:20px;top:10px;width:808px;height:260px;overflow:visible}
 #shape .sh{fill:#000}
 #shape .fg{fill:var(--y);stroke:#111;stroke-width:5;stroke-linejoin:round;transition:fill .4s}
 #shape.solved .fg{fill:var(--l)}
@@ -41,24 +41,24 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--paper);color:v
 @keyframes ring{0%{transform:scale(.3);opacity:1}100%{transform:scale(2.2);opacity:0}}
 
 /* Tipps mit Countdown */
-#hints{position:absolute;top:728px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+#hints{position:absolute;top:668px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .hint{height:76px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000;overflow:hidden;white-space:nowrap}
 .hint .k{font-size:19px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
 .hint .v{font-size:29px;font-weight:900;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
 .hint.lock{background:#e7e2d6;color:#555}
 .hint.open{background:var(--c)}
 
-#tiles{position:absolute;top:822px;left:110px;right:110px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:10px 22px;height:118px}
+#tiles{position:absolute;top:762px;left:110px;right:110px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:10px 22px;height:118px}
 .word{display:flex;gap:9px}
 .t{display:flex;align-items:center;justify-content:center;font-weight:900;letter-spacing:-.02em;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000;color:#111}
 .t.on{background:var(--y)}
 .t.solved{background:var(--l)}
 
-#timer{position:absolute;top:956px;left:120px;right:120px;height:26px;background:var(--card);border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;overflow:hidden}
+#timer{position:absolute;top:896px;left:120px;right:120px;height:26px;background:var(--card);border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;overflow:hidden}
 #bar{height:100%;width:100%;background:var(--p);transition:width .3s linear}
 #bar.low{background:var(--o)}
 
-#solvers{position:absolute;top:1000px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+#solvers{position:absolute;top:940px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
 .sol{display:flex;align-items:center;gap:10px;padding:2px 14px;font-size:28px;font-weight:800;min-width:0;background:var(--card);border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000}
 .sol .m{font-size:30px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sol .p{color:var(--g);font-weight:900}
@@ -93,12 +93,23 @@ h1{font-size:68px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#ff
 #chatpop .cp2.w{background:var(--p);transform:rotate(-1.5deg)}
 #chatpop .cp2.f{background:var(--c)}
 #chatpop .cp2 .x{color:#d22}
+/* Zuschauer-Hilfe nur im Bild (Niklas 12.10.): Tipp-Zeile unter der Tabelle, wechselt alle 16 s; !help blendet die Übersicht ein.
+   Beides im sicheren Handy-Bereich (x 110–970, y 240–1090). */
+#tip{position:absolute;top:1053px;left:110px;right:110px;height:37px;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;
+  font-size:25px;font-weight:800;color:#111;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000}
+#tip b{background:var(--y);padding:0 8px;margin:0 4px;border:3px solid #111;border-radius:6px;font-weight:900}
+#help{position:absolute;top:352px;left:130px;right:130px;z-index:6;padding:14px 22px 16px;display:none;background:var(--y)!important;transform:rotate(-1deg)}
+#help .ht{font-size:24px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+#help .hl{font-size:27px;font-weight:800;line-height:1.28;padding:2px 0}
+#help .hl b{background:#fff;padding:0 8px;border:3px solid #111;border-radius:6px;font-weight:900}
 canvas#fx{position:absolute;inset:0;pointer-events:none}
 </style></head>
 <body><div id="stage">
   <div id="cat"></div>
   <div class="box" id="map"><svg id="shape" viewBox="0 0 820 335" preserveAspectRatio="xMidYMid meet"></svg><div id="most"></div></div>
   <div id="chatpop"></div>
+  <div class="box" id="help"></div>
+  <div id="tip"></div>
   <div id="hints"></div>
   <div id="tiles"></div>
   <div id="timer"><div id="bar"></div></div>
@@ -106,7 +117,6 @@ canvas#fx{position:absolute;inset:0;pointer-events:none}
   <div id="low">
     <div id="head"><div class="live"><i></i>LIVE</div><h1>Guess the Capital</h1></div>
     <div class="box" id="topbox"><div class="label">Top today</div><div id="top"></div></div>
-    <div id="how"><b>type the capital</b> in chat · <b>!country</b> for your flag</div>
   </div>
   <canvas id="fx" width="1080" height="1920"></canvas>
 </div>
@@ -147,7 +157,7 @@ fetch('shapes.json').then(r=>r.json()).then(j=>{SHAPES=j});
 
 // Kachelgröße + Zeilen: größte Kachel, bei der der Name in höchstens 2 Zeilen à 860 px passt (Niklas 10.10.: zweizeilige Namen
 // schoben sich über Tipps und Zeitbalken). Braucht der Name mehr Höhe als die Standard-118 px, rücken Karte und Tipps nach oben.
-const TILES_TOP=822, TILES_H=118, MAP_TOP=356, MAP_H=354, HINTS_TOP=728;
+const TILES_TOP=762, TILES_H=118, MAP_TOP=356, MAP_H=294, HINTS_TOP=668;
 function rowsAt(words,s){const gap=9, wg=22; let rows=1, w=0;
   for(const x of words){const ww=x.length*s+(x.length-1)*gap; if(w && w+wg+ww>860){rows++; w=ww} else w+=(w?wg:0)+ww; if(ww>860) return 9}
   return rows}
@@ -180,7 +190,7 @@ function drawShape(){
 }
 // Name der Hauptstadt als Schild neben dem Punkt (bei der Auflösung), bleibt innerhalb des Kartenfelds
 function capLabel(name){
-  const [x,y]=SHAPES.shapes[S.code].cap, w=name.length*23+34, h=52;
+  const [x,y]=SHAPES.shapes[S.code].cap, w=name.length*27+40, h=52;
   const lx=Math.max(4,Math.min(816-w,x-w/2)), ly=y>120?y-h-24:y+24;
   $('lab').innerHTML=`<rect x="${lx}" y="${ly}" width="${w}" height="${h}" rx="10"/><text x="${lx+w/2}" y="${ly+38}" text-anchor="middle">★ ${esc(name)}</text>`;
   pop($('lab'),{transform:'translateY(16px)',opacity:0},.7,.4);
@@ -234,22 +244,43 @@ async function pollBoard(){
 }
 setInterval(pollBoard,2000); pollBoard();
 
+// Tipp-Zeile: wechselt alle 16 s (Niklas 12.10.). Flaggen-Beispiel konkret, Bonusrunde laut gami.js alle 10 Min ×2
+const FLAGEX=[['brazil','🇧🇷'],['japan','🇯🇵'],['italy','🇮🇹'],['austria','🇦🇹']]; let tipI=0, tipF=0;
+const TIPS=[()=>`👥 Everyone who's right scores – <b>fastest</b> gets the most`,
+  ()=>{const f=FLAGEX[tipF++%FLAGEX.length]; return `🏳️ Type <b>!${f[0]}</b> for your flag ${f[1]}`},
+  ()=>`💡 Stuck? Type <b>!hint</b> – a few of you, hint comes sooner`,
+  ()=>`⚡ Bonus round about every 10 min: <b>double points</b>`,
+  ()=>`❓ Type <b>!help</b> to see how it works`];
+function nextTip(){ const el=$('tip'); el.innerHTML=TIPS[tipI++%TIPS.length](); pop(el,{transform:'translateY(10px)',opacity:0},1,.4) }
+nextTip(); setInterval(nextTip,16000);
+// !help: Übersicht ein paar Sekunden über der Karte
+let helpT=null;
+function showHelp(){
+  const el=$('help'); el.innerHTML=`<div class="ht">How it works</div>
+    <div class="hl">🏛️ <b>Type the capital</b> – all right answers score</div>
+    <div class="hl">⏱️ Fastest gets <b>10</b>, then 7, 5, 3</div>
+    <div class="hl">🏳️ <b>!brazil</b> – your flag next to your name</div>
+    <div class="hl">💡 <b>!hint</b> – a few of you, next hint comes sooner</div>
+    <div class="hl">⚡ Bonus round <b>×2</b> about every 10 min</div>`;
+  el.style.display='block'; pop(el,{transform:'scale(.9) rotate(-3deg)',opacity:0},.7,.4); bell(PENTA[3],.4,.06);
+  clearTimeout(helpT); helpT=setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:250,fill:'forwards'}); setTimeout(()=>{el.style.display='none'},260) },8000);
+}
 // Chat-Echo: Begrüßung zuerst, sonst nur die neueste Nachricht (keine Warteschlange, die hinterherhinkt) – wie beim Wortraten
 let popQ=[], popBusy=false, feedSince=0, feedFirst=true;
 function showPop(){
   if(popBusy||!popQ.length) return; popBusy=true;
-  const w=popQ.findIndex(x=>x.welcome||x.levelUp||x.streakPop), x=w>=0?popQ.splice(w,1)[0]:popQ.pop(); if(w<0) popQ=[];
+  const w=popQ.findIndex(x=>x.welcome||x.levelUp||x.streakPop||x.hintVote||x.hintOpen), x=w>=0?popQ.splice(w,1)[0]:popQ.pop(); if(w<0) popQ=[];
   const u=`<span class="u">${esc(x.user)}</span>`;
-  const html=x.levelUp?`${x.badge} <span class="u">${esc(x.user)}</span> is now ${esc(x.levelUp)}!`:x.streakPop?`🔥 <span class="u">${esc(x.user)}</span> ${x.streakPop} in a row · +${x.sb} bonus`:x.welcome?`👋 Welcome <span class="u">${esc(x.user)}!</span> Type the capital`:x.flag&&!x.guess?`${u} ${x.flag} joined`:x.late?`${u} ✓ just too late!`:`${u}: ${esc(x.guess)} <span class="x">✗</span>`;
-  $('chatpop').innerHTML=`<div class="cp2${x.welcome||x.levelUp||x.streakPop?' w':x.flag&&!x.guess?' f':''}">${html}</div>`; pop($('chatpop').firstChild,{transform:'scale(.6)',opacity:0},.6,.35);
+  const html=x.levelUp?`${x.badge} <span class="u">${esc(x.user)}</span> is now ${esc(x.levelUp)}!`:x.hintOpen?`💡 Chat unlocked the next hint!`:x.hintVote?`💡 ${u} wants a hint · ${x.hintVote}/${x.need}`:x.streakPop?`🔥 <span class="u">${esc(x.user)}</span> ${x.streakPop} in a row · +${x.sb} bonus`:x.welcome?`👋 Welcome <span class="u">${esc(x.user)}!</span> Type the capital`:x.flag&&!x.guess?`${u} ${x.flag} joined`:x.late?`${u} ✓ just too late!`:`${u}: ${esc(x.guess)} <span class="x">✗</span>`;
+  $('chatpop').innerHTML=`<div class="cp2${x.welcome||x.levelUp||x.streakPop||x.hintOpen?' w':x.flag&&!x.guess?' f':''}">${html}</div>`; pop($('chatpop').firstChild,{transform:'scale(.6)',opacity:0},.6,.35);
   if(x.welcome) bell(PENTA[4],.4,.06);
-  setTimeout(()=>{ const el=$('chatpop').firstChild; if(el) el.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}); setTimeout(()=>{popBusy=false;showPop()},220) }, x.welcome||x.levelUp||x.streakPop?3200:1600);
+  setTimeout(()=>{ const el=$('chatpop').firstChild; if(el) el.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}); setTimeout(()=>{popBusy=false;showPop()},220) }, x.welcome||x.levelUp||x.streakPop||x.hintOpen?3200:1600);
 }
 async function pollFeed(){
   try{
     const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last;
     if(feedFirst){ feedFirst=false; return }   // nach einem Neuladen keine alten Nachrichten abspielen
-    for(const x of f.feed) if(!x.ok) popQ.push(x); popQ=popQ.slice(-12); showPop();
+    for(const x of f.feed){ if(x.help){ showHelp(); continue } if(!x.ok) popQ.push(x) } popQ=popQ.slice(-12); showPop();
   }catch{}
 }
 setInterval(pollFeed,700); pollFeed();
