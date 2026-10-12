@@ -81,8 +81,8 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
   const arrowK = clamp((te - T.end - .3) / .4);
   const wob = arrowK >= 1 ? Math.abs(Math.sin(te * 7)) : 0;
   const ringT = ((te - T.end - .7) % .8) / .8;
-  const ARROW = 'M430 1070 C640 1130 340 1290 178 1334';
-  const ang = Math.atan2(1334 - 1290, 178 - 340) * 180 / Math.PI;       // Richtung der Pfeilspitze
+  const ARROW = 'M440 1110 C660 1210 390 1400 215 1465';
+  const ang = Math.atan2(1465 - 1400, 215 - 390) * 180 / Math.PI;       // Richtung der Pfeilspitze
   const ease = (x: number) => 1 - Math.pow(1 - x, 3);
   const drawK = ease(arrowK), headK = clamp((te - T.end - .65) / .3);
   const nudge = arrowK >= 1 && headK >= 1 ? 16 * Math.abs(Math.sin((te - T.end) * 6.5)) : 0;
@@ -174,16 +174,16 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
         </div>
         <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: 1080, height: 1920, pointerEvents: 'none', overflow: 'visible'}}>
           <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff6a5c" /><stop offset="1" stopColor="#e01616" /></linearGradient></defs>
-          {[0, 1].map(i => { const rt = ((te - T.end - .8 - i * .45) % 1.1) / 1.1; return arrowK >= 1 && rt >= 0 ? <circle key={i} cx={98} cy={1400} r={62 + 90 * rt} fill="none" stroke={i ? '#ffd23a' : C.red} strokeWidth={16 - 10 * rt} opacity={1 - rt} /> : null; })}
+          {[0, 1].map(i => { const rt = ((te - T.end - .8 - i * .45) % 1.1) / 1.1; return arrowK >= 1 && rt >= 0 ? <circle key={i} cx={142} cy={1558} r={62 + 90 * rt} fill="none" stroke={i ? '#ffd23a' : C.red} strokeWidth={16 - 10 * rt} opacity={1 - rt} /> : null; })}
           <g transform={`translate(${ux * nudge} ${uy * nudge})`}>
             <g transform="translate(12 14)" opacity={.55}>
               <path d={ARROW} fill="none" stroke="#000" strokeWidth={66} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
-              <g transform={`translate(178 1334) rotate(${ang}) scale(${headK})`}><path d={HEAD} fill="#000" stroke="#000" strokeWidth={34} strokeLinejoin="round" /></g></g>
+              <g transform={`translate(215 1465) rotate(${ang}) scale(${headK})`}><path d={HEAD} fill="#000" stroke="#000" strokeWidth={34} strokeLinejoin="round" /></g></g>
             <path d={ARROW} fill="none" stroke="#fff" strokeWidth={74} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
             <path d={ARROW} fill="none" stroke="#111" strokeWidth={58} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
             <path d={ARROW} fill="none" stroke="url(#ag)" strokeWidth={40} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
             <path d={ARROW} fill="none" stroke="rgba(255,255,255,.55)" strokeWidth={9} strokeLinecap="round" transform="translate(-6 -8)" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - drawK} />
-            {headK > 0 ? <g transform={`translate(178 1334) rotate(${ang}) scale(${.4 + .6 * Math.min(1.25, spring({frame: Math.round((te - T.end - .65) * fps), fps, config: {damping: 7, stiffness: 260, mass: .6}}))})`}>
+            {headK > 0 ? <g transform={`translate(215 1465) rotate(${ang}) scale(${.4 + .6 * Math.min(1.25, spring({frame: Math.round((te - T.end - .65) * fps), fps, config: {damping: 7, stiffness: 260, mass: .6}}))})`}>
               <path d={HEAD} fill="#fff" stroke="#fff" strokeWidth={46} strokeLinejoin="round" />
               <path d={HEAD} fill="#111" stroke="#111" strokeWidth={30} strokeLinejoin="round" />
               <path d={HEAD} fill="url(#ag)" stroke="url(#ag)" strokeWidth={12} strokeLinejoin="round" /></g> : null}
