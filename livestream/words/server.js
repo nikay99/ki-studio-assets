@@ -45,9 +45,16 @@ const saveKnown = () => { if (!knownT) knownT = setTimeout(() => { knownT = null
 
 // ---------- Runden ----------
 let round = null, recent = [], deck = [], feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
+// Gesehene Rätsel merken, auch über Neustarts (Niklas 12.10.: Wiederkehrer sollen nichts doppelt sehen): innerhalb von 24 h nichts erneut ziehen,
+// ist der Pool leer gezogen, kommt das am längsten nicht gezeigte zuerst
+const SEEN_FILE = path.join(DATA, 'seen.json'), SEEN_MS = 24 * 3600 * 1000;
+let seen = {}; try { seen = JSON.parse(fs.readFileSync(SEEN_FILE, 'utf8')) || {}; } catch {}
+let seenT = null;
+const saveSeen = () => { if (!seenT) seenT = setTimeout(() => { seenT = null; const lim = Date.now() - 3 * SEEN_MS; for (const k in seen) if (seen[k] < lim) delete seen[k]; fs.writeFile(SEEN_FILE, JSON.stringify(seen), () => {}); }, 3000); };
 function nextWord() {
-  if (!deck.length) deck = WORDS.map((_, i) => i).sort(() => Math.random() - 0.5);
-  return WORDS[deck.pop()];
+  const lim = Date.now() - SEEN_MS, fresh = WORDS.filter(x => !(seen[x.w] > lim));
+  const x = fresh.length ? fresh[Math.floor(Math.random() * fresh.length)] : WORDS.reduce((a, b) => (seen[a.w] || 0) <= (seen[b.w] || 0) ? a : b);
+  seen[x.w] = Date.now(); saveSeen(); return x;
 }
 const EASY = new Set('US GB DE AT FR IT ES NL PL UA TR BR MX CA AR JP KR IN ID AU SE NO CH PT EG NG PH VN SA CO CL ZA MA GR IE RO HU CZ PK TH MY NZ DK FI BE IL KE PE CN RU JM CU IS HR RS QA AE SG NP BD LK CM GH SN'.split(' '));
 function nextFlag() {
