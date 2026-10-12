@@ -1,4 +1,4 @@
-# Mischt Musik (stable-audio-3, eigen) + SFX (ElevenLabs) zum 15-s-Short. mix.py out.wav <buchstaben>
+# Mischt Musik (stable-audio-3, eigen) + SFX (ElevenLabs) zum 15-s-Short. mix.py out.wav <buchstaben> [aufdeck_start aufdeck_ende]
 import numpy as np, subprocess, sys
 SR=48000; D=15.0; DIR=__import__('os').path.dirname(__import__('os').path.abspath(__file__))+'/sfx/'
 def load(f):
@@ -19,7 +19,7 @@ def put(f,at,gain,peak_at=None):
 put('slam.mp3',0,0.9,peak_at=0.3)
 for t in [1,2,3,4,5]: put('tick.mp3',t,0.45+0.1*(t-1))
 for t in [2.0,3.2,4.4]: put('pop.mp3',t,0.6)
-n=int(sys.argv[2]); [put('pop.mp3',2.5+k*3.0/n,0.35) for k in range(n)]
+n=int(sys.argv[2]); r0,r1=(float(sys.argv[3]),float(sys.argv[4])) if len(sys.argv)>4 else (2.5,5.5); [put('pop.mp3',r0+k*(r1-r0)/n,0.35) for k in range(n)]
 put('riser.mp3',4.0,0.5)
 put('ding.mp3',6.0,0.8); put('cheer.mp3',6.05,0.45)
 put('pop.mp3',10.0,0.6)
