@@ -64,11 +64,8 @@ canvas{position:absolute;inset:0;z-index:4;pointer-events:none}
   <canvas id="fx" width="1080" height="1920"></canvas>
   <div id="end"><div class="b" id="endcard"><div class="live"><i></i>LIVE 24/7</div><h2>Guess capitals live with the chat</h2>
     <div class="arrow">TAP MY PROFILE PIC ↙ LIVE</div><div class="games">Guess the Capital · Country · Word</div></div>
-    <svg id="arr" viewBox="0 0 1080 1920"><path id="ap0" fill="none" stroke="#000" stroke-width="62" stroke-linecap="round" stroke-linejoin="round" d="M380 1085 C520 1200 380 1370 250 1425"/>
-      <path id="ap" fill="none" stroke="#ff3b3b" stroke-width="38" stroke-linecap="round" stroke-linejoin="round" d="M380 1085 C520 1200 380 1370 250 1425"/>
-      <g id="ah"><path fill="#000" stroke="#000" stroke-width="26" stroke-linejoin="round" d="M170 1494 L212 1372 L296 1470 Z"/>
-      <path fill="#ff3b3b" stroke="#ff3b3b" stroke-width="8" stroke-linejoin="round" d="M180 1484 L218 1388 L284 1460 Z"/></g>
-      <circle id="aring" cx="138" cy="1552" r="58" fill="none" stroke="#ff3b3b" stroke-width="12"/></svg></div>
+    <svg id="arr" viewBox="0 0 1080 1920"><g id="ag"><polygon id="as" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="round" points="10,-45 150,-45 150,-125 280,0 150,125 150,45 10,45" transform="translate(12,12)"/>
+      <polygon id="ap" fill="#ff3b3b" stroke="#000" stroke-width="14" stroke-linejoin="round" points="10,-45 150,-45 150,-125 280,0 150,125 150,45 10,45"/></g></svg></div>
 </div>
 <script>
 // Ablauf (Sekunden): 0 Land + Umriss + Hook, 1–6 Countdown 5…1 mit Tipps (2,0 Anfangsbuchstabe / 3,2 Punkt im Umriss / 4,4 Endbuchstabe
@@ -116,10 +113,10 @@ const parts=[...Array(120)].map((_,i)=>({a:-Math.PI/2+(R()-.5)*2.4,v:14+R()*16,c
 function confetti(t){ fx.clearRect(0,0,1080,1920); const d=t-T.solve; if(d<0||d>3) return;
   for(const p of parts){ const f=d*30, x=540+Math.cos(p.a)*p.v*f*.97, y=840+Math.sin(p.a)*p.v*f+.19*f*f; fx.save(); fx.translate(x,y); fx.rotate(p.s+f*.15); fx.globalAlpha=Math.max(0,1-d/3); fx.fillStyle=p.c; fx.fillRect(-p.r,-p.r/2,p.r*2,p.r); fx.restore() } }
 // Pfeil aufs Profilbild (Niklas 12.10.): wird ab 10,4 s gezeichnet, Spitze bei x≈9 %, y≈71 % (Feed-Profilbild mit LIVE-Ring)
-function arrowAt(t){ const L=$('ap').getTotalLength(), k=Math.max(0,Math.min(1,(t-T.end-.3)/.4));
-  const rp=((t-T.end-.7)%.8)/.8; $('aring').style.opacity=k>=1&&t>T.end+.7?1-rp:0; $('aring').setAttribute('r',58+70*rp);
-  for(const id of ['ap0','ap']){ $(id).style.strokeDasharray=L; $(id).style.strokeDashoffset=L*(1-k) }
-  $('ah').style.opacity=k>=1?1:0; $('arr').style.transform=k>=1?`translate(${-16*Math.abs(Math.sin(t*7))}px,${12*Math.abs(Math.sin(t*7))}px)`:'none' }
+// Pfeil Richtung Profilbild (Niklas 13.10.: kürzer, breiter, pulsierend, nur ungefähre Richtung unten links)
+function arrowAt(t){ const k=Math.max(0,Math.min(1,(t-T.end-.3)/.35)), p=Math.sin((t-T.end)*Math.PI*2*2.2), pop=k<1?1-Math.pow(1-k,3):1,
+  sc=pop*(1.04+.1*p), bob=14*(1+p)/2, tx=190-bob*.707, ty=1470+bob*.707;
+  $('ag').setAttribute('transform',`translate(${tx} ${ty}) rotate(135) scale(${sc}) translate(-280 0)`); $('arr').style.opacity=k>0?1:0; $('arr').style.transform='none' }
 const HOOKV2=new URLSearchParams(location.search).get('hook')==='1';
 function render(t0){
   const back=t0>T.total-0.4, t=back?0:t0;
