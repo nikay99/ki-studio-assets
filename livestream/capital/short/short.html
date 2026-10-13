@@ -64,8 +64,8 @@ canvas{position:absolute;inset:0;z-index:4;pointer-events:none}
   <canvas id="fx" width="1080" height="1920"></canvas>
   <div id="end"><div class="b" id="endcard"><div class="live"><i></i>LIVE 24/7</div><h2>Guess capitals live with the chat</h2>
     <div class="arrow">TAP MY PROFILE PIC ↙ LIVE</div><div class="games">Guess the Capital · Country · Word</div></div>
-    <svg id="arr" viewBox="0 0 1080 1920"><g id="ag"><polygon id="as" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="round" points="10,-45 150,-45 150,-125 280,0 150,125 150,45 10,45" transform="translate(12,12)"/>
-      <polygon id="ap" fill="#ff3b3b" stroke="#000" stroke-width="14" stroke-linejoin="round" points="10,-45 150,-45 150,-125 280,0 150,125 150,45 10,45"/></g></svg></div>
+    <svg id="arr" viewBox="0 0 1080 1920"><g id="ag"><polygon id="as" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="round" points="10,-45 290,-45 290,-125 420,0 290,125 290,45 10,45" transform="translate(12,12)"/>
+      <polygon id="ap" fill="#ff3b3b" stroke="#000" stroke-width="14" stroke-linejoin="round" points="10,-45 290,-45 290,-125 420,0 290,125 290,45 10,45"/></g></svg></div>
 </div>
 <script>
 // Ablauf (Sekunden): 0 Land + Umriss + Hook, 1–6 Countdown 5…1 mit Tipps (2,0 Anfangsbuchstabe / 3,2 Punkt im Umriss / 4,4 Endbuchstabe
@@ -115,8 +115,8 @@ function confetti(t){ fx.clearRect(0,0,1080,1920); const d=t-T.solve; if(d<0||d>
 // Pfeil aufs Profilbild (Niklas 12.10.): wird ab 10,4 s gezeichnet, Spitze bei x≈9 %, y≈71 % (Feed-Profilbild mit LIVE-Ring)
 // Pfeil Richtung Profilbild (Niklas 13.10.: kürzer, breiter, pulsierend, nur ungefähre Richtung unten links)
 function arrowAt(t){ const k=Math.max(0,Math.min(1,(t-T.end-.3)/.35)), p=Math.sin((t-T.end)*Math.PI*2*2.2), pop=k<1?1-Math.pow(1-k,3):1,
-  sc=pop*(1.04+.1*p), bob=14*(1+p)/2, tx=190-bob*.707, ty=1470+bob*.707;
-  $('ag').setAttribute('transform',`translate(${tx} ${ty}) rotate(135) scale(${sc}) translate(-280 0)`); $('arr').style.opacity=k>0?1:0; $('arr').style.transform='none' }
+  sc=pop*(1.03+.08*p), bob=16*(1+p)/2, A=122*Math.PI/180, tx=190+bob*Math.cos(A), ty=1500+bob*Math.sin(A);
+  $('ag').setAttribute('transform',`translate(${tx} ${ty}) rotate(122) scale(${sc}) translate(-420 0)`); $('arr').style.opacity=k>0?1:0; $('arr').style.transform='none' }
 const HOOKV2=new URLSearchParams(location.search).get('hook')==='1';
 function render(t0){
   const back=t0>T.total-0.4, t=back?0:t0;
