@@ -81,14 +81,14 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
   const arrowK = clamp((te - T.end - .3) / .4);
   const wob = arrowK >= 1 ? Math.abs(Math.sin(te * 7)) : 0;
   const ringT = ((te - T.end - .7) % .8) / .8;
-  // Generischer Block-Pfeil (Niklas 13.10.): kurz, breit, pulsierend, zeigt nur grob nach links unten aufs Profilbild
-  const ang = 144;                                                        // Grad, 0 = nach rechts
+  // Generischer Block-Pfeil (Niklas 13.10.): lang (ab Kartenunterkante bis links unten, Niklas 13.10. 05:20Z), breit, pulsierend, zeigt nur grob aufs Profilbild
+  const ang = 117;                                                        // Grad, 0 = nach rechts
   const ease = (x: number) => 1 - Math.pow(1 - x, 3);
   const pulse = arrowK >= 1 ? Math.abs(Math.sin((te - T.end) * 5.5)) : 0;
-  const arrowS = (.55 + .45 * ease(arrowK)) * (1 + .14 * pulse);
-  const nudge = 26 * pulse;
+  const arrowS = (.55 + .45 * ease(arrowK)) * (1 + .07 * pulse);
+  const nudge = 22 * pulse;
   const ux = Math.cos(ang * Math.PI / 180), uy = Math.sin(ang * Math.PI / 180);
-  const BLOCK = 'M150 0 L20 -112 L20 -58 L-130 -58 L-130 58 L20 58 L20 112 Z';
+  const BLOCK = 'M320 0 L120 -120 L120 -50 L-320 -50 L-320 50 L120 50 L120 120 Z';
 
   const cx = (el: number, a: number) => (a);
   void cx;
@@ -175,7 +175,7 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
         </div>
         <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: 1080, height: 1920, pointerEvents: 'none', overflow: 'visible'}}>
           <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff6a5c" /><stop offset="1" stopColor="#e01616" /></linearGradient></defs>
-          <g transform={`translate(${330 + ux * nudge} ${1415 + uy * nudge}) rotate(${ang}) scale(${arrowS})`} opacity={clamp(arrowK * 3)}>
+          <g transform={`translate(${270 + ux * nudge} ${1340 + uy * nudge}) rotate(${ang}) scale(${arrowS})`} opacity={clamp(arrowK * 3)}>
             <path d={BLOCK} transform="translate(10 12)" fill="#000" stroke="#000" strokeWidth={34} strokeLinejoin="round" opacity={.5} />
             <path d={BLOCK} fill="#fff" stroke="#fff" strokeWidth={50} strokeLinejoin="round" />
             <path d={BLOCK} fill="#111" stroke="#111" strokeWidth={34} strokeLinejoin="round" />
