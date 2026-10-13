@@ -1,6 +1,6 @@
 # Mischt Musik (stable-audio-3, eigen) + SFX (ElevenLabs) zum 15-s-Short. mix.py out.wav <buchstaben> [aufdeck_start aufdeck_ende]
 import numpy as np, subprocess, sys
-SR=48000; D=15.0; DIR=__import__('os').path.dirname(__import__('os').path.abspath(__file__))+'/sfx/'
+SR=48000; D=float(__import__('os').environ.get('SHORT_DUR','15')); END=float(__import__('os').environ.get('SHORT_END','10')); DIR=__import__('os').path.dirname(__import__('os').path.abspath(__file__))+'/sfx/'
 def load(f):
     a=np.frombuffer(subprocess.run(['ffmpeg','-v','error','-i',DIR+f,'-ac','2','-ar',str(SR),'-f','f32le','-'],capture_output=True).stdout,dtype='<f4').reshape(-1,2).astype(float)
     return a
@@ -22,6 +22,6 @@ for t in [2.0,3.2,4.4]: put('pop.mp3',t,0.6)
 n=int(sys.argv[2]); r0,r1=(float(sys.argv[3]),float(sys.argv[4])) if len(sys.argv)>4 else (2.5,5.5); [put('pop.mp3',r0+k*(r1-r0)/n,0.35) for k in range(n)]
 put('riser.mp3',4.0,0.5)
 put('ding.mp3',6.0,0.8); put('cheer.mp3',6.05,0.45)
-put('pop.mp3',10.0,0.6)
+put('pop.mp3',END,0.6)
 out=np.clip(out,-1,1)
 subprocess.run(['ffmpeg','-v','error','-y','-f','f32le','-ar',str(SR),'-ac','2','-i','-',sys.argv[1]],input=out.astype('<f4').tobytes())

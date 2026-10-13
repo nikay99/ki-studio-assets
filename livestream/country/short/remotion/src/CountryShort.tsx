@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring, delayRender, continueRender, staticFile} from 'remotion';
 
-const T = {hint: [2.0, 3.2, 4.4], rev0: 2.5, rev1: 5.5, nv0: .5, nv1: 1.5, solve: 6.0, end: 10.0, total: 15.0, intro: 1.2};
+const T = {hint: [2.0, 3.2, 4.4], rev0: 2.5, rev1: 5.5, nv0: .5, nv1: 1.5, solve: 6.0, end: 7.5, total: 11.5, intro: 1.2};
 const C = {paper: '#1f3a4d', dot: '#2f5670', card: '#f8f4eb', y: '#fed439', p: '#ff7b9c', c: '#61d4f5', l: '#b6f36a', o: '#ff8a3d', sea: '#d9f1fb', red: '#ff3b3b'};
 const flagOf = (c: string) => String.fromCodePoint(...[...c].map(x => 0x1F1E6 + x.charCodeAt(0) - 65));
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -90,8 +90,11 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
   const ux = Math.cos(ang * Math.PI / 180), uy = Math.sin(ang * Math.PI / 180);
   const BLOCK = 'M185 0 L35 -92 L35 -38 L-185 -38 L-185 38 L35 38 L35 92 Z';
 
-  const cx = (el: number, a: number) => (a);
-  void cx;
+  // Stream-Hinweis schon in der Ratephase (Niklas 13.10. 14:00Z): Banner + kleiner schlanker Pfeil, bleibt bis zur Endkarte
+  const bk = clamp((t - T.intro - .1) / .4);
+  const bpulse = Math.abs(Math.sin(t * 5.5));
+  const bpop = bk > 0 ? .6 + .4 * spring({frame: Math.round((t - T.intro - .1) * fps), fps, config: {damping: 9, stiffness: 220, mass: .6}}) : 0;
+  const bang = 150, bux = Math.cos(bang * Math.PI / 180), buy = Math.sin(bang * Math.PI / 180);
 
   return (
     <AbsoluteFill style={{background: C.paper, fontFamily: 'Inter, "Noto Color Emoji", sans-serif', overflow: 'hidden'}}>
@@ -161,6 +164,18 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
 
         <AbsoluteFill style={{background: '#fff', opacity: flash}} />
         <AbsoluteFill style={{boxShadow: 'inset 0 0 220px 60px rgba(255,40,40,.75)', opacity: vig}} />
+      </AbsoluteFill>
+
+      {/* Stream-Hinweis während Raten und Auflösung */}
+      <AbsoluteFill style={{zIndex: 4, opacity: bk * (1 - endOp), pointerEvents: 'none'}}>
+        <div style={{position: 'absolute', left: 330, top: 1572, transform: `scale(${bpop})`, transformOrigin: 'left center', ...box({background: C.y, color: '#111', fontWeight: 900, fontSize: 42, lineHeight: 1.08, padding: '12px 22px', borderWidth: 5, borderRadius: 14, boxShadow: '7px 7px 0 #000', whiteSpace: 'nowrap'})}}>
+          <span style={{color: C.red}}>● LIVE NOW</span><br />GUESS ALONG IN MY STREAM</div>
+        <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: 1080, height: 1920, overflow: 'visible'}}>
+          <g transform={`translate(${262 + bux * 16 * bpulse} ${1615 + buy * 16 * bpulse}) rotate(${bang}) scale(${.42 * (1 + .07 * bpulse)})`}>
+            <path d={BLOCK} transform="translate(8 10)" fill="#000" stroke="#000" strokeWidth={14} strokeLinejoin="round" opacity={.45} />
+            <path d={BLOCK} fill="#ff3b3b" stroke="#000" strokeWidth={14} strokeLinejoin="miter" />
+          </g>
+        </svg>
       </AbsoluteFill>
 
       {/* Endkarte mit Pfeil aufs Profilbild (Niklas 12.10.: dick, pulsierender Ring) */}
