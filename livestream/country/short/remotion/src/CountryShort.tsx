@@ -81,14 +81,14 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
   const arrowK = clamp((te - T.end - .3) / .4);
   const wob = arrowK >= 1 ? Math.abs(Math.sin(te * 7)) : 0;
   const ringT = ((te - T.end - .7) % .8) / .8;
-  // Generischer Block-Pfeil (Niklas 13.10.): lang (ab Kartenunterkante bis links unten, Niklas 13.10. 05:20Z), breit, pulsierend, zeigt nur grob aufs Profilbild
-  const ang = 117;                                                        // Grad, 0 = nach rechts
+  // Generischer Block-Pfeil (Niklas 13.10.): schlank (Gemini-Vorschlag, Niklas 13.10. 06:30Z: ca. 20 % kleiner als lang, dünner Rand), pulsierend, zeigt nur grob aufs Profilbild
+  const ang = 123;                                                        // Grad, 0 = nach rechts
   const ease = (x: number) => 1 - Math.pow(1 - x, 3);
   const pulse = arrowK >= 1 ? Math.abs(Math.sin((te - T.end) * 5.5)) : 0;
   const arrowS = (.55 + .45 * ease(arrowK)) * (1 + .07 * pulse);
   const nudge = 22 * pulse;
   const ux = Math.cos(ang * Math.PI / 180), uy = Math.sin(ang * Math.PI / 180);
-  const BLOCK = 'M320 0 L120 -120 L120 -50 L-320 -50 L-320 50 L120 50 L120 120 Z';
+  const BLOCK = 'M185 0 L35 -92 L35 -38 L-185 -38 L-185 38 L35 38 L35 92 Z';
 
   const cx = (el: number, a: number) => (a);
   void cx;
@@ -175,11 +175,9 @@ export const CountryShort: React.FC<P> = ({code, country, cap, cont, nv, d, worl
         </div>
         <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: 1080, height: 1920, pointerEvents: 'none', overflow: 'visible'}}>
           <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff6a5c" /><stop offset="1" stopColor="#e01616" /></linearGradient></defs>
-          <g transform={`translate(${270 + ux * nudge} ${1340 + uy * nudge}) rotate(${ang}) scale(${arrowS})`} opacity={clamp(arrowK * 3)}>
-            <path d={BLOCK} transform="translate(10 12)" fill="#000" stroke="#000" strokeWidth={34} strokeLinejoin="round" opacity={.5} />
-            <path d={BLOCK} fill="#fff" stroke="#fff" strokeWidth={50} strokeLinejoin="round" />
-            <path d={BLOCK} fill="#111" stroke="#111" strokeWidth={34} strokeLinejoin="round" />
-            <path d={BLOCK} fill="url(#ag)" stroke="url(#ag)" strokeWidth={14} strokeLinejoin="round" />
+          <g transform={`translate(${268 + ux * nudge} ${1358 + uy * nudge}) rotate(${ang}) scale(${arrowS})`} opacity={clamp(arrowK * 3)}>
+            <path d={BLOCK} transform="translate(8 10)" fill="#000" stroke="#000" strokeWidth={14} strokeLinejoin="round" opacity={.45} />
+            <path d={BLOCK} fill="#ff3b3b" stroke="#000" strokeWidth={14} strokeLinejoin="miter" />
           </g>
         </svg>
       </AbsoluteFill>
