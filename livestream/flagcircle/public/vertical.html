@@ -107,7 +107,13 @@ function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627',
 (function loop(){fx.clearRect(0,0,1080,1920);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=.15;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
 
 
-const sfxC={out:()=>{bell(220,.5,.12);bell(165,.6,.1,.06)}, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
+let sfxLast=0, sfxBurst=0;
+function blip(f0,f1,d,v,type='sine'){ const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain(); o.type=type; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+d); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(master); o.start(t); o.stop(t+d+.02) }
+function hitSfx(kind,v){ // gedrosselt: max ca. 9 Klänge/s, leise unter der Musik
+  const now=performance.now(); if(now-sfxLast<110) return; sfxLast=now; const k=Math.min(1,v/700);
+  if(kind==='ball'){ const f=520+Math.random()*380; blip(f*1.6,f*.7,.09,.035+.03*k,'triangle') }
+  else { blip(190+Math.random()*60,90,.12,.05+.04*k,'sine') } }
+const sfxC={out:()=>{ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) }, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
 const G=$('game').getContext('2d');
 const CX=540, CY=690, R=330, BR_=36, SPEED=900;
 let S=null, ver=null, sim=null, lastT=0, lastN=0, shownN=0, lastSolv=0, lastFeed=0;
@@ -147,7 +153,7 @@ function stepSim(dt){
     for(let i=0;i<live.length;i++) for(let j=i+1;j<live.length;j++){
       const a=live[i],b=live[j],dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy,md=BR_*2;
       if(d2<md*md&&d2>.01){ const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,p=(md-d)/2; a.x-=nx*p;a.y-=ny*p;b.x+=nx*p;b.y+=ny*p;
-        const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny; if(rv<0){ a.vx+=rv*nx;a.vy+=rv*ny;b.vx-=rv*nx;b.vy-=rv*ny; if(-rv>450) m.shake=Math.min(1,m.shake+.3) } }
+        const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny; if(rv<0){ a.vx+=rv*nx;a.vy+=rv*ny;b.vx-=rv*nx;b.vy-=rv*ny; if(-rv>140) hitSfx('ball',-rv); if(-rv>450) m.shake=Math.min(1,m.shake+.3) } }
     }
     for(const b of live){
       const dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy);
@@ -155,7 +161,7 @@ function stepSim(dt){
         let ang=Math.atan2(dy,dx), diff=Math.atan2(Math.sin(ang-m.holeA),Math.cos(ang-m.holeA));
         if(Math.abs(diff)<m.holeW && d+BR_>R+4){ b.fall=1; b.fvx=dx/d*260; b.fvy=dy/d*260; knockOut(b); continue }   // durchs Loch
         const nx=dx/d,ny=dy/d,vn=b.vx*nx+b.vy*ny;
-        if(Math.abs(diff)>=m.holeW||d+BR_>R+14){ if(vn>0){ b.vx-=2*vn*nx; b.vy-=2*vn*ny } if(Math.abs(diff)>=m.holeW){ b.x=CX+nx*(R-BR_); b.y=CY+ny*(R-BR_) } }
+        if(Math.abs(diff)>=m.holeW||d+BR_>R+14){ if(vn>0){ b.vx-=2*vn*nx; b.vy-=2*vn*ny; if(vn>200) hitSfx('wall',vn) } if(Math.abs(diff)>=m.holeW){ b.x=CX+nx*(R-BR_); b.y=CY+ny*(R-BR_) } }
       }
       // Tempo konstant halten (kein Einschlafen), kleine Zufallsablenkung
       const sp=Math.hypot(b.vx,b.vy)||1, tgt=SPEED*(nLeft<=3?.85:1), k=1+(tgt/sp-1)*.05; b.vx*=k; b.vy*=k;
