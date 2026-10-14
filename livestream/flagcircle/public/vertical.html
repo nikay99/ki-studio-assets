@@ -109,15 +109,15 @@ function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627',
 (function loop(){fx.clearRect(0,0,1080,1920);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=.15;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
 
 
-let sfxLast=0; const KOS=['ko-kurz-1','ko-kurz-2','ko-kurz-3']; const HITS=['punch-2','punch-3','laser-2'];
-const BUF={}; ['ko-kurz-1','ko-kurz-2','ko-kurz-3','ko-4-posaune','punch-2','punch-3','laser-2','hit-1','hit-2','wall-ping','out-whoosh-boom','win-fanfare','start-countdown-go'].forEach(n=>fetch('/sfx/'+n+'.mp3').then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[n]=b}).catch(()=>{}));
+let sfxLast=0, bigUntil=0, lastFan=-1e9; const KOS=['ko-kurz-1','ko-kurz-2','ko-kurz-3']; const HITS=['punch-2','punch-3','laser-2'];
+const BUF={}; ['ko-kurz-1','ko-kurz-2','ko-kurz-3','punch-2','punch-3','laser-2','hit-1','hit-2','wall-ping','out-whoosh-boom','win-fanfare','start-countdown-go'].forEach(n=>fetch('/sfx/'+n+'.mp3').then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[n]=b}).catch(()=>{}));
 function play(n,v,rate=1){ const b=BUF[n]; if(!b) return false; const o=AC.createBufferSource(),g=AC.createGain(); o.buffer=b; o.playbackRate.value=rate; g.gain.value=v; o.connect(g); g.connect(master); o.start(); return true }
 function blip(f0,f1,d,v,type='sine'){ const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain(); o.type=type; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+d); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(master); o.start(t); o.stop(t+d+.02) }
 const pairT=new Map();
 function hitSfx(a,b,v){ // nur im Frame eines echten Kontakts, pro Paar 150 ms Sperre, keine Warteschlange
   const key=a.code<b.code?a.code+b.code:b.code+a.code, now=performance.now(); if(now-(pairT.get(key)||0)<150||now-sfxLast<80) return; pairT.set(key,now); sfxLast=now; if(pairT.size>400) pairT.clear();
   play(HITS[Math.floor(Math.random()*HITS.length)],.2+.22*Math.min(1,v/700),.92+Math.random()*.16) }
-const sfxC={out:()=>{ if(!play(sim&&sim.left<=1?'ko-4-posaune':KOS[Math.floor(Math.random()*KOS.length)],.55)){ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) } }, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
+const sfxC={out:()=>{ if(!play(KOS[Math.floor(Math.random()*KOS.length)],.55)){ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) } }, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
 const G=$('game').getContext('2d');
 const CX=540, CY=700, R=365, BR_=36, SPEED=900;
 let S=null, ver=null, sim=null, lastT=0, lastN=0, shownN=0, lastSolv=0, lastFeed=0;
@@ -214,12 +214,12 @@ async function poll(){
   try{
     const s=await (await fetch('/api/state',{cache:'no-store'})).json();
     if(ver && s.v!==ver) return location.reload(); ver=s.v; S=s;
-    if(s.n!==lastN){ lastN=s.n; lastSolv=0; $('solvers').innerHTML=''; $('win').style.display='none'; initSim(s); if(!play('start-countdown-go',.5)) sfx.start(); lastCnt=-1;
+    if(s.n!==lastN){ lastN=s.n; lastSolv=0; $('solvers').innerHTML=''; $('win').style.display='none'; initSim(s); if(s.phase==='run' && performance.now()-lastFan>4000 && performance.now()>bigUntil){ bigUntil=performance.now()+2500; if(!play('start-countdown-go',.5)) sfx.start() } lastCnt=-1;
       $('p1').animate([{transform:'scale(.7) rotate(-8deg)',opacity:0},{transform:'none',opacity:1}],{duration:400,easing:'cubic-bezier(.2,1.4,.4,1)'}) }
     if(s.phase==='run' && sim && sim.n===s.n){ const c=sim.left; if(c!==lastCnt){ $('cnt').textContent=c; if(lastCnt>0) pop($('p2'),{transform:'scale(1.25)'},.5,.4); lastCnt=c } }
     if(s.phase==='show' && shownN!==s.n){ shownN=s.n; if(sim) sim.posted=true;
       $('wl').textContent=s.tour.champion?'CHAMPION':'HEAT '+s.tour.heat+' WINNER'; $('win').querySelector('.big').textContent=flagOf(s.winner); $('win').querySelector('.nm').textContent=s.winnerName; $('win').style.display='flex';
-      pop($('win'),{transform:'scale(.3) rotate(-10deg)',opacity:0},.55,.55); if(!play('win-fanfare',.5)) sfx.end(); confetti(540,640,110); setTimeout(()=>confetti(300,700,60),300); setTimeout(()=>confetti(780,700,60),500); $('cnt').textContent='1' }
+      pop($('win'),{transform:'scale(.3) rotate(-10deg)',opacity:0},.55,.55); if(performance.now()>bigUntil){ lastFan=performance.now(); bigUntil=lastFan+3000; if(!play('win-fanfare',.5)) sfx.end() } confetti(540,640,110); setTimeout(()=>confetti(300,700,60),300); setTimeout(()=>confetti(780,700,60),500); $('cnt').textContent='1' }
     renderSolvers();
     const tr=s.tour, fin=tr.heat>4;
     $('p1').textContent=s.phase==='run'?(fin?'FINAL · 4 left':(s.left<=4?'Heat '+tr.heat+'/4 · final '+s.left+'!':'Heat '+tr.heat+'/4')):(tr.champion?'We have a champion':'Heat '+tr.heat+' winner');
