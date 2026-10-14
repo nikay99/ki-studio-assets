@@ -17,7 +17,7 @@ sync() {
 }
 sync "$DIR/music.json" "${DATA_DIR:-/var/lib/marble}/music" marble
 # Eigene Musik je Quiz-Stream (Niklas 10.10.): <spiel>/music.json -> /var/lib/marble-<spiel>/music; der Spiel-Server nimmt sie, sobald dort Stücke liegen
-[ "$(id -u)" = 0 ] && for G in words country capital; do
+[ "$(id -u)" = 0 ] && for G in words country capital flagcircle; do
   [ -f "$DIR/$G/music.json" ] && id "$G" >/dev/null 2>&1 && sync "$DIR/$G/music.json" "/var/lib/marble-$G/music" "$G"
 done
 
