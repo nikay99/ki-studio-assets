@@ -10,7 +10,7 @@ import hashlib, calendar, fcntl, json, os, re, subprocess, sys, time, urllib.par
 
 # Mehrere Streams auf einem Kanal (09.10.): jeder Waechter fasst nur Sendungen an, die an SEINEN Stream-Eingang gebunden sind,
 # und prueft "live?" an der eigenen Sendung (watch-Seite) statt an der Kanalseite /live, die nur eine zeigt.
-# Aufruf: ensure-live.py [marble|words|colony|country|capital|flagbattle]
+# Aufruf: ensure-live.py [marble|words|colony|country|capital|flagbattle|flagcircle]
 # slot = Minuten-Versatz zu den festen Wechselzeiten (ROT_TIMES), damit nie zwei Streams gleichzeitig wechseln.
 PROFILES = {
     'marble': dict(D='/var/lib/marble', env='/etc/marble/broadcast.env', user='marble', stream=('digitalocean-streaming',),
@@ -47,6 +47,11 @@ PROFILES = {
                        prefix='Flag Battle', title='Flag Battle 🔴 LIVE – A or B? Type in Chat!', meta='/opt/marble/flagbattle/broadcast.json',
                        thumb='/opt/marble/flagbattle/thumbnail.jpg', runjson=False, slot=40, latency='ultraLow',
                        remind=['🚩 Type A or B in the chat – everyone who votes for the winning flag scores!']),
+    # Flag Circle Survival (Niklas 14.10., ersetzt Capital in der Rotation); gleicher Stream-Eingang wie Capital/Colony
+    'flagcircle': dict(D='/var/lib/marble-flagcircle', env='/etc/marble/broadcast-flagcircle.env', user='flagcircle', stream=('capital', 'capital-key', 'colony', 'colony-key'),
+                       prefix='Flag Circle Survival', title='Flag Circle Survival 🔴 LIVE – 16 Flags, 1 Hole, Who Survives?', meta='/opt/marble/flagcircle/broadcast.json',
+                       thumb='/opt/marble/flagcircle/thumbnail.jpg', runjson=False, slot=40, latency='ultraLow',
+                       remind=['🕳️ Type the flag you think survives in the chat!']),
 }
 GAME = sys.argv[1] if len(sys.argv) > 1 else 'marble'
 P = PROFILES[GAME]
@@ -177,7 +182,7 @@ def rotation_game(now):
     base = (ROT_ANCHOR % 86400) // 60
     k = sorted(((h * 60 + m - base) % 1440) * 60 for h, m in ROT_TIMES).index(off)   # 0, 1, 2 = Block im Tag
     g = ROTATION[int(k + d) % len(ROTATION)]
-    return 'flagbattle' if g == 'capital' and s >= FB_FROM else g
+    return 'flagcircle' if g == 'capital' and s >= FB_FROM else g
 
 def rotation_off(st, save):
     """Spiel ist im rotierenden Betrieb nicht dran: laufende Sendung beenden (Archiv bleibt), Encoder pausieren."""
@@ -207,7 +212,7 @@ def rotate_due(start, now):
 def main():
     scrub()
     if os.path.exists(D + '/NOBROADCAST'): return
-    rg = rotation_game(time.time()) if GAME in ROTATION or GAME == 'flagbattle' else None
+    rg = rotation_game(time.time()) if GAME in ROTATION or GAME in ('flagbattle', 'flagcircle') else None
     if rg: P['slot'] = 0   # im rotierenden Betrieb wechselt alles genau zum Termin
     try: st = json.load(open(STATE))
     except Exception: st = {}
