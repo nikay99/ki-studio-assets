@@ -58,6 +58,8 @@ start_chrome; sleep 8
 
 while true; do
   [ -f /etc/marble/capital.env ] && . /etc/marble/capital.env
+  # Rotation: Spiel nicht dran -> Browser aus (pausierte Browser kosteten 14.10. so viel CPU, dass der laufende Stream ruckelte); ist es dran, startet er hier neu
+  if [ -f "$DATA_DIR/PAUSE.rot" ]; then kill $CHROME_PID 2>/dev/null; sleep 20; continue; fi
   kill -0 $CHROME_PID 2>/dev/null || { log "Chrome neu gestartet"; start_chrome; sleep 8; }
   if [ -f "$DATA_DIR/PAUSE" ] || [ -z "${STREAM_KEY:-}" ]; then sleep 20; continue; fi
   HWDEV=(); [ "$HW" = vaapi ] && [ "${CAPITAL_VAAPI:-1}" = 1 ] && HWDEV=(-vaapi_device /dev/dri/renderD128)
