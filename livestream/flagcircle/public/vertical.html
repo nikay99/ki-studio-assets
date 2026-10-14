@@ -159,7 +159,7 @@ function stepSim(dt){
       const dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy);
       if(d+BR_>R){
         let ang=Math.atan2(dy,dx), diff=Math.atan2(Math.sin(ang-m.holeA),Math.cos(ang-m.holeA));
-        if(Math.abs(diff)<m.holeW && d+BR_>R+4){ b.fall=1; b.fvx=dx/d*260; b.fvy=dy/d*260; knockOut(b); continue }   // durchs Loch
+        if(Math.abs(diff)<m.holeW && d+BR_>R+4){ b.fall=1; b.fvx=dx/d*950; b.fvy=dy/d*950; knockOut(b); continue }   // durchs Loch
         const nx=dx/d,ny=dy/d,vn=b.vx*nx+b.vy*ny;
         if(Math.abs(diff)>=m.holeW||d+BR_>R+14){ if(vn>0){ b.vx-=2*vn*nx; b.vy-=2*vn*ny; if(vn>200) hitSfx('wall',vn) } if(Math.abs(diff)>=m.holeW){ b.x=CX+nx*(R-BR_); b.y=CY+ny*(R-BR_) } }
       }
@@ -167,7 +167,7 @@ function stepSim(dt){
       const sp=Math.hypot(b.vx,b.vy)||1, tgt=SPEED*(nLeft<=3?.85:1), k=1+(tgt/sp-1)*.05; b.vx*=k; b.vy*=k;
     }
   }
-  for(const b of m.balls){ if(b.fall){ b.fall+=dt*1.4; b.x+=b.fvx*dt; b.y+=b.fvy*dt; b.s=Math.max(0,1-(b.fall-1)*1.1); if(b.fall>1.9) b.alive=false } }
+  for(const b of m.balls){ if(b.fall){ b.fall+=dt*1.4; b.x+=b.fvx*dt; b.y+=b.fvy*dt; b.s=Math.min(1.35,1+(b.fall-1)*.5); b.rot+=dt*9; if(b.fall>4||b.x<-120||b.x>1200||b.y<-120||b.y>2040) b.alive=false } }
   if(m.shake>0) m.shake=Math.max(0,m.shake-dt*2);
 }
 let outT=0;
@@ -200,7 +200,7 @@ function draw(){
   G.shadowBlur=0;
   if(m){
     for(const b of m.balls){ if(!b.alive||(S&&S.phase==='show')) continue; const img=ballFor(b.code), s=b.s, d=BR_*2*s;
-      if(b.fall){ G.globalAlpha=Math.max(0,s); }
+      if(b.fall){ G.globalAlpha=1; }
       G.save(); G.translate(b.x,b.y); G.shadowColor='rgba(0,0,0,.55)'; G.shadowBlur=0; G.shadowOffsetX=5*s; G.shadowOffsetY=5*s; G.drawImage(img,-d/2,-d/2,d,d); G.restore(); G.globalAlpha=1 }
   }
   G.restore();
