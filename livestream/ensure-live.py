@@ -84,6 +84,7 @@ RTMP = 'a.rtmp.youtube.com/live2'
 ROTATION = ('country', 'capital', 'words')
 ROT_FROM = calendar.timegm((2026, 10, 10, 13, 30, 0))
 FB_FROM = calendar.timegm((2026, 10, 14, 13, 30, 0))     # ab diesem Block ersetzt Flag Battle den Capital-Platz (Niklas 14.10.)
+FLAGCIRCLE_AKTIV = False   # 14.10. 17:20Z: Flag Circle ist nicht live gegangen (Waechter meldete keine Sendung), zurueck auf die alte Rotation bis die Ursache klar ist
 FC_NOW = calendar.timegm((2026, 10, 14, 16, 1, 0))       # Niklas 14.10. 15:56Z: Flag Circle sofort live, der laufende Block geht vorzeitig an Flag Circle
 ROT_ANCHOR = calendar.timegm((2026, 10, 10, 22, 30, 0))   # Tag 0, erster Block = ROTATION[0]
 
@@ -183,8 +184,9 @@ def rotation_game(now):
     base = (ROT_ANCHOR % 86400) // 60
     k = sorted(((h * 60 + m - base) % 1440) * 60 for h, m in ROT_TIMES).index(off)   # 0, 1, 2 = Block im Tag
     g = ROTATION[int(k + d) % len(ROTATION)]
-    if g == 'capital' and s >= FB_FROM: g = 'flagcircle'
-    if s < FC_NOW <= now: g = 'flagcircle'   # vorzeitiger Wechsel mitten im Block (nur der Block, der FC_NOW enthaelt)
+    if FLAGCIRCLE_AKTIV:
+        if g == 'capital' and s >= FB_FROM: g = 'flagcircle'
+        if s < FC_NOW <= now: g = 'flagcircle'   # vorzeitiger Wechsel mitten im Block
     return g
 
 def rotation_off(st, save):
