@@ -127,7 +127,7 @@ function initSim(s){
 }
 function stepSim(dt){
   const m=sim; if(!m||m.posted) return;
-  const live=m.balls.filter(b=>b.alive&&!b.fall), nLeft=m.balls.filter(b=>b.alive).length;
+  const live=m.balls.filter(b=>b.alive&&!b.fall), nLeft=live.length;
   m.slow=nLeft<=2?0.45:nLeft<=3?0.7:1; dt*=m.slow; m.t+=dt; m.sinceOut+=dt;
   m.holeA+=dt*(nLeft<=3?.5:.75);
   // Loch wird breiter, je länger niemand rausfiel (Tempo ≈ alle 2–3 s ein Ball), nach einem Ausfall wieder eng
@@ -144,7 +144,7 @@ function stepSim(dt){
       const dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy);
       if(d+BR_>R){
         let ang=Math.atan2(dy,dx), diff=Math.atan2(Math.sin(ang-m.holeA),Math.cos(ang-m.holeA));
-        if(Math.abs(diff)<m.holeW && d+BR_>R+4){ b.fall=1; b.fvx=dx/d*260; b.fvy=dy/d*260; m.sinceOut=0; continue }   // durchs Loch
+        if(Math.abs(diff)<m.holeW && d+BR_>R+4){ b.fall=1; b.fvx=dx/d*260; b.fvy=dy/d*260; knockOut(b); continue }   // durchs Loch
         const nx=dx/d,ny=dy/d,vn=b.vx*nx+b.vy*ny;
         if(Math.abs(diff)>=m.holeW||d+BR_>R+14){ if(vn>0){ b.vx-=2*vn*nx; b.vy-=2*vn*ny } if(Math.abs(diff)>=m.holeW){ b.x=CX+nx*(R-BR_); b.y=CY+ny*(R-BR_) } }
       }
@@ -152,13 +152,13 @@ function stepSim(dt){
       const sp=Math.hypot(b.vx,b.vy)||1, tgt=SPEED*(nLeft<=3?.85:1), k=1+(tgt/sp-1)*.05; b.vx*=k; b.vy*=k;
     }
   }
-  for(const b of m.balls){ if(b.fall){ b.fall+=dt*1.4; b.x+=b.fvx*dt; b.y+=b.fvy*dt; b.s=Math.max(0,1-(b.fall-1)*1.1); if(b.fall>1.9&&b.alive){ b.alive=false; knockOut(b) } } }
+  for(const b of m.balls){ if(b.fall){ b.fall+=dt*1.4; b.x+=b.fvx*dt; b.y+=b.fvy*dt; b.s=Math.max(0,1-(b.fall-1)*1.1); if(b.fall>1.9) b.alive=false } }
   if(m.shake>0) m.shake=Math.max(0,m.shake-dt*2);
 }
 function knockOut(b){
-  const m=sim; m.sinceOut=0; m.left=m.balls.filter(x=>x.alive).length; m.outs.push(b.code);
+  const m=sim; m.sinceOut=0; m.left=m.balls.filter(x=>x.alive&&!x.fall).length; m.outs.push(b.code); $('cnt').textContent=m.left; pop($('p2'),{transform:'scale(1.25)'},.5,.4); lastCnt=m.left;
   fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,code:b.code})}).catch(()=>{});
-  sfxC.out(); const w=m.left; if(w===1){ m.posted=true; const last=m.balls.find(x=>x.alive); fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}) }
+  sfxC.out(); const w=m.left; if(w<=1){ m.posted=true; const last=m.balls.find(x=>x.alive&&!x.fall)||b; fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}) }
 }
 function draw(){
   G.clearRect(0,0,1080,1920);
