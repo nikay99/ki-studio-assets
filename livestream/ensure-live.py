@@ -84,6 +84,7 @@ RTMP = 'a.rtmp.youtube.com/live2'
 ROTATION = ('country', 'capital', 'words')
 ROT_FROM = calendar.timegm((2026, 10, 10, 13, 30, 0))
 FB_FROM = calendar.timegm((2026, 10, 14, 13, 30, 0))     # ab diesem Block ersetzt Flag Battle den Capital-Platz (Niklas 14.10.)
+FC_NOW = calendar.timegm((2026, 10, 14, 16, 1, 0))       # Niklas 14.10. 15:56Z: Flag Circle sofort live, der laufende Block geht vorzeitig an Flag Circle
 ROT_ANCHOR = calendar.timegm((2026, 10, 10, 22, 30, 0))   # Tag 0, erster Block = ROTATION[0]
 
 def log(msg):
@@ -182,7 +183,9 @@ def rotation_game(now):
     base = (ROT_ANCHOR % 86400) // 60
     k = sorted(((h * 60 + m - base) % 1440) * 60 for h, m in ROT_TIMES).index(off)   # 0, 1, 2 = Block im Tag
     g = ROTATION[int(k + d) % len(ROTATION)]
-    return 'flagcircle' if g == 'capital' and s >= FB_FROM else g
+    if g == 'capital' and s >= FB_FROM: g = 'flagcircle'
+    if s < FC_NOW <= now: g = 'flagcircle'   # vorzeitiger Wechsel mitten im Block (nur der Block, der FC_NOW enthaelt)
+    return g
 
 def rotation_off(st, save):
     """Spiel ist im rotierenden Betrieb nicht dran: laufende Sendung beenden (Archiv bleibt), Encoder pausieren."""
