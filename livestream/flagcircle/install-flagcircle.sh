@@ -11,6 +11,9 @@ if [ ! -s /etc/marble/flagcircle.env ] && grep -q '^STREAM_KEY=' /etc/marble/cap
 # bis die Rotation Flag Circle freigibt, sendet nichts
 [ -e /var/lib/marble-flagcircle/PAUSE ] || { echo 'Einrichtung: wartet auf Rotation' > /var/lib/marble-flagcircle/PAUSE; touch /var/lib/marble-flagcircle/PAUSE.rot; chown flagcircle:flagcircle /var/lib/marble-flagcircle/PAUSE /var/lib/marble-flagcircle/PAUSE.rot; }
 
+# Zugang des Waechters zur Live-API (n8n): wie Capital, Inhalt wird nicht ausgegeben (fehlte am 14.10. -> 16:01-17:23Z keine Sendung)
+[ -s /etc/marble/broadcast-flagcircle.env ] || { cp /etc/marble/broadcast-capital.env /etc/marble/broadcast-flagcircle.env; chown root:flagcircle /etc/marble/broadcast-flagcircle.env; chmod 640 /etc/marble/broadcast-flagcircle.env; }
+
 # Schlüssel eintragen (Niklas in der Proxmox-Konsole): flagcircle-key
 cat > /usr/local/bin/flagcircle-key <<'EOK'
 #!/bin/bash

@@ -11,6 +11,9 @@ if [ ! -s /etc/marble/flagbattle.env ] && grep -q '^STREAM_KEY=' /etc/marble/cap
 # bis die Rotation Flag Battle freigibt, sendet nichts
 [ -e /var/lib/marble-flagbattle/PAUSE ] || { echo 'Einrichtung: wartet auf Rotation' > /var/lib/marble-flagbattle/PAUSE; touch /var/lib/marble-flagbattle/PAUSE.rot; chown flagbattle:flagbattle /var/lib/marble-flagbattle/PAUSE /var/lib/marble-flagbattle/PAUSE.rot; }
 
+# Zugang des Waechters zur Live-API (n8n): wie Capital, Inhalt wird nicht ausgegeben (fehlte am 14.10. -> 16:01-17:23Z keine Sendung)
+[ -s /etc/marble/broadcast-flagbattle.env ] || { cp /etc/marble/broadcast-capital.env /etc/marble/broadcast-flagbattle.env; chown root:flagbattle /etc/marble/broadcast-flagbattle.env; chmod 640 /etc/marble/broadcast-flagbattle.env; }
+
 # Schlüssel eintragen (Niklas in der Proxmox-Konsole): flagbattle-key
 cat > /usr/local/bin/flagbattle-key <<'EOK'
 #!/bin/bash
