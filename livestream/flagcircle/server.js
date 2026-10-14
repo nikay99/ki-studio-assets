@@ -27,7 +27,8 @@ const isHint = m => m.channelId === OWN_CHANNEL && HINT.test(String(m.text || ''
 const TOP = new Set('IN US BR JP FR DE PK BD VN GB TR ID MX NG PH EG IT ES RU CN KR CA AU AR PL UA SA ZA'.split(' '));
 const SKIP = new Set('HK MO PR GL VA GI FO IM BM KY CW AW RE NC PF GU VI PS XK TW'.split(' '));
 const POOL = COUNTRY_LIST.map(c => c[0]).filter(c => !SKIP.has(c));
-const N_BALLS = 16, SHOW_MS = 10000, MAX_RUN_MS = 100000, TIP_UNTIL_LEFT = 4;
+const N_BALLS = 16, HEATS = 4, SHOW_MS = 6500, FINAL_SHOW_MS = 14000, MAX_RUN_MS = 100000, TIP_UNTIL_LEFT = 4;   // Turnier: 4 Läufe à 16 Flaggen + Finale der 4 Sieger
+const T_BASE = [0, 15, 10, 7, 5];   // Turniertipp-Punkte je nach Lauf, in dem getippt wurde
 
 const STATE_FILE = path.join(DATA, 'state.json');
 let st = { day: '', points: {}, wins: {}, flags: {}, rounds: 0, bestStreak: null };
@@ -42,26 +43,33 @@ let known = new Set(); try { known = new Set(JSON.parse(fs.readFileSync(KNOWN_FI
 let knownT = null;
 const saveKnown = () => { if (!knownT) knownT = setTimeout(() => { knownT = null; fs.writeFile(KNOWN_FILE, JSON.stringify([...known].slice(-20000)), () => {}); }, 3000); };
 
-let round = null, recent = [], feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
-function pickCodes() {
-  const forced = (process.env.FORCE || '').split(',').filter(Boolean);   // nur für lokale Vorschauen
-  if (forced.length) return forced.slice(0, N_BALLS);
-  const out = [], tops = POOL.filter(c => TOP.has(c) && !recent.includes(c)), rest = POOL.filter(c => !TOP.has(c) && !recent.includes(c));
-  const take = (arr, n) => { for (let i = 0; i < n && arr.length; i++) out.push(arr.splice(Math.floor(Math.random() * arr.length), 1)[0]); };
-  take(tops, 8); take(rest, N_BALLS - out.length);
-  recent = [...recent, ...out].slice(-80);
-  return out.sort(() => Math.random() - 0.5);
+let round = null, T = null, recent = [], feed = [], feedId = 0, msgCount = 0, chatStatus = { chat: CHANNEL ? 'startet' : 'kein Kanal' };
+function pickCodes() {   // 64 Flaggen fürs Turnier: 28 beliebte + 36 übrige, gemischt, in 4 Gruppen mit je 7 beliebten
+  const forced = (process.env.FORCE || '').split(',').filter(Boolean);   // nur für lokale Vorschauen (Reihenfolge = Gruppen)
+  if (forced.length >= HEATS * N_BALLS) return [forced.slice(0, 16), forced.slice(16, 32), forced.slice(32, 48), forced.slice(48, 64)];
+  const tops = POOL.filter(c => TOP.has(c) && !recent.includes(c)), rest = POOL.filter(c => !TOP.has(c) && !recent.includes(c));
+  const take = (arr, n) => { const o = []; for (let i = 0; i < n && arr.length; i++) o.push(arr.splice(Math.floor(Math.random() * arr.length), 1)[0]); return o; };
+  const t = take(tops, 28), r = take(rest, 64 - 28);
+  recent = [...recent, ...t, ...r].slice(-120);
+  const groups = [[], [], [], []]; t.forEach((c, i) => groups[i % 4].push(c)); r.forEach((c, i) => groups[i % 4].push(c));
+  return groups.map(g => g.sort(() => Math.random() - 0.5));
 }
 function startRound() {
   rollDay();
-  const n = st.rounds + 1, codes = pickCodes();
+  if (!T || T.heat >= HEATS + 1) { T = { id: (T ? T.id : 0) + 1, groups: pickCodes(), heat: 0, winners: [], tTips: {}, champion: null, tSolvers: [] }; }
+  T.heat++;
+  const codes = T.heat <= HEATS ? T.groups[T.heat - 1] : T.winners.slice();
+  const n = st.rounds + 1;
   round = { n, codes, names: codes.map(nameOf), start: Date.now(), phase: 'run', out: [], tips: {}, winner: null, solvers: [], ...gami.roundStart() };
   st.rounds = n; save();
 }
+// Flaggen, die im Turnier noch eine Chance haben (für Turniertipps): Sieger der Läufe + alle Flaggen der kommenden Läufe + aktueller Lauf (lebende)
+const tAlive = () => [...T.winners, ...alive(), ...(T.heat < HEATS ? T.groups.slice(T.heat).flat() : [])];
 const alive = () => round.codes.filter(c => !round.out.includes(c));
 function finish(win) {
   if (round.phase !== 'run') return;
-  round.winner = win; round.phase = 'show'; round.showEnd = Date.now() + SHOW_MS;
+  round.winner = win; round.phase = 'show'; round.showEnd = Date.now() + (T.heat > HEATS ? FINAL_SHOW_MS : SHOW_MS);
+  if (T.heat <= HEATS) T.winners.push(win); else { T.champion = win; }
   if (!round.out.includes(win)) round.out.push(win);
   const right = Object.entries(round.tips).filter(([, t]) => t.code === win).sort((a, b) => a[1].t - b[1].t);
   right.forEach(([user, t]) => {
@@ -71,6 +79,14 @@ function finish(win) {
     if (gm.up) feed.push({ id: ++feedId, user, levelUp: gm.up[0], badge: gm.up[2] });
     if (!st.bestStreak || gm.streak > st.bestStreak.n) st.bestStreak = { user, n: gm.streak };
   });
+  if (T.champion) {   // Turnier zu Ende: alle, die den Champion getippt haben
+    Object.entries(T.tTips).filter(([, t]) => t.code === T.champion).sort((a, b) => a[1].t - b[1].t).forEach(([user, t]) => {
+      const gm = gami.award(user, t.base, round), pts = gm.pts;
+      T.tSolvers.push({ user, pts, flag: st.flags[user] || '', b: gm.badge });
+      st.points[user] = (st.points[user] || 0) + pts;
+      if (gm.up) feed.push({ id: ++feedId, user, levelUp: gm.up[0], badge: gm.up[2] });
+    });
+  }
   save();
 }
 function tick() {
@@ -82,10 +98,10 @@ function tick() {
 setInterval(tick, 500); tick();
 
 // Tipp: ISO-Kürzel (2 Buchstaben) oder Landesname/Alias einer der Flaggen, die gerade im Spiel sind
-function parseTip(text) {
+function parseTip(text, pool) {
   if (/^\s*!/.test(text)) return null;
   const t = norm(text); if (!t) return null;
-  const inPlay = round.codes;
+  const inPlay = pool || round.codes;
   for (const c of inPlay) { if (t === c.toLowerCase()) return c; }
   for (const c of inPlay) { const al = (BYCODE[c][2] || []).map(norm).concat(norm(nameOf(c))); if (al.includes(t)) return c; }
   return null;
@@ -97,14 +113,17 @@ function onChat(user, text) {
   const cmd = /^\s*!/.test(text) ? norm(text) : '';
   if (cmd) { for (const [code, , al] of COUNTRY_LIST) if (al.map(norm).includes(cmd)) { if (st.flags[user] !== code) { st.flags[user] = code; save(); push({ flag: flagOf(code) }); } break; } return; }
   if (!round) return;
-  const code = parseTip(text); if (!code) return;
-  if (round.phase !== 'run') return push({ late: 1, tip: flagOf(code) });
+  // Turniertipp: Flagge aus dem ganzen Turnier (auch aus späteren Läufen), bis einschließlich Lauf 4, einmal pro Spieler
+  const tc = T.heat <= HEATS && round.phase === 'run' && !T.tTips[user] ? parseTip(text, tAlive()) : null;
+  if (tc) { T.tTips[user] = { code: tc, t: Date.now(), base: T_BASE[T.heat] }; push({ tip: flagOf(tc), name: nameOf(tc), flag: st.flags[user] ? flagOf(st.flags[user]) : '', title: 1 }); }
+  const code = parseTip(text); if (!code) return;   // Lauf-Tipp: Flagge des laufenden Laufs
+  if (round.phase !== 'run') return tc ? 0 : push({ late: 1, tip: flagOf(code) });
   const left = alive().length;
-  if (left <= TIP_UNTIL_LEFT) return push({ late: 1, tip: flagOf(code) });
-  if (round.out.includes(code)) return push({ dead: 1, tip: flagOf(code) });
+  if (left <= TIP_UNTIL_LEFT) return tc ? 0 : push({ late: 1, tip: flagOf(code) });
+  if (round.out.includes(code)) return tc ? 0 : push({ dead: 1, tip: flagOf(code) });
   if (round.tips[user]) return;   // erster Tipp zählt (kein Umentscheiden, sonst gewinnt jeder spät)
   round.tips[user] = { code, t: Date.now(), base: left >= 12 ? 10 : left >= 8 ? 7 : 5 };
-  push({ tip: flagOf(code), name: nameOf(code), flag: st.flags[user] ? flagOf(st.flags[user]) : '' });
+  if (!tc) push({ tip: flagOf(code), name: nameOf(code), flag: st.flags[user] ? flagOf(st.flags[user]) : '' });
 }
 
 function board() {
@@ -113,13 +132,15 @@ function board() {
     .map(([u, p]) => ({ user: u, pts: p, wins: st.wins[u] || 0, flag: (gami.badge(u) + ' ' + (st.flags[u] ? flagOf(st.flags[u]) : '')).trim() }));
   return { top, players: Object.keys(st.points).length, rounds: st.rounds, bestStreak: st.bestStreak };
 }
+function tTally() { const o = {}; for (const t of Object.values(T.tTips)) o[t.code] = (o[t.code] || 0) + 1; return Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c, n]) => [c, n]); }
 function view() {
   const r = round, show = r.phase === 'show', tally = {};
   for (const t of Object.values(r.tips)) tally[t.code] = (tally[t.code] || 0) + 1;
   return {
     v: VERSION, now: Date.now(), n: r.n, phase: r.phase, start: r.start, codes: r.codes, names: r.names, out: r.out, left: alive().length,
     tips: tally, nTips: Object.keys(r.tips).length, winner: show ? r.winner : null, winnerName: show ? nameOf(r.winner) : null, showEnd: r.showEnd || 0,
-    solvers: show ? r.solvers.slice(0, 3).map(s => ({ ...s, flag: ((s.b || '') + ' ' + (s.flag ? flagOf(s.flag) : '')).trim() })) : [], nSolvers: show ? r.solvers.length : 0,
+    solvers: show ? (T.champion ? T.tSolvers : r.solvers).slice(0, 3).map(s => ({ ...s, flag: ((s.b || '') + ' ' + (s.flag ? flagOf(s.flag) : '')).trim() })) : [], nSolvers: show ? (T.champion ? T.tSolvers : r.solvers).length : 0, solversKind: T.champion ? 'title' : 'heat',
+    tour: { id: T.id, heat: T.heat, heats: HEATS + 1, winners: T.winners, champion: T.champion, nTTips: Object.keys(T.tTips).length, tTally: tTally(), champName: T.champion ? nameOf(T.champion) : null },
     gami: gami.info(r),
   };
 }
@@ -157,7 +178,7 @@ if (CHANNEL) chat.start({ channel: CHANNEL, log: m => console.log('[chat]', m), 
 if (process.env.DEMO === '1') {
   const names = ['lena_k', 'mike_tx', 'joao.br', 'aziz99', 'tom_uk', 'sakura', 'pierre', 'marta_pl', 'ravi', 'kim.s', 'emma.rose', 'lucia'];
   for (const n of names.slice(0, 6)) onChat(n, '!' + ['brazil', 'germany', 'japan', 'france', 'india', 'poland'][Math.floor(Math.random() * 6)]);
-  setInterval(() => { if (!round || round.phase !== 'run') return; const u = names[Math.floor(Math.random() * names.length)]; onChat(u, round.codes[Math.floor(Math.random() * round.codes.length)]); }, 2500);
+  setInterval(() => { if (!round || round.phase !== 'run') return; const u = names[Math.floor(Math.random() * names.length)]; const pool = Math.random() < 0.35 ? tAlive() : round.codes; onChat(u, pool[Math.floor(Math.random() * pool.length)]); }, 2000);
 }
 const WATCH = ['server.js', 'public/vertical.html', '../chat.js', '../gami.js', '../gami-ui.js'].map(f => path.join(__dirname, f));
 const mtimes = () => WATCH.map(f => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } }).join();
