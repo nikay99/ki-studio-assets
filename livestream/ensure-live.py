@@ -84,8 +84,8 @@ RTMP = 'a.rtmp.youtube.com/live2'
 ROTATION = ('country', 'capital', 'words')
 ROT_FROM = calendar.timegm((2026, 10, 10, 13, 30, 0))
 FB_FROM = calendar.timegm((2026, 10, 14, 13, 30, 0))     # ab diesem Block ersetzt Flag Battle den Capital-Platz (Niklas 14.10.)
-FLAGCIRCLE_AKTIV = False   # 14.10. 17:20Z: Flag Circle ist nicht live gegangen (Waechter meldete keine Sendung), zurueck auf die alte Rotation bis die Ursache klar ist
-FC_NOW = calendar.timegm((2026, 10, 14, 16, 1, 0))       # Niklas 14.10. 15:56Z: Flag Circle sofort live, der laufende Block geht vorzeitig an Flag Circle
+FLAGCIRCLE_AKTIV = True    # 14.10. 17:31Z wieder an (Zugangsdatei auf der VM ergaenzt), Niklas 17:19Z "direkt flag"
+FC_NOW = calendar.timegm((2026, 10, 14, 17, 31, 0))       # Niklas 14.10. 15:56Z: Flag Circle sofort live, der laufende Block geht vorzeitig an Flag Circle
 ROT_ANCHOR = calendar.timegm((2026, 10, 10, 22, 30, 0))   # Tag 0, erster Block = ROTATION[0]
 
 def log(msg):
