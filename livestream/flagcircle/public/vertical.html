@@ -113,11 +113,11 @@ let sfxLast=0; const KOS=['ko-kurz-1','ko-kurz-2','ko-kurz-3']; const HITS=['pun
 const BUF={}; ['ko-kurz-1','ko-kurz-2','ko-kurz-3','ko-4-posaune','punch-2','punch-3','laser-2','hit-1','hit-2','wall-ping','out-whoosh-boom','win-fanfare','start-countdown-go'].forEach(n=>fetch('/sfx/'+n+'.mp3').then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[n]=b}).catch(()=>{}));
 function play(n,v,rate=1){ const b=BUF[n]; if(!b) return false; const o=AC.createBufferSource(),g=AC.createGain(); o.buffer=b; o.playbackRate.value=rate; g.gain.value=v; o.connect(g); g.connect(master); o.start(); return true }
 function blip(f0,f1,d,v,type='sine'){ const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain(); o.type=type; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+d); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(master); o.start(t); o.stop(t+d+.02) }
-function hitSfx(kind,v){ // gedrosselt: max ca. 9 Klänge/s, leise unter der Musik
-  const now=performance.now(); if(now-sfxLast<110) return; sfxLast=now; const k=Math.min(1,v/700);
-  if(kind==='ball'){ if(!play(HITS[Math.floor(Math.random()*HITS.length)],.2+.22*k,.92+Math.random()*.16)){ const f=520+Math.random()*380; blip(f*1.6,f*.7,.09,.035+.03*k,'triangle') } }
-  else { if(!play('wall-ping',.12+.14*k,.9+Math.random()*.2)) blip(190+Math.random()*60,90,.12,.05+.04*k,'sine') } }
-const sfxC={out:()=>{ if(!play(sim&&sim.left<=1?'ko-4-posaune':KOS[Math.floor(Math.random()*KOS.length)],.55)){ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) } }, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
+const pairT=new Map();
+function hitSfx(a,b,v){ // nur im Frame eines echten Kontakts, pro Paar 150 ms Sperre, keine Warteschlange
+  const key=a.code<b.code?a.code+b.code:b.code+a.code, now=performance.now(); if(now-(pairT.get(key)||0)<150||now-sfxLast<80) return; pairT.set(key,now); sfxLast=now; if(pairT.size>400) pairT.clear();
+  play(HITS[Math.floor(Math.random()*HITS.length)],.2+.22*Math.min(1,v/700),.92+Math.random()*.16) }
+const sfxC={out:()=>{ if(!play(sim&&sim.left<=1?'ko-4-posaune':KOS[Math.floor(Math.random()*KOS.length)],.55)){ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) } }, tick:()=>{}, near:()=>{}};
 const G=$('game').getContext('2d');
 const CX=540, CY=700, R=365, BR_=36, SPEED=900;
 let S=null, ver=null, sim=null, lastT=0, lastN=0, shownN=0, lastSolv=0, lastFeed=0;
@@ -157,7 +157,7 @@ function stepSim(dt){
     for(let i=0;i<live.length;i++) for(let j=i+1;j<live.length;j++){
       const a=live[i],b=live[j],dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy,md=BR_*2;
       if(d2<md*md&&d2>.01){ const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,p=(md-d)/2; a.x-=nx*p;a.y-=ny*p;b.x+=nx*p;b.y+=ny*p;
-        const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny; if(rv<0){ a.vx+=rv*nx;a.vy+=rv*ny;b.vx-=rv*nx;b.vy-=rv*ny; if(-rv>140) hitSfx('ball',-rv); if(-rv>450) m.shake=Math.min(1,m.shake+.3) } }
+        const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny; if(rv<0){ a.vx+=rv*nx;a.vy+=rv*ny;b.vx-=rv*nx;b.vy-=rv*ny; if(-rv>260) hitSfx(a,b,-rv); if(-rv>450) m.shake=Math.min(1,m.shake+.3) } }
     }
     for(const b of live){
       const dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy);
@@ -165,7 +165,7 @@ function stepSim(dt){
         let ang=Math.atan2(dy,dx), diff=Math.atan2(Math.sin(ang-m.holeA),Math.cos(ang-m.holeA));
         if(Math.abs(diff)<m.holeW && d+BR_>R+4){ b.fall=1; { const vn0=(b.vx*dx+b.vy*dy)/d; let ex=b.vx, ey=b.vy; if(vn0<250){ const add=250-vn0; ex+=dx/d*add; ey+=dy/d*add } const sp0=Math.hypot(ex,ey)||1, k0=Math.max(1,900/sp0); b.fvx=ex*k0; b.fvy=ey*k0 } knockOut(b); continue }   // durchs Loch
         const nx=dx/d,ny=dy/d,vn=b.vx*nx+b.vy*ny;
-        if(Math.abs(diff)>=m.holeW||d+BR_>R+14){ if(vn>0){ b.vx-=2*vn*nx; b.vy-=2*vn*ny; if(vn>200) hitSfx('wall',vn) } if(Math.abs(diff)>=m.holeW){ b.x=CX+nx*(R-BR_); b.y=CY+ny*(R-BR_) } }
+        if(Math.abs(diff)>=m.holeW||d+BR_>R+14){ if(vn>0){ b.vx-=2*vn*nx; b.vy-=2*vn*ny } if(Math.abs(diff)>=m.holeW){ b.x=CX+nx*(R-BR_); b.y=CY+ny*(R-BR_) } }
       }
       // Tempo konstant halten (kein Einschlafen), kleine Zufallsablenkung
       const sp=Math.hypot(b.vx,b.vy)||1, tgt=SPEED*(nLeft<=3?.85:1), k=1+(tgt/sp-1)*.05; b.vx*=k; b.vy*=k;
