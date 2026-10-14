@@ -140,7 +140,7 @@ function view() {
     v: VERSION, now: Date.now(), n: r.n, phase: r.phase, start: r.start, codes: r.codes, names: r.names, out: r.out, left: alive().length,
     tips: tally, nTips: Object.keys(r.tips).length, winner: show ? r.winner : null, winnerName: show ? nameOf(r.winner) : null, showEnd: r.showEnd || 0,
     solvers: show ? (T.champion ? T.tSolvers : r.solvers).slice(0, 3).map(s => ({ ...s, flag: ((s.b || '') + ' ' + (s.flag ? flagOf(s.flag) : '')).trim() })) : [], nSolvers: show ? (T.champion ? T.tSolvers : r.solvers).length : 0, solversKind: T.champion ? 'title' : 'heat',
-    tour: { id: T.id, heat: T.heat, heats: HEATS + 1, winners: T.winners, champion: T.champion, nTTips: Object.keys(T.tTips).length, tTally: tTally(), champName: T.champion ? nameOf(T.champion) : null },
+    tour: { id: T.id, heat: T.heat, heats: HEATS + 1, winners: T.winners, champion: T.champion, nTTips: Object.keys(T.tTips).length, tTally: tTally(), champName: T.champion ? nameOf(T.champion) : null, names: Object.fromEntries([...T.winners, T.champion].filter(Boolean).map(c => [c, nameOf(c)])) },
     gami: gami.info(r),
   };
 }
