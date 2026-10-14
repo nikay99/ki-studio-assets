@@ -107,13 +107,13 @@ function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627',
 (function loop(){fx.clearRect(0,0,1080,1920);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=.15;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
 
 
-let sfxLast=0, punchN=0;
-const BUF={}; ['punch-2','punch-3','hit-1','hit-2','wall-ping','out-whoosh-boom','win-fanfare','start-countdown-go'].forEach(n=>fetch('/sfx/'+n+'.mp3').then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[n]=b}).catch(()=>{}));
+let sfxLast=0; const HITS=['punch-2','punch-3','laser-1','laser-2','laser-3'];
+const BUF={}; ['punch-2','punch-3','laser-1','laser-2','laser-3','hit-1','hit-2','wall-ping','out-whoosh-boom','win-fanfare','start-countdown-go'].forEach(n=>fetch('/sfx/'+n+'.mp3').then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[n]=b}).catch(()=>{}));
 function play(n,v,rate=1){ const b=BUF[n]; if(!b) return false; const o=AC.createBufferSource(),g=AC.createGain(); o.buffer=b; o.playbackRate.value=rate; g.gain.value=v; o.connect(g); g.connect(master); o.start(); return true }
 function blip(f0,f1,d,v,type='sine'){ const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain(); o.type=type; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+d); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(master); o.start(t); o.stop(t+d+.02) }
 function hitSfx(kind,v){ // gedrosselt: max ca. 9 Klänge/s, leise unter der Musik
   const now=performance.now(); if(now-sfxLast<110) return; sfxLast=now; const k=Math.min(1,v/700);
-  if(kind==='ball'){ if(!play((punchN++%2)?'punch-3':'punch-2',.2+.22*k,.92+Math.random()*.16)){ const f=520+Math.random()*380; blip(f*1.6,f*.7,.09,.035+.03*k,'triangle') } }
+  if(kind==='ball'){ if(!play(HITS[Math.floor(Math.random()*HITS.length)],.2+.22*k,.92+Math.random()*.16)){ const f=520+Math.random()*380; blip(f*1.6,f*.7,.09,.035+.03*k,'triangle') } }
   else { if(!play('wall-ping',.12+.14*k,.9+Math.random()*.2)) blip(190+Math.random()*60,90,.12,.05+.04*k,'sine') } }
 const sfxC={out:()=>{ if(!play('out-whoosh-boom',.55)){ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) } }, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
 const G=$('game').getContext('2d');
@@ -183,7 +183,7 @@ function outPop(code){
 function knockOut(b){
   const m=sim; m.sinceOut=0; m.left=m.balls.filter(x=>x.alive&&!x.fall).length; m.outs.push(b.code); $('cnt').textContent=m.left; pop($('p2'),{transform:'scale(1.25)'},.5,.4); lastCnt=m.left;
   fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,code:b.code})}).catch(()=>{});
-  sfxC.out(); outPop(b.code); const w=m.left; if(w<=1){ m.posted=true; const last=m.balls.find(x=>x.alive&&!x.fall)||b; fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}) }
+  sfxC.out(); if(m.left>1) outPop(b.code); const w=m.left; if(w<=1){ m.posted=true; const last=m.balls.find(x=>x.alive&&!x.fall)||b; fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}) }
 }
 function draw(){
   G.clearRect(0,0,1080,1920);
