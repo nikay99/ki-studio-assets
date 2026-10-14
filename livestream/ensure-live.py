@@ -10,7 +10,7 @@ import hashlib, calendar, fcntl, json, os, re, subprocess, sys, time, urllib.par
 
 # Mehrere Streams auf einem Kanal (09.10.): jeder Waechter fasst nur Sendungen an, die an SEINEN Stream-Eingang gebunden sind,
 # und prueft "live?" an der eigenen Sendung (watch-Seite) statt an der Kanalseite /live, die nur eine zeigt.
-# Aufruf: ensure-live.py [marble|words|colony|country|capital]
+# Aufruf: ensure-live.py [marble|words|colony|country|capital|flagbattle]
 # slot = Minuten-Versatz zu den festen Wechselzeiten (ROT_TIMES), damit nie zwei Streams gleichzeitig wechseln.
 PROFILES = {
     'marble': dict(D='/var/lib/marble', env='/etc/marble/broadcast.env', user='marble', stream=('digitalocean-streaming',),
@@ -42,6 +42,11 @@ PROFILES = {
                     prefix='Guess the Capital', title='Guess the Capital of the Country 🔴 LIVE – type it in chat!', meta='/opt/marble/capital/broadcast.json',
                     thumb='/opt/marble/capital/thumbnail.jpg', runjson=False, slot=40, latency='ultraLow',
                     remind=['🏛️ Know the capital? Type it in the chat – everyone who is right scores!']),
+    # Flag Battle (Niklas 14.10., ersetzt Capital in der Rotation); gleicher Stream-Eingang wie Capital/Colony
+    'flagbattle': dict(D='/var/lib/marble-flagbattle', env='/etc/marble/broadcast-flagbattle.env', user='flagbattle', stream=('capital', 'capital-key', 'colony', 'colony-key'),
+                       prefix='Flag Battle', title='Flag Battle 🔴 LIVE – A or B? Type in Chat!', meta='/opt/marble/flagbattle/broadcast.json',
+                       thumb='/opt/marble/flagbattle/thumbnail.jpg', runjson=False, slot=40, latency='ultraLow',
+                       remind=['🚩 Type A or B in the chat – everyone who votes for the winning flag scores!']),
 }
 GAME = sys.argv[1] if len(sys.argv) > 1 else 'marble'
 P = PROFILES[GAME]
@@ -73,6 +78,7 @@ RTMP = 'a.rtmp.youtube.com/live2'
 # Vor ROT_ANCHOR (Sa 10.10. ab 13:30 UTC) laeuft nur Word.
 ROTATION = ('country', 'capital', 'words')
 ROT_FROM = calendar.timegm((2026, 10, 10, 13, 30, 0))
+FB_FROM = calendar.timegm((2026, 10, 14, 13, 30, 0))     # ab diesem Block ersetzt Flag Battle den Capital-Platz (Niklas 14.10.)
 ROT_ANCHOR = calendar.timegm((2026, 10, 10, 22, 30, 0))   # Tag 0, erster Block = ROTATION[0]
 
 def log(msg):
@@ -170,7 +176,8 @@ def rotation_game(now):
     off = (s - ROT_ANCHOR) - d * 86400
     base = (ROT_ANCHOR % 86400) // 60
     k = sorted(((h * 60 + m - base) % 1440) * 60 for h, m in ROT_TIMES).index(off)   # 0, 1, 2 = Block im Tag
-    return ROTATION[int(k + d) % len(ROTATION)]
+    g = ROTATION[int(k + d) % len(ROTATION)]
+    return 'flagbattle' if g == 'capital' and s >= FB_FROM else g
 
 def rotation_off(st, save):
     """Spiel ist im rotierenden Betrieb nicht dran: laufende Sendung beenden (Archiv bleibt), Encoder pausieren."""
@@ -200,7 +207,7 @@ def rotate_due(start, now):
 def main():
     scrub()
     if os.path.exists(D + '/NOBROADCAST'): return
-    rg = rotation_game(time.time()) if GAME in ROTATION else None
+    rg = rotation_game(time.time()) if GAME in ROTATION or GAME == 'flagbattle' else None
     if rg: P['slot'] = 0   # im rotierenden Betrieb wechselt alles genau zum Termin
     try: st = json.load(open(STATE))
     except Exception: st = {}
