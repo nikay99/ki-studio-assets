@@ -53,12 +53,17 @@ h1{font-size:60px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#ff
 #chatpop .cp2.w{background:var(--p);transform:rotate(-1.5deg)}
 #chatpop .cp2.f{background:var(--c)}
 #chatpop .cp2.o{background:var(--o)}
+#outpop{position:absolute;left:110px;right:110px;top:392px;display:flex;justify-content:center;pointer-events:none;z-index:7}
+#outpop .op{display:inline-flex;align-items:center;gap:18px;max-width:860px;padding:6px 30px 12px;background:#ff3b3b;color:#fff;border:7px solid #111;border-radius:18px;box-shadow:10px 10px 0 #000;font-weight:900;white-space:nowrap;transform:rotate(-2deg)}
+#outpop .op .f{font-size:84px;line-height:1}#outpop .op .t{display:flex;flex-direction:column;line-height:1.02;min-width:0}
+#outpop .op small{font-size:30px;letter-spacing:.14em;color:#ffe3e3}#outpop .op b{font-size:66px;text-transform:uppercase;text-shadow:4px 4px 0 #111;overflow:hidden;text-overflow:ellipsis}
 canvas#fx{position:absolute;inset:0;pointer-events:none;z-index:8}
 </style></head>
 <body><div id="stage">
   <canvas id="game" width="1080" height="1920"></canvas>
   <div id="top"><div class="pill" id="p1">Who survives?</div><div class="pill" id="p2">Still in <b id="cnt">16</b></div></div>
   <div id="chatpop"></div>
+  <div id="outpop"></div>
   <div id="bracket"></div>
   <div id="win"><div class="wl" id="wl">SURVIVOR</div><div class="big"></div><div class="nm"></div></div>
   <div id="solvers"></div>
@@ -159,10 +164,18 @@ function stepSim(dt){
   for(const b of m.balls){ if(b.fall){ b.fall+=dt*1.4; b.x+=b.fvx*dt; b.y+=b.fvy*dt; b.s=Math.max(0,1-(b.fall-1)*1.1); if(b.fall>1.9) b.alive=false } }
   if(m.shake>0) m.shake=Math.max(0,m.shake-dt*2);
 }
+let outT=0;
+function outPop(code){
+  const i=S&&S.codes?S.codes.indexOf(code):-1, nm=(i>=0&&S.names&&S.names[i])||code, host=$('outpop');
+  const wrap=document.createElement('div'); wrap.className='op'; wrap.innerHTML=`<span class="f">${flagOf(code)}</span><span class="t"><small>OUT</small><b></b></span>`; wrap.querySelector('b').textContent=nm;
+  host.innerHTML=''; host.appendChild(wrap); const my=++outT;
+  wrap.animate([{transform:'rotate(-2deg) scale(.4)',opacity:0},{transform:'rotate(-2deg) scale(1.12)',opacity:1,offset:.25},{transform:'rotate(-2deg) scale(1)',opacity:1,offset:.8},{transform:'rotate(-2deg) scale(.9)',opacity:0}],{duration:1500,easing:'ease-out'});
+  setTimeout(()=>{ if(outT===my) host.innerHTML='' },1480);
+}
 function knockOut(b){
   const m=sim; m.sinceOut=0; m.left=m.balls.filter(x=>x.alive&&!x.fall).length; m.outs.push(b.code); $('cnt').textContent=m.left; pop($('p2'),{transform:'scale(1.25)'},.5,.4); lastCnt=m.left;
   fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,code:b.code})}).catch(()=>{});
-  sfxC.out(); const w=m.left; if(w<=1){ m.posted=true; const last=m.balls.find(x=>x.alive&&!x.fall)||b; fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}) }
+  sfxC.out(); outPop(b.code); const w=m.left; if(w<=1){ m.posted=true; const last=m.balls.find(x=>x.alive&&!x.fall)||b; fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}) }
 }
 function draw(){
   G.clearRect(0,0,1080,1920);
