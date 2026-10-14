@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Flag Battle LIVE</title>
+<style>
+/* Flag Battle im Hochformat 9:16, Bühne 1080×1920, gleicher Neo-Brutalism-Look wie Guess the Capital/Country, eigene Grundfarbe (tiefes Violett).
+   Handy-sichtbar: x 110–970, y 240–1090 (oben Kanalname, ab ~1090 der Chat). Alles Spielwichtige liegt dort; Titel + Bestenliste darunter. */
+@font-face{font-family:Inter;src:url(fonts/InterVariable.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#111;--paper:#2a1650;--dot:#3b2373;--card:#f8f4eb;--y:#fed439;--p:#ff7b9c;--c:#61d4f5;--l:#b6f36a;--o:#ff8a3d;--g:#0a6b42}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,*{cursor:none!important}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--paper);color:var(--ink);
+  font-family:Inter,"Noto Color Emoji",system-ui,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;background:var(--paper);
+  background-image:radial-gradient(var(--dot) 2.4px,transparent 2.4px);background-size:36px 36px}
+.box{background:var(--card);border:6px solid #111;border-radius:16px;box-shadow:10px 10px 0 #000}
+.label{display:inline-block;font-size:24px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;background:#fff;color:#111;
+  padding:4px 14px;border:4px solid #111;border-radius:8px;box-shadow:4px 4px 0 #111;margin-bottom:14px}
+
+#tag{position:absolute;top:244px;left:110px;right:110px;display:flex;justify-content:center}
+#tag div{font-size:34px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;background:var(--y);color:#111;padding:6px 24px 8px;border:6px solid #111;border-radius:14px;box-shadow:8px 8px 0 #000;transform:rotate(-1.5deg);white-space:nowrap}
+#tag b{background:#fff;border:3px solid #111;border-radius:8px;padding:0 10px;margin:0 2px}
+
+.fc{position:absolute;top:340px;width:410px;height:430px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden;padding-top:44px}
+#cardA{left:110px;background:var(--c)}#cardB{left:560px;background:var(--p)}
+.fc .ab{position:absolute;top:8px;left:12px;width:58px;height:58px;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;background:#fff;border:5px solid #111;border-radius:10px;box-shadow:4px 4px 0 #000;z-index:2}
+.fc .fl{font-size:250px;line-height:1.1;filter:drop-shadow(8px 8px 0 rgba(0,0,0,.35));margin-top:10px}
+.fc .nm{position:absolute;left:8px;right:8px;bottom:12px;text-align:center;font-weight:900;color:#111;line-height:1.05;text-transform:uppercase;letter-spacing:-.01em;background:#fff;border:5px solid #111;border-radius:10px;padding:5px 6px 7px;box-shadow:4px 4px 0 #000}
+.fc.win{border-color:#111;box-shadow:0 0 0 10px var(--y),14px 14px 0 10px #000;z-index:3}
+.fc.win::after{content:"WINNER";position:absolute;top:-4px;left:70px;right:-6px;text-align:right;font-size:46px;font-weight:900;letter-spacing:.04em;color:#fff;text-shadow:5px 5px 0 #111,-3px -3px 0 #111,3px -3px 0 #111,-3px 3px 0 #111;transform:rotate(-4deg);z-index:4}
+.fc.lose .fl,.fc.lose .nm{filter:grayscale(1)}
+.fc.lose{opacity:.55}
+#vs{position:absolute;top:488px;left:50%;width:150px;height:150px;margin-left:-75px;display:flex;align-items:center;justify-content:center;font-size:76px;font-weight:900;color:#111;background:var(--y);border:8px solid #111;border-radius:50%;box-shadow:8px 8px 0 #000;z-index:5;transform:rotate(-8deg)}
+
+#vote{position:absolute;top:806px;left:110px;right:110px;height:76px;display:flex;background:#fff;border:6px solid #111;border-radius:14px;box-shadow:8px 8px 0 #000;overflow:hidden}
+#vA,#vB{height:100%;display:flex;align-items:center;font-size:36px;font-weight:900;color:#111;white-space:nowrap;transition:width .35s ease-out;min-width:0}
+#vA{background:var(--c);width:50%;padding-left:14px}
+#vB{background:var(--p);width:50%;justify-content:flex-end;padding-right:14px}
+#vA small,#vB small{font-size:22px;font-weight:800;opacity:.7;margin:0 8px}
+
+#timer{position:absolute;top:900px;left:120px;right:120px;height:26px;background:var(--card);border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;overflow:hidden}
+#bar{height:100%;width:100%;background:var(--y);transition:width .3s linear}
+#bar.low{background:var(--o)}
+
+#solvers{position:absolute;top:948px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.sol{display:flex;align-items:center;gap:10px;padding:2px 14px;font-size:28px;font-weight:800;min-width:0;background:var(--card);border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000}
+.sol .m{font-size:30px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sol .p{color:var(--g);font-weight:900}
+.sol .fl2{font-weight:900;color:#d13a00}
+.sol.first{background:var(--y)}
+.sol.more,.sol.cta{justify-content:center}
+.sol.all,.sol.cta{grid-column:1/-1}
+.sol.cta{background:var(--l)}
+
+#low{position:absolute;top:1150px;left:110px;right:110px;display:flex;flex-direction:column;align-items:center;gap:26px}
+#head{display:flex;align-items:center;justify-content:center;gap:18px}
+.live{display:inline-flex;align-items:center;gap:10px;background:#ff3b3b;color:#fff;font-weight:900;font-size:28px;letter-spacing:.06em;
+  padding:5px 16px;border:5px solid #111;border-radius:10px;box-shadow:6px 6px 0 #000;transform:rotate(-4deg)}
+.live i{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #111;animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
+h1{font-size:76px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#fff;text-shadow:5px 5px 0 #ff4b72;white-space:nowrap}
+#topbox{width:100%;padding:18px 26px 14px;background:var(--y)!important}
+.row{display:flex;align-items:center;gap:12px;font-size:32px;font-weight:800;padding:5px 0}
+.row .r{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:900;background:#fff;border:3px solid #111;border-radius:6px;flex:none}
+.row .n{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.row .p{font-weight:900}
+.rec{font-size:30px;font-weight:800}
+#how{font-size:30px;font-weight:800;color:#fff;text-align:center}
+#how b{background:var(--y);color:#111;padding:0 10px;border:3px solid #111;border-radius:6px}
+#chatpop{position:absolute;top:1030px;left:110px;right:110px;height:56px;display:flex;justify-content:center;pointer-events:none;z-index:2}
+#chatpop .cp2{display:inline-flex;align-items:center;gap:10px;max-width:860px;font-size:28px;font-weight:900;color:#111;white-space:nowrap;overflow:hidden;
+  padding:4px 20px 6px;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000}
+#chatpop .cp2 .u{max-width:420px;overflow:hidden;text-overflow:ellipsis}
+#chatpop .cp2.w{background:var(--p);transform:rotate(-1.5deg)}
+#chatpop .cp2.f{background:var(--c)}
+#chatpop .cp2 .x{color:#d22}
+canvas#fx{position:absolute;inset:0;pointer-events:none}
+</style></head>
+<body><div id="stage">
+  <div id="tag"><div>Type <b>A</b> or <b>B</b> in chat</div></div>
+  <div class="box fc" id="cardA"><div class="ab">A</div><div class="fl"></div><div class="nm"></div></div>
+  <div class="box fc" id="cardB"><div class="ab">B</div><div class="fl"></div><div class="nm"></div></div>
+  <div id="vs">VS</div>
+  <div id="vote"><div id="vA"></div><div id="vB"></div></div>
+  <div id="timer"><div id="bar"></div></div>
+  <div id="solvers"></div>
+  <div id="chatpop"></div>
+  <div id="low">
+    <div id="head"><div class="live"><i></i>LIVE</div><h1>Flag Battle</h1></div>
+    <div class="box" id="topbox"><div class="label">Top today</div><div id="top"></div></div>
+    <div id="how"><b>A</b> or <b>B</b> in chat · <b>!country</b> for your flag</div>
+  </div>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+</div>
+<script>
+const fit=()=>{const s=Math.min(innerWidth/1080,innerHeight/1920);document.getElementById('stage').style.transform=`scale(${s})`};addEventListener('resize',fit);fit();
+const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const flagOf=c=>String.fromCodePoint(...[...c].map(x=>0x1F1E6+x.charCodeAt(0)-65));
+
+// Federn wie beim Wortraten (Dämpfung + Antwortzeit als CSS linear()-Kurve)
+const springCache={};
+function spring(damping=1,response=.4){
+  const k=damping+'/'+response; if(springCache[k]) return springCache[k];
+  const w=2*Math.PI/response, z=damping, pts=[]; let dur=0;
+  const x=t=>{ if(z<1){const wd=w*Math.sqrt(1-z*z);return 1-Math.exp(-z*w*t)*(Math.cos(wd*t)+(z*w/wd)*Math.sin(wd*t))} return 1-Math.exp(-w*t)*(1+w*t) };
+  for(let t=0;t<3;t+=1/120){ if(t>.1 && Math.abs(1-x(t))<.001 && Math.abs(1-x(t+.05))<.001){dur=t;break} dur=t }
+  for(let i=0;i<=60;i++) pts.push(+x(dur*i/60).toFixed(4));
+  return springCache[k]={easing:`linear(${pts.join(',')})`,duration:dur*1000};
+}
+const pop=(el,from,d=.8,r=.38,delay=0)=>{const s=spring(d,r);el.animate([from,{transform:'none',opacity:1}],{duration:s.duration,easing:s.easing,delay,fill:'backwards'})};
+
+// Ton (Pentatonik-Glocken wie beim Wortraten)
+const AC=new (window.AudioContext||window.webkitAudioContext)(), master=AC.createGain(); master.gain.value=.9; master.connect(AC.destination);
+function bell(f,d=.5,v=.14,at=0){const t=AC.currentTime+at;for(const [m,vv] of [[1,1],[2.01,.35],[3.02,.12]]){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f*m;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*vv,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05)}}
+const PENTA=[523.25,587.33,659.25,783.99,880,1046.5];
+const sfx={reveal:i=>bell(PENTA[i%PENTA.length],.35,.07), hint:()=>{bell(659.25,.4,.09);bell(987.77,.5,.07,.08)},
+  correct:p=>{const b=[1046.5,880,783.99][Math.min(p,2)];bell(b,.6,.14);bell(b*1.5,.7,.08,.07)},
+  start:()=>[0,2,4].forEach((n,i)=>bell(PENTA[n],.5,.08,i*.08)), end:()=>[0,2,4,5].forEach((n,i)=>bell(PENTA[n],.9,.1,i*.09)), miss:()=>bell(392,.8,.08)};
+const music=new Audio(); music.volume=.32; let mlist=[], mi=0;
+async function nextSong(){ try{ if(!mlist.length||mi>=mlist.length){ mlist=(await (await fetch('/api/music')).json()).sort(()=>Math.random()-.5); mi=0 } if(!mlist.length) return; music.src='/music/'+encodeURIComponent(mlist[mi++%mlist.length]); await music.play() }catch{} }
+music.onended=nextSong; music.onerror=()=>{mlist=[];setTimeout(nextSong,3000)}; nextSong(); document.addEventListener('click',()=>{AC.resume();if(music.paused)nextSong()});
+
+const fx=$('fx').getContext('2d'); let parts=[];
+function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627','#5ab4ff'];for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,v=8+Math.random()*12;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:cols[i%5],r:Math.random()*5+4,a:Math.random()*6,l:80+Math.random()*40})}}
+(function loop(){fx.clearRect(0,0,1080,1920);parts=parts.filter(p=>p.l-->0);for(const p of parts){p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=.15;fx.save();fx.translate(p.x,p.y);fx.rotate(p.a);fx.fillStyle=p.c;fx.globalAlpha=Math.min(1,p.l/30);fx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fx.restore()}requestAnimationFrame(loop)})();
+
+
+const sfxB={vote:()=>bell(1318.5,.18,.05), vs:()=>{bell(196,.5,.18);bell(392,.4,.1,.05)}};
+let S=null, lastN=0, shownN=0, ver=null, lastSolv=0, lastVotes=0;
+const fitName=(el,t)=>{el.textContent=t;el.style.fontSize=(t.length<=9?44:t.length<=13?36:t.length<=17?29:24)+'px'};
+function setVotes(){
+  const A=S.votesA,B=S.votesB,t=A+B,pa=t?Math.round(A/t*100):50,pb=t?100-pa:50;
+  $('vA').style.width=(t?Math.max(14,Math.min(86,pa)):50)+'%'; $('vB').style.width=(t?Math.max(14,Math.min(86,pb)):50)+'%';
+  $('vA').innerHTML=t?`${pa}%<small>${A}</small>`:'A'; $('vB').innerHTML=t?`<small>${B}</small>${pb}%`:'B';
+}
+async function poll(){
+  try{
+    const s=await (await fetch('/api/state',{cache:'no-store'})).json();
+    if(ver && s.v!==ver) return location.reload(); ver=s.v; S=s;
+    if(s.n!==lastN){ lastN=s.n; lastSolv=0; lastVotes=0; $('solvers').innerHTML='';
+      for(const [id,c,nm] of [['cardA',s.a,s.aName],['cardB',s.b,s.bName]]){ const el=$(id); el.getAnimations().forEach(a=>a.cancel()); el.className='box fc'; el.style.transform='';
+        el.querySelector('.fl').textContent=flagOf(c); fitName(el.querySelector('.nm'),nm);
+        pop(el,{transform:`translateX(${id==='cardA'?-120:120}px) rotate(${id==='cardA'?-6:6}deg)`,opacity:0},.7,.5) }
+      pop($('vs'),{transform:'scale(2.4) rotate(-20deg)',opacity:0},.55,.45,250); sfxB.vs(); sfx.start() }
+    setVotes(); if(s.votesA+s.votesB>lastVotes && s.phase==='vote') sfxB.vote(); lastVotes=s.votesA+s.votesB;
+    if(s.phase==='show' && shownN!==s.n){ shownN=s.n;
+      const w=s.winner==='A'?'cardA':'cardB', l=s.winner==='A'?'cardB':'cardA';
+      $(w).classList.add('win'); $(l).classList.add('lose');
+      // Gewinner „frisst“ die andere Flagge: Verlierer schrumpft zur Seite des Siegers weg, Gewinner wächst
+      const dir=s.winner==='A'?1:-1;
+      $(w).animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1.06)'}],{duration:900,easing:'cubic-bezier(.2,1.4,.4,1)',fill:'forwards'});
+      $(l).animate([{transform:'none',clipPath:'inset(0 0 0 0)'},{transform:`translateX(${dir*40}px) scale(.8) rotate(${dir*4}deg)`,clipPath:`inset(0 ${s.winner==='A'?'50% 0 0':'0 0 50%'})`}],{duration:1100,easing:'ease-in',fill:'forwards'});
+      sfx.end(); confetti(s.winner==='A'?330:750,520,90); if(s.coin) sfx.miss() }
+    renderSolvers();
+    const left=s.phase==='vote'?Math.max(0,(s.end-s.now)/(s.end-s.start)):0; $('bar').style.width=(left*100)+'%'; $('bar').className=left<.3?'low':'';
+    $('tag').firstChild.innerHTML=s.phase==='vote'?'Type <b>A</b> or <b>B</b> in chat':(s.coin?'Tie! Coin flip decided':'The chat has spoken');
+  }catch{}
+}
+function renderSolvers(){
+  const m=['🥇','🥈','🥉'], s=S.solvers, box=$('solvers');
+  for(let i=lastSolv;i<s.length;i++){ const x=s[i], d=document.createElement('div');
+    d.className='sol'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span>${x.streak>=2?`<span class="fl2">🔥${x.streak}</span>`:''}<span class="p">${x.mult>1?'⚡':''}+${x.pts}</span>`;
+    box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4,i*120); if(i===0) sfx.correct(0) }
+  lastSolv=s.length;
+  if(S.nSolvers>3 && !box.querySelector('.more')){ const d=document.createElement('div'); d.className='sol more'; d.textContent=`+${S.nSolvers-3} more voted right`; box.appendChild(d) }
+  if(S.phase==='show' && !S.nSolvers && !box.querySelector('.all')){ const d=document.createElement('div'); d.className='sol more all'; d.textContent='Nobody voted for the winner'; box.appendChild(d) }
+  let cta=box.querySelector('.cta'); const t=S.phase==='vote'&&S.votesA+S.votesB===0?'💬 Pick a side: type A or B':'';
+  if(t){ if(!cta){cta=document.createElement('div');cta.className='sol cta';box.prepend(cta)} cta.textContent=t } else if(cta) cta.remove();
+}
+setInterval(poll,300); poll();
+async function pollBoard(){
+  try{
+    const b=await (await fetch('/api/board',{cache:'no-store'})).json();
+    $('top').innerHTML=b.top.slice(0,5).map((x,i)=>`<div class="row"><span class="r">${i+1}</span><span class="n">${x.flag} ${esc(x.user)}</span><span class="p">${x.pts}</span></div>`).join('')||'<div class="rec">Be the first to score</div>';
+  }catch{}
+}
+setInterval(pollBoard,2000); pollBoard();
+
+let popQ=[], popBusy=false, feedSince=0, feedFirst=true;
+function showPop(){
+  if(popBusy||!popQ.length) return; popBusy=true;
+  const w=popQ.findIndex(x=>x.welcome||x.levelUp), x=w>=0?popQ.splice(w,1)[0]:popQ.pop(); if(w<0) popQ=[];
+  const u=`<span class="u">${esc(x.user)}</span>`;
+  const html=x.levelUp?`${x.badge} ${u} is now ${esc(x.levelUp)}!`:x.welcome?`👋 Welcome ${u}! Type A or B`:x.flag&&!x.vote?`${u} ${x.flag} joined`:x.late?`${u} ${x.side} ✓ just too late!`:`${u} ${x.flag||''} voted <b>${x.vote}</b>`;
+  $('chatpop').innerHTML=`<div class="cp2${x.welcome||x.levelUp?' w':x.flag&&!x.vote?' f':''}">${html}</div>`; pop($('chatpop').firstChild,{transform:'scale(.6)',opacity:0},.6,.35);
+  if(x.welcome) bell(PENTA[4],.4,.06);
+  setTimeout(()=>{ const el=$('chatpop').firstChild; if(el) el.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}); setTimeout(()=>{popBusy=false;showPop()},220) }, x.welcome||x.levelUp?3000:1200);
+}
+async function pollFeed(){
+  try{
+    const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last;
+    if(feedFirst){ feedFirst=false; return }
+    for(const x of f.feed) popQ.push(x); popQ=popQ.slice(-12); showPop();
+  }catch{}
+}
+setInterval(pollFeed,700); pollFeed();
+</script>
+<script src="/gami-ui.js"></script>
+</body></html>
