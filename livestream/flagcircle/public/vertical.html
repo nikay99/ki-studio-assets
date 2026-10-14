@@ -20,11 +20,14 @@ canvas#game{position:absolute;left:0;top:0}
 #p1{background:var(--y);transform:rotate(-1.5deg)}
 #p2{background:var(--c);transform:rotate(1.5deg)}
 #p2 b{font-size:40px}
-#win{position:absolute;left:110px;right:110px;top:440px;display:none;flex-direction:column;align-items:center;gap:14px;z-index:6;pointer-events:none}
-#win .big{font-size:250px;line-height:1;filter:drop-shadow(10px 10px 0 rgba(0,0,0,.5))}
+#bracket{position:absolute;top:1052px;left:110px;right:110px;display:flex;justify-content:center;align-items:center;gap:12px;z-index:5}
+.bk{min-width:70px;height:46px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;padding:0 10px;background:#fff;border:4px solid #111;border-radius:10px;box-shadow:4px 4px 0 #000;color:#111}
+.bk.q{background:#2a3a5f;color:#9fb2d8;font-size:22px}.bk.cur{background:var(--y);animation:blink 1.4s ease-in-out infinite}.bk.fin{background:var(--p)}
+#win{position:absolute;left:110px;right:110px;top:400px;display:none;flex-direction:column;align-items:center;gap:14px;z-index:6;pointer-events:none}
+#win .big{font-size:210px;line-height:1;filter:drop-shadow(10px 10px 0 rgba(0,0,0,.5))}
 #win .nm{font-size:64px;font-weight:900;text-transform:uppercase;color:#111;background:var(--y);border:6px solid #111;border-radius:14px;box-shadow:8px 8px 0 #000;padding:2px 26px 6px;transform:rotate(-2deg)}
 #win .wl{font-size:44px;font-weight:900;color:#fff;text-shadow:4px 4px 0 #111,-2px -2px 0 #111,2px -2px 0 #111,-2px 2px 0 #111;letter-spacing:.06em}
-#solvers{position:absolute;top:1010px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;z-index:7}
+#solvers{position:absolute;top:870px;left:110px;right:110px;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;z-index:7}
 .sol{display:flex;align-items:center;gap:10px;padding:2px 14px;font-size:28px;font-weight:800;min-width:0;background:var(--card);border:5px solid #111;border-radius:12px;box-shadow:5px 5px 0 #000}
 .sol .m{font-size:30px}.sol .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sol .p{color:var(--g);font-weight:900}.sol .fl2{font-weight:900;color:#d13a00}
@@ -43,7 +46,7 @@ h1{font-size:60px;font-weight:900;letter-spacing:-.035em;line-height:1;color:#ff
 .rec{font-size:30px;font-weight:800}
 #how{font-size:30px;font-weight:800;color:#fff;text-align:center}
 #how b{background:var(--y);color:#111;padding:0 10px;border:3px solid #111;border-radius:6px}
-#chatpop{position:absolute;top:322px;left:110px;right:110px;height:48px;display:flex;justify-content:center;pointer-events:none;z-index:2}
+#chatpop{position:absolute;top:312px;left:110px;right:110px;height:44px;display:flex;justify-content:center;pointer-events:none;z-index:2}
 #chatpop .cp2{display:inline-flex;align-items:center;gap:10px;max-width:860px;font-size:26px;font-weight:900;color:#111;white-space:nowrap;overflow:hidden;
   padding:2px 18px 4px;background:#fff;border:5px solid #111;border-radius:12px;box-shadow:6px 6px 0 #000}
 #chatpop .cp2 .u{max-width:420px;overflow:hidden;text-overflow:ellipsis}
@@ -56,12 +59,13 @@ canvas#fx{position:absolute;inset:0;pointer-events:none;z-index:8}
   <canvas id="game" width="1080" height="1920"></canvas>
   <div id="top"><div class="pill" id="p1">Who survives?</div><div class="pill" id="p2">Still in <b id="cnt">16</b></div></div>
   <div id="chatpop"></div>
-  <div id="win"><div class="wl">SURVIVOR</div><div class="big"></div><div class="nm"></div></div>
+  <div id="bracket"></div>
+  <div id="win"><div class="wl" id="wl">SURVIVOR</div><div class="big"></div><div class="nm"></div></div>
   <div id="solvers"></div>
   <div id="low">
     <div id="head"><div class="live"><i></i>LIVE</div><h1>Flag Circle Survival</h1></div>
     <div class="box" id="topbox"><div class="label">Top today</div><div id="board"></div></div>
-    <div id="how">tip the winner in chat: <b>DE</b> <b>BR</b> <b>JP</b></div>
+    <div id="how">tip the champion in chat: <b>DE</b> <b>BR</b> <b>JP</b></div>
   </div>
   <canvas id="fx" width="1080" height="1920"></canvas>
 </div>
@@ -100,7 +104,7 @@ function confetti(x,y,n=60){const cols=['#ff5d8d','#7c5cff','#2ec4a6','#ffb627',
 
 const sfxC={out:()=>{bell(220,.5,.12);bell(165,.6,.1,.06)}, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
 const G=$('game').getContext('2d');
-const CX=540, CY=720, R=360, BR_=38, SPEED=520;
+const CX=540, CY=690, R=330, BR_=36, SPEED=500;
 let S=null, ver=null, sim=null, lastT=0, lastN=0, shownN=0, lastSolv=0, lastFeed=0;
 
 // ---- Flaggen-Bälle: Emoji einmal in ein Rundbild zeichnen ----
@@ -191,11 +195,20 @@ async function poll(){
       $('p1').animate([{transform:'scale(.7) rotate(-8deg)',opacity:0},{transform:'none',opacity:1}],{duration:400,easing:'cubic-bezier(.2,1.4,.4,1)'}) }
     if(s.phase==='run' && sim && sim.n===s.n){ const c=sim.left; if(c!==lastCnt){ $('cnt').textContent=c; if(lastCnt>0) pop($('p2'),{transform:'scale(1.25)'},.5,.4); lastCnt=c } }
     if(s.phase==='show' && shownN!==s.n){ shownN=s.n; if(sim) sim.posted=true;
-      $('win').querySelector('.big').textContent=flagOf(s.winner); $('win').querySelector('.nm').textContent=s.winnerName; $('win').style.display='flex';
+      $('wl').textContent=s.tour.champion?'CHAMPION':'HEAT '+s.tour.heat+' WINNER'; $('win').querySelector('.big').textContent=flagOf(s.winner); $('win').querySelector('.nm').textContent=s.winnerName; $('win').style.display='flex';
       pop($('win'),{transform:'scale(.3) rotate(-10deg)',opacity:0},.55,.55); sfx.end(); confetti(540,640,110); setTimeout(()=>confetti(300,700,60),300); setTimeout(()=>confetti(780,700,60),500); $('cnt').textContent='1' }
     renderSolvers();
-    $('p1').textContent=s.phase==='run'?(s.left<=4?'Final '+s.left+'!':'Who survives?'):'We have a winner';
+    const tr=s.tour, fin=tr.heat>4;
+    $('p1').textContent=s.phase==='run'?(fin?'FINAL · 4 left':(s.left<=4?'Heat '+tr.heat+'/4 · final '+s.left+'!':'Heat '+tr.heat+'/4')):(tr.champion?'We have a champion':'Heat '+tr.heat+' winner');
+    renderBracket(tr,s);
   }catch{}
+}
+function renderBracket(tr,s){
+  const key=JSON.stringify([tr.heat,tr.winners,tr.champion,s.phase]); if($('bracket').dataset.k===key) return; $('bracket').dataset.k=key;
+  let h='<div class="bk q" style="min-width:auto;font-size:20px">🏆</div>';
+  for(let i=1;i<=5;i++){ const w=i<=4?tr.winners[i-1]:tr.champion; const cur=(i===tr.heat)&&!tr.champion&&s.phase==='run';
+    h+=`<div class="bk ${w?(i===5?'fin':''):(cur?'cur':'q')}">${w?flagOf(w):(i===5?'FINAL':'H'+i)}</div>`; if(i===4) h+='<div style="color:#9fb2d8;font-size:26px;font-weight:900">▸</div>' }
+  $('bracket').innerHTML=h;
 }
 function renderSolvers(){
   const m=['🥇','🥈','🥉'], s=S.solvers, box=$('solvers');
@@ -203,8 +216,9 @@ function renderSolvers(){
     d.className='sol'+(i?'':' first'); d.innerHTML=`<span class="m">${m[i]}</span><span class="n">${x.flag} ${esc(x.user)}</span>${x.streak>=2?`<span class="fl2">🔥${x.streak}</span>`:''}<span class="p">${x.mult>1?'⚡':''}+${x.pts}</span>`;
     box.appendChild(d); pop(d,{transform:'translateY(30px)',opacity:0},1,.4,i*120); if(i===0) sfx.correct(0) }
   lastSolv=s.length;
+  if(S.solversKind==='title' && s.length && !box.querySelector('.ttl')){ const d=document.createElement('div'); d.className='sol all ttl'; d.textContent='🏆 Champion tipped right'; box.prepend(d) }
   if(S.nSolvers>3 && !box.querySelector('.more')){ const d=document.createElement('div'); d.className='sol more'; d.textContent=`+${S.nSolvers-3} more tipped right`; box.appendChild(d) }
-  if(S.phase==='show' && !S.nSolvers && !box.querySelector('.all')){ const d=document.createElement('div'); d.className='sol all'; d.textContent=S.nTips?'Nobody tipped the survivor':'Tip the winner next round'; box.appendChild(d) }
+  if(S.phase==='show' && !S.nSolvers && !box.querySelector('.all')){ const d=document.createElement('div'); d.className='sol all'; d.textContent=S.tour.champion?'Nobody tipped the champion':S.nTips?'Nobody tipped the survivor':'Tip the winner'; box.appendChild(d) }
 }
 setInterval(poll,300); poll();
 function frame(t){ const dt=Math.min(.05,(t-lastT)/1000||0); lastT=t; if(S&&S.phase==='run') stepSim(dt); else if(sim&&S&&S.phase==='show') { for(const b of sim.balls) if(b.alive&&!b.fall){ b.x+=b.vx*dt*.2; b.y+=b.vy*dt*.2 } } draw(); requestAnimationFrame(frame) }
@@ -222,7 +236,7 @@ function showPop(){
   if(popBusy||!popQ.length) return; popBusy=true;
   const w=popQ.findIndex(x=>x.welcome||x.levelUp), x=w>=0?popQ.splice(w,1)[0]:popQ.pop(); if(w<0) popQ=[];
   const u=`<span class="u">${esc(x.user)}</span>`;
-  const html=x.out?`${flagOf(x.out)} is out!`:x.levelUp?`${x.badge} ${u} is now ${esc(x.levelUp)}!`:x.welcome?`👋 Welcome ${u}! Tip the winner`:x.flag&&!x.tip?`${u} ${x.flag} joined`:x.late?`${u} ${x.tip} too late`:x.dead?`${u} ${x.tip} is already out`:`${u} ${x.flag||''} tips ${x.tip} ${esc(x.name||'')}`;
+  const html=x.out?`${flagOf(x.out)} is out!`:x.levelUp?`${x.badge} ${u} is now ${esc(x.levelUp)}!`:x.welcome?`👋 Welcome ${u}! Tip the winner`:x.flag&&!x.tip?`${u} ${x.flag} joined`:x.late?`${u} ${x.tip} too late`:x.dead?`${u} ${x.tip} is already out`:`${u} ${x.flag||''} tips ${x.tip} ${esc(x.name||'')}${x.title?' for the title 🏆':''}`;
   $('chatpop').innerHTML=`<div class="cp2${x.out?' o':x.welcome||x.levelUp?' w':x.flag&&!x.tip?' f':''}">${html}</div>`; pop($('chatpop').firstChild,{transform:'scale(.6)',opacity:0},.6,.35);
   if(x.welcome) bell(PENTA[4],.4,.06);
   setTimeout(()=>{ const el=$('chatpop').firstChild; if(el) el.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}); setTimeout(()=>{popBusy=false;showPop()},220) }, x.welcome||x.levelUp?3000:1300);
