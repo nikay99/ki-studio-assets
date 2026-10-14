@@ -117,7 +117,7 @@ const pairT=new Map();
 function hitSfx(a,b,v){ // nur im Frame eines echten Kontakts, pro Paar 150 ms Sperre, keine Warteschlange
   const key=a.code<b.code?a.code+b.code:b.code+a.code, now=performance.now(); if(now-(pairT.get(key)||0)<150||now-sfxLast<80) return; pairT.set(key,now); sfxLast=now; if(pairT.size>400) pairT.clear();
   play(HITS[Math.floor(Math.random()*HITS.length)],.2+.22*Math.min(1,v/700),.92+Math.random()*.16) }
-const sfxC={out:()=>{ if(!play(sim&&sim.left<=1?'ko-4-posaune':KOS[Math.floor(Math.random()*KOS.length)],.55)){ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) } }, tick:()=>{}, near:()=>{}};
+const sfxC={out:()=>{ if(!play(sim&&sim.left<=1?'ko-4-posaune':KOS[Math.floor(Math.random()*KOS.length)],.55)){ blip(900,120,.45,.09,'sawtooth'); blip(1500,300,.3,.04,'triangle'); bell(220,.5,.1);bell(165,.6,.08,.06) } }, tick:()=>bell(1760,.06,.03), near:()=>bell(1318.5,.12,.05)};
 const G=$('game').getContext('2d');
 const CX=540, CY=700, R=365, BR_=36, SPEED=900;
 let S=null, ver=null, sim=null, lastT=0, lastN=0, shownN=0, lastSolv=0, lastFeed=0;
