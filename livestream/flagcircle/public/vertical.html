@@ -144,12 +144,14 @@ function initSim(s){
   for(let k=0;k<30;k++) for(let i=0;i<balls.length;i++) for(let j=i+1;j<balls.length;j++){ const a=balls[i],b=balls[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1; if(d<BR_*2){ const p=(BR_*2-d)/2; a.x-=dx/d*p;a.y-=dy/d*p;b.x+=dx/d*p;b.y+=dy/d*p } }
   sim={n:s.n,balls,t:0,holeA:rnd(0,Math.PI*2),holeW:.05,sinceOut:0,left:balls.length,posted:false,slow:1,shake:0,outs:[]};
 }
+// Tempo-Kurve: viele Bälle = ruhiger, wenige = schneller; Heat 1 am langsamsten, Heat 4 und Finale am schnellsten
+function spdFactor(m,nLeft){ const heat=Math.max(1,Math.min(5,(S&&S.tour&&S.tour.heat)||1)), hb=[0,.7,.85,1.0,1.2,1.4][heat], N=Math.max(2,m.balls.length), prog=Math.max(0,Math.min(1,1-(nLeft-1)/(N-1))); return hb*(.85+.3*prog) }
 function stepSim(dt){
   const m=sim; if(!m||m.posted) return;
   const live=m.balls.filter(b=>b.alive&&!b.fall), nLeft=live.length;
   if(nLeft<=1&&!m.posted){ m.oneT=(m.oneT||0)+dt; if(m.oneT>4){ m.posted=true; const last=live[0]||m.balls[0]; fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}); return } }
-  m.slow=nLeft<=2?0.6:nLeft<=3?0.8:1; dt*=m.slow; m.t+=dt; m.sinceOut+=dt;
-  m.holeA+=dt*(nLeft<=3?.9:1.4);
+  m.slow=nLeft<=2?0.9:1; dt*=m.slow; m.t+=dt; m.sinceOut+=dt;
+  const spF=spdFactor(m,nLeft); m.holeA+=dt*(.9+.6*spF);
   // Loch wird breiter, je länger niemand rausfiel (Tempo ≈ alle 2–3 s ein Ball), nach einem Ausfall wieder eng
   m.holeW=Math.min(.5,.04+.13*Math.max(0,m.sinceOut-0.9));
   const sub=5, h=dt/sub;
@@ -171,7 +173,7 @@ function stepSim(dt){
       // Tempo konstant halten (kein Einschlafen), kleine Zufallsablenkung
       if(!(Math.hypot(b.vx,b.vy)>5)||!isFinite(b.x+b.y)){ if(!isFinite(b.x+b.y)){ b.x=CX; b.y=CY } const a0=Math.random()*Math.PI*2; b.vx=Math.cos(a0)*SPEED; b.vy=Math.sin(a0)*SPEED }
       if(Math.hypot(b.x-CX,b.y-CY)+BR_>R-4 && Math.abs(Math.atan2(Math.sin(Math.atan2(b.y-CY,b.x-CX)-m.holeA),Math.cos(Math.atan2(b.y-CY,b.x-CX)-m.holeA)))<m.holeW+.05){ b.edgeT=(b.edgeT||0)+h; if(b.edgeT>1.5){ const ang=Math.atan2(b.y-CY,b.x-CX); b.vx=Math.cos(ang)*SPEED; b.vy=Math.sin(ang)*SPEED; b.x=CX+Math.cos(ang)*(R-BR_+10); b.y=CY+Math.sin(ang)*(R-BR_+10); b.edgeT=0 } } else b.edgeT=0
-      const sp=Math.hypot(b.vx,b.vy)||1, tgt=SPEED*(nLeft<=3?.85:1), k=1+(tgt/sp-1)*.05; b.vx*=k; b.vy*=k;
+      const sp=Math.hypot(b.vx,b.vy)||1, tgt=SPEED*spF, k=1+(tgt/sp-1)*.05; b.vx*=k; b.vy*=k;
     }
   }
   for(const b of m.balls){ if(b.fall){ b.fall+=dt*1.4; b.fvx*=1+dt*.5; b.fvy*=1+dt*.5; b.x+=b.fvx*dt; b.y+=b.fvy*dt; b.s=Math.min(1.35,1+(b.fall-1)*.5); b.rot+=dt*9; if(b.fall>4||b.x<-120||b.x>1200||b.y<-120||b.y>2040) b.alive=false } }
