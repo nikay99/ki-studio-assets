@@ -147,6 +147,7 @@ function initSim(s){
 function stepSim(dt){
   const m=sim; if(!m||m.posted) return;
   const live=m.balls.filter(b=>b.alive&&!b.fall), nLeft=live.length;
+  if(nLeft<=1&&!m.posted){ m.oneT=(m.oneT||0)+dt; if(m.oneT>4){ m.posted=true; const last=live[0]||m.balls[0]; fetch('/api/out',{method:'POST',body:JSON.stringify({n:m.n,win:last.code})}).catch(()=>{}); return } }
   m.slow=nLeft<=2?0.6:nLeft<=3?0.8:1; dt*=m.slow; m.t+=dt; m.sinceOut+=dt;
   m.holeA+=dt*(nLeft<=3?.9:1.4);
   // Loch wird breiter, je länger niemand rausfiel (Tempo ≈ alle 2–3 s ein Ball), nach einem Ausfall wieder eng
@@ -168,6 +169,8 @@ function stepSim(dt){
         if(Math.abs(diff)>=m.holeW||d+BR_>R+14){ if(vn>0){ b.vx-=2*vn*nx; b.vy-=2*vn*ny } if(Math.abs(diff)>=m.holeW){ b.x=CX+nx*(R-BR_); b.y=CY+ny*(R-BR_) } }
       }
       // Tempo konstant halten (kein Einschlafen), kleine Zufallsablenkung
+      if(!(Math.hypot(b.vx,b.vy)>5)||!isFinite(b.x+b.y)){ if(!isFinite(b.x+b.y)){ b.x=CX; b.y=CY } const a0=Math.random()*Math.PI*2; b.vx=Math.cos(a0)*SPEED; b.vy=Math.sin(a0)*SPEED }
+      if(Math.hypot(b.x-CX,b.y-CY)+BR_>R-4 && Math.abs(Math.atan2(Math.sin(Math.atan2(b.y-CY,b.x-CX)-m.holeA),Math.cos(Math.atan2(b.y-CY,b.x-CX)-m.holeA)))<m.holeW+.05){ b.edgeT=(b.edgeT||0)+h; if(b.edgeT>1.5){ const ang=Math.atan2(b.y-CY,b.x-CX); b.vx=Math.cos(ang)*SPEED; b.vy=Math.sin(ang)*SPEED; b.x=CX+Math.cos(ang)*(R-BR_+10); b.y=CY+Math.sin(ang)*(R-BR_+10); b.edgeT=0 } } else b.edgeT=0
       const sp=Math.hypot(b.vx,b.vy)||1, tgt=SPEED*(nLeft<=3?.85:1), k=1+(tgt/sp-1)*.05; b.vx*=k; b.vy*=k;
     }
   }
@@ -245,8 +248,15 @@ function renderSolvers(){
   if(S.phase==='show' && !S.nSolvers && !box.querySelector('.all')){ const d=document.createElement('div'); d.className='sol all'; d.textContent=S.tour.champion?'Nobody tipped the champion':S.nTips?'Nobody tipped the survivor':'Tip the winner'; box.appendChild(d) }
 }
 setInterval(poll,300); poll();
-function frame(t){ const dt=Math.min(.05,(t-lastT)/1000||0); lastT=t; if(S&&S.phase==='run') stepSim(dt); else if(sim&&S&&S.phase==='show') { for(const b of sim.balls) if(b.alive&&!b.fall){ b.x+=b.vx*dt*.2; b.y+=b.vy*dt*.2 } } draw(); requestAnimationFrame(frame) }
+let lastRaf=performance.now(), frameErr=0, simSig='', simSigT=performance.now();
+function frame(t){ requestAnimationFrame(frame); lastRaf=performance.now();
+  try{ const dt=Math.min(.05,(t-lastT)/1000||0); lastT=t; if(S&&S.phase==='run') stepSim(dt); else if(sim&&S&&S.phase==='show') { for(const b of sim.balls) if(b.alive&&!b.fall){ b.x+=b.vx*dt*.2; b.y+=b.vy*dt*.2 } } draw(); frameErr=0 }
+  catch(e){ console.error('frame',e); if(++frameErr>=30) location.reload(); try{ G.restore() }catch(_){} } }
 requestAnimationFrame(frame);
+// Watchdog: bleibt das Bild stehen (keine Frames oder Sim-Zustand 30 s unverändert im Lauf), Seite neu laden
+setInterval(()=>{ const now=performance.now();
+  if(now-lastRaf>15000){ location.reload(); return }
+  if(S&&S.phase==='run'&&sim){ const sig=sim.t.toFixed(2)+'|'+sim.left+'|'+S.n; if(sig!==simSig){ simSig=sig; simSigT=now } else if(now-simSigT>30000){ location.reload(); return } } else simSigT=now },2000);
 async function pollBoard(){
   try{
     const b=await (await fetch('/api/board',{cache:'no-store'})).json();
