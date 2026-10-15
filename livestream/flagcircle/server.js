@@ -148,6 +148,8 @@ function view() {
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.woff2': 'font/woff2', '.svg': 'image/svg+xml' };
 const send = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
 const WORDS_PUB = path.join(__dirname, '../words/public');
+let HB = null;
+setInterval(() => { if (HB && Date.now() - HB.at > 20000) { console.log('[hb] Seite meldet sich seit', Math.round((Date.now() - HB.at) / 1000), 's nicht mehr', JSON.stringify(HB)); HB.at = Date.now() - 15000; } }, 10000);
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   // Die Seite meldet Ausscheiden und Sieger (nur lokal erreichbar, Server hört auf 127.0.0.1)
@@ -159,6 +161,15 @@ http.createServer((req, res) => {
       } catch {} send(res, 200, { ok: 1 }); }); return;
   }
   if (u.pathname === '/gami-ui.js') return fs.readFile(path.join(__dirname, '..', 'gami-ui.js'), (e, b) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' }); res.end(b); });
+  // Lebenszeichen der Seite (Diagnose bei Standbildern): Frames, Sim-Zustand, Fehler
+  if (u.pathname === '/api/hb' && req.method === 'POST') {
+    let b = ''; req.on('data', d => { b += d; if (b.length > 4000) req.destroy(); }); req.on('end', () => {
+      try { const j = JSON.parse(b); const prev = HB; HB = { at: Date.now(), ...j };
+        if (prev && j.frames === prev.frames) console.log('[hb] keine neuen Frames seit', Math.round((Date.now() - prev.at) / 1000), 's', JSON.stringify(j));
+        if (j.err && (!prev || j.err !== prev.err)) console.log('[hb] Seitenfehler:', String(j.errMsg || '').slice(0, 300));
+      } catch {} send(res, 200, { ok: 1 }); }); return;
+  }
+  if (u.pathname === '/api/hb') return send(res, 200, { hb: HB, ageS: HB ? Math.round((Date.now() - HB.at) / 1000) : null });
   if (u.pathname === '/api/state') return send(res, 200, view());
   if (u.pathname === '/api/board') return send(res, 200, board());
   if (u.pathname === '/api/feed') { const since = +u.searchParams.get('since') || 0; return send(res, 200, { last: feedId, feed: feed.filter(f => f.id > since).slice(-20) }); }
