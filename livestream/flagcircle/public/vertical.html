@@ -281,7 +281,7 @@ async function pollFeed(){
   try{
     const f=await (await fetch('/api/feed?since='+feedSince,{cache:'no-store'})).json(); feedSince=f.last;
     if(feedFirst){ feedFirst=false; return }
-    for(const x of f.feed) popQ.push(x); popQ=popQ.slice(-12); showPop();
+    for(const x of f.feed) if(!x.out) popQ.push(x); popQ=popQ.slice(-12); showPop();
   }catch{}
 }
 setInterval(pollFeed,700); pollFeed();
