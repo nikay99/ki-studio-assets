@@ -56,24 +56,34 @@ start_chrome; sleep 8
 # Standbild-Wächter (15.10., Flag Circle stand nachts eingefroren): alle 20 s ein kleines Bild vom Bildschirm; ist es 4× hintereinander
 # exakt gleich (~80 s Standbild), hängt die Seite. Zusätzlich Ton: 3× hintereinander (~60 s) stumm (Spitze < -60 dB) → ebenfalls Chrome neu
 # (15.10.: nach Neuladen der Seite kam bei Flag Circle zweimal kein Ton mehr), → Chrome beenden, die Schleife unten startet ihn neu. Nicht bei pausierter Rotation.
-freeze_guard(){ local last="" same=0 h a quiet=0
+# 15.10. 06:02–08:42Z Schwarzbild: Chrome wurde beendet, die Schleife unten startet ihn aber erst neu, wenn ffmpeg endet; ffmpeg sendete
+# das leere Display weiter. Darum beendet der Wächter jetzt immer Chrome UND den Encoder (neu_starten), dann startet die Schleife beides
+# frisch. Zusätzlich: fehlt Chrome ganz oder ist das Bild einfarbig (schwarz/leer, Helligkeits-Spanne < 8), zählt das sofort als Fehler.
+neu_starten(){ log "$1: Chrome und Sendung werden neu gestartet"; pkill -f -- "--user-data-dir=$DATA_DIR/chrome"; kill "$(cat "$DATA_DIR/ffmpeg.pid" 2>/dev/null)" 2>/dev/null; }
+freeze_guard(){ local last="" same=0 h a quiet=0 leer=0 weg=0 f="$DATA_DIR/guard.gray" sp
   while sleep 20; do
-    if [ -f "$DATA_DIR/PAUSE.rot" ] || [ -f "$DATA_DIR/PAUSE" ]; then same=0; last=""; continue; fi
-    h=$(timeout 10 ffmpeg -hide_banner -loglevel error -f x11grab -draw_mouse 0 -video_size "${RW}x${RH}" -i "$DISPLAY.0" -frames:v 1 -vf scale=108:192 -f rawvideo - 2>/dev/null | md5sum | cut -c1-32)
+    if [ -f "$DATA_DIR/PAUSE.rot" ] || [ -f "$DATA_DIR/PAUSE" ]; then same=0; last=""; leer=0; weg=0; continue; fi
+    if ! pgrep -f -- "--user-data-dir=$DATA_DIR/chrome" >/dev/null; then weg=$((weg+1)); else weg=0; fi
+    if [ "$weg" -ge 2 ]; then neu_starten "Kein Chrome seit ~40 s"; weg=0; same=0; last=""; leer=0; sleep 40; continue; fi
+    rm -f "$f"; timeout 10 ffmpeg -hide_banner -loglevel error -f x11grab -draw_mouse 0 -video_size "${RW}x${RH}" -i "$DISPLAY.0" -frames:v 1 -vf scale=108:192,format=gray -f rawvideo "$f" 2>/dev/null
+    h=""; sp=""
+    if [ -s "$f" ]; then h=$(md5sum < "$f" | cut -c1-32); sp=$(od -An -v -tu1 "$f" | awk '{for(i=1;i<=NF;i++){v=$i+0; if(n==0||v<mn)mn=v; if(v>mx)mx=v; n++}} END{print mx-mn}'); fi
+    if [ -n "$sp" ] && [ "$sp" -lt 8 ]; then leer=$((leer+1)); else leer=0; fi
+    if [ "$leer" -ge 2 ]; then neu_starten "Leeres/schwarzes Bild seit ~40 s"; leer=0; same=0; last=""; sleep 40; continue; fi
     a=$(timeout 8 ffmpeg -hide_banner -f pulse -i "$(pactl get-default-sink 2>/dev/null).monitor" -t 3 -af volumedetect -f null - 2>&1 | sed -n 's/.*max_volume: \(-*[0-9.]*\) dB/\1/p')
     if [ -n "$a" ] && awk "BEGIN{exit !($a < -60)}"; then quiet=$((quiet+1)); else quiet=0; fi
-    if [ "$quiet" -ge 3 ]; then log "Kein Ton seit ~60 s: Chrome wird neu gestartet"; pkill -f -- "--user-data-dir=$DATA_DIR/chrome"; quiet=0; same=0; last=""; sleep 30; continue; fi
-    [ -z "$h" ] || [ "$h" = d41d8cd98f00b204e9800998ecf8427e ] && continue
+    if [ "$quiet" -ge 3 ]; then neu_starten "Kein Ton seit ~60 s"; quiet=0; same=0; last=""; sleep 40; continue; fi
+    [ -z "$h" ] && continue
     if [ "$h" = "$last" ]; then same=$((same+1)); else same=0; last="$h"; fi
-    if [ "$same" -ge 3 ]; then log "Standbild seit ~80 s erkannt: Chrome wird neu gestartet"; pkill -f -- "--user-data-dir=$DATA_DIR/chrome" ; same=0; last=""; sleep 30; fi
+    if [ "$same" -ge 3 ]; then neu_starten "Standbild seit ~80 s"; same=0; last=""; sleep 40; fi
   done; }
 freeze_guard &
 
 while true; do
   [ -f /etc/marble/words.env ] && . /etc/marble/words.env
   # Rotation: Spiel nicht dran -> Browser aus (pausierte Browser kosteten 14.10. so viel CPU, dass der laufende Stream ruckelte); ist es dran, startet er hier neu
-  if [ -f "$DATA_DIR/PAUSE.rot" ]; then kill $CHROME_PID 2>/dev/null; sleep 20; continue; fi
-  kill -0 $CHROME_PID 2>/dev/null || { log "Chrome neu gestartet"; start_chrome; sleep 8; }
+  if [ -f "$DATA_DIR/PAUSE.rot" ]; then pkill -f -- "--user-data-dir=$DATA_DIR/chrome"; sleep 20; continue; fi
+  pgrep -f -- "--user-data-dir=$DATA_DIR/chrome" >/dev/null || { log "Chrome neu gestartet"; start_chrome; sleep 8; }
   if [ -f "$DATA_DIR/PAUSE" ] || [ -z "${STREAM_KEY:-}" ]; then sleep 20; continue; fi
   HWDEV=(); [ "$HW" = vaapi ] && [ "${WORDS_VAAPI:-1}" = 1 ] && HWDEV=(-vaapi_device /dev/dri/renderD128)
   IN=("${HWDEV[@]}" -thread_queue_size 1024 -f x11grab -draw_mouse 0 -video_size "${RW}x${RH}" -framerate "$FPS" -i :98.0
