@@ -56,11 +56,15 @@ start_chrome(){
 for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8091/api/state && break; sleep 2; done
 start_chrome; sleep 8
 # Standbild-Wächter (15.10., Flag Circle stand nachts eingefroren): alle 20 s ein kleines Bild vom Bildschirm; ist es 4× hintereinander
-# exakt gleich (~80 s Standbild), hängt die Seite → Chrome beenden, die Schleife unten startet ihn neu. Nicht bei pausierter Rotation.
-freeze_guard(){ local last="" same=0 h
+# exakt gleich (~80 s Standbild), hängt die Seite. Zusätzlich Ton: 3× hintereinander (~60 s) stumm (Spitze < -60 dB) → ebenfalls Chrome neu
+# (15.10.: nach Neuladen der Seite kam bei Flag Circle zweimal kein Ton mehr), → Chrome beenden, die Schleife unten startet ihn neu. Nicht bei pausierter Rotation.
+freeze_guard(){ local last="" same=0 h a quiet=0
   while sleep 20; do
     if [ -f "$DATA_DIR/PAUSE.rot" ] || [ -f "$DATA_DIR/PAUSE" ]; then same=0; last=""; continue; fi
     h=$(timeout 10 ffmpeg -hide_banner -loglevel error -f x11grab -draw_mouse 0 -video_size "${RW}x${RH}" -i "$DISPLAY.0" -frames:v 1 -vf scale=108:192 -f rawvideo - 2>/dev/null | md5sum | cut -c1-32)
+    a=$(timeout 8 ffmpeg -hide_banner -f pulse -i "$(pactl get-default-sink 2>/dev/null).monitor" -t 3 -af volumedetect -f null - 2>&1 | sed -n 's/.*max_volume: \(-*[0-9.]*\) dB/\1/p')
+    if [ -n "$a" ] && awk "BEGIN{exit !($a < -60)}"; then quiet=$((quiet+1)); else quiet=0; fi
+    if [ "$quiet" -ge 3 ]; then log "Kein Ton seit ~60 s: Chrome wird neu gestartet"; pkill -f -- "--user-data-dir=$DATA_DIR/chrome"; quiet=0; same=0; last=""; sleep 30; continue; fi
     [ -z "$h" ] || [ "$h" = d41d8cd98f00b204e9800998ecf8427e ] && continue
     if [ "$h" = "$last" ]; then same=$((same+1)); else same=0; last="$h"; fi
     if [ "$same" -ge 3 ]; then log "Standbild seit ~80 s erkannt: Chrome wird neu gestartet"; pkill -f -- "--user-data-dir=$DATA_DIR/chrome" ; same=0; last=""; sleep 30; fi
