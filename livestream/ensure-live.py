@@ -86,6 +86,7 @@ ROT_FROM = calendar.timegm((2026, 10, 10, 13, 30, 0))
 FB_FROM = calendar.timegm((2026, 10, 14, 13, 30, 0))     # ab diesem Block ersetzt Flag Battle den Capital-Platz (Niklas 14.10.)
 FLAGCIRCLE_AKTIV = True    # 14.10. 17:31Z wieder an (Zugangsdatei auf der VM ergaenzt), Niklas 17:19Z "direkt flag"
 FC_DAY = (calendar.timegm((2026, 10, 15, 5, 30, 0)), calendar.timegm((2026, 10, 16, 5, 30, 0)))   # Niklas 15.10.: Flag Circle den ganzen Tag, keine Rotation
+WORDS_ONLY = calendar.timegm((2026, 10, 15, 18, 40, 0))  # Niklas 15.10. 18:35Z: "guess the emoji word only stream 24/7" -> Rotation aus, nur noch Word
 FC_NOW = calendar.timegm((2026, 10, 14, 17, 31, 0))       # Niklas 14.10. 15:56Z: Flag Circle sofort live, der laufende Block geht vorzeitig an Flag Circle
 ROT_ANCHOR = calendar.timegm((2026, 10, 10, 22, 30, 0))   # Tag 0, erster Block = ROTATION[0]
 
@@ -179,6 +180,7 @@ def rotation_game(now):
     """Welches Quiz-Spiel ist im rotierenden Betrieb gerade dran? None vor ROT_FROM."""
     if now < ROT_FROM: return None
     if now < ROT_ANCHOR: return 'words'
+    if now >= WORDS_ONLY: return 'words'
     s = last_slot(now, 0)
     d = (s - ROT_ANCHOR) // 86400                      # Tag (beginnt zur Uhrzeit von ROT_ANCHOR)
     off = (s - ROT_ANCHOR) - d * 86400
