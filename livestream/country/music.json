@@ -1,46 +1,82 @@
 [
  {
-  "name": "fetz-01-hardstyle",
-  "url": "https://v3b.fal.media/files/b/0aae7007/SYxpN5Z2hlM92Mj767G2Z_OsTgWOS3.mp3"
+  "name": "fetz20-00-hardstyle",
+  "url": "https://v3b.fal.media/files/b/0aae7033/5bUZRulcjwX072FcKgeTq_tRFfz9WC.mp3"
  },
  {
-  "name": "fetz-02-dnb",
-  "url": "https://v3b.fal.media/files/b/0aae7003/ab_G6nMajvcD5eTKhXLu7_612AjLAQ.mp3"
+  "name": "fetz20-01-liquid-dnb",
+  "url": "https://v3b.fal.media/files/b/0aae702c/c8sJ9PVEir1LkGOprwD9b_blhR5haN.mp3"
  },
  {
-  "name": "fetz-03-electrohouse",
-  "url": "https://v3b.fal.media/files/b/0aae7005/rGNJyVycQBe_uXlRcsvo1_jll4xlI5.mp3"
+  "name": "fetz20-02-neurofunk",
+  "url": "https://v3b.fal.media/files/b/0aae702f/LO5JyRzlOtVdp1b2mT8rx_9qBi80h2.mp3"
  },
  {
-  "name": "fetz-04-chiptune",
-  "url": "https://v3b.fal.media/files/b/0aae7009/l10IpIH-J4LsFHXK5lA30_35njBLyB.mp3"
+  "name": "fetz20-03-electrohouse",
+  "url": "https://v3b.fal.media/files/b/0aae702d/3MYVV_SBv4AWRD0UU-cu3_0q6sNKH7.mp3"
  },
  {
-  "name": "fetz-05-drumstep",
-  "url": "https://v3b.fal.media/files/b/0aae700a/bK6IFIIt5Us3By0xUl7YE_fnSDyNqe.mp3"
+  "name": "fetz20-04-chiptune",
+  "url": "https://v3b.fal.media/files/b/0aae702a/PiCKnWk0HSIf6r8H3ZSQI_50SYuxbl.mp3"
  },
  {
-  "name": "fetz-06-bigroom",
-  "url": "https://v3b.fal.media/files/b/0aae700c/NhrDwe8qkyQwygJgDE6H1_L1sJiHgx.mp3"
+  "name": "fetz20-05-poppunk",
+  "url": "https://v3b.fal.media/files/b/0aae7035/tQBDLRKOAUVmGg5y3KuPO_Xc23W3ZQ.mp3"
  },
  {
-  "name": "flagcircle-00-gameshow",
-  "url": "https://v3b.fal.media/files/b/0aae605b/BOxGgan2N7lBxxVmy6XUu_1svQxe4q.mp3"
+  "name": "fetz20-06-trance",
+  "url": "https://v3b.fal.media/files/b/0aae7027/3kKla4y10FW2nCvAFqJik_OGsJ7dbP.mp3"
  },
  {
-  "name": "flagcircle-01-dnb",
-  "url": "https://v3b.fal.media/files/b/0aae6063/qsqiXLcqsafB_ilfDQpfh_VExRjbA5.mp3"
+  "name": "fetz20-07-hardtechno",
+  "url": "https://v3b.fal.media/files/b/0aae7028/XBU-NU7Avhb66SSSo2NBA_1aXTx0OQ.mp3"
  },
  {
-  "name": "flagcircle-02-electrorock",
-  "url": "https://v3b.fal.media/files/b/0aae605e/7v3K6KK_ljsBo372kXCO7_5aNeccvB.mp3"
+  "name": "fetz20-08-phonk",
+  "url": "https://v3b.fal.media/files/b/0aae7046/iyg0NvxyblQEHbRne13nr_fetz-phonk.mp3"
  },
  {
-  "name": "flagcircle-03-chiptune",
-  "url": "https://v3b.fal.media/files/b/0aae6061/AzN_QoCnUgiwCJMzoKPpP_dvFFVqKH.mp3"
+  "name": "fetz20-09-bigroom",
+  "url": "https://v3b.fal.media/files/b/0aae7037/ECAycFjAcISdpCFo7SIjZ_RTLphUq3.mp3"
  },
  {
-  "name": "flagcircle-04-countdown",
-  "url": "https://v3b.fal.media/files/b/0aae6059/LuPSsD54qjRrlVqD8SheE_3IlTZdhD.mp3"
+  "name": "fetz20-10-dubstep",
+  "url": "https://v3b.fal.media/files/b/0aae7034/IHwjF2SlSnxR26rLRy2Iw_8DLttPFl.mp3"
+ },
+ {
+  "name": "fetz20-11-eurobeat",
+  "url": "https://v3b.fal.media/files/b/0aae7034/M2xK6bXXw0qKwZuXrAeYE_BT9Rigwg.mp3"
+ },
+ {
+  "name": "fetz20-12-trailer",
+  "url": "https://v3b.fal.media/files/b/0aae7031/QHwuL46OrdYoNdMJ71ShY_bvAcDYa1.mp3"
+ },
+ {
+  "name": "fetz20-13-jungle",
+  "url": "https://v3b.fal.media/files/b/0aae7035/SzGBHhjlmG2BipQrjxejg_N1BdKhjD.mp3"
+ },
+ {
+  "name": "fetz20-14-happyhardcore",
+  "url": "https://v3b.fal.media/files/b/0aae7036/Q3p4w3rfBicfEu07PexTU_H2SP1SqC.mp3"
+ },
+ {
+  "name": "fetz20-15-nudisco",
+  "url": "https://v3b.fal.media/files/b/0aae7032/xbwEY1fSWVP3f54rNSrkQ_nETYtNGx.mp3"
+ },
+ {
+  "name": "fetz20-16-synthwave",
+  "url": "https://v3b.fal.media/files/b/0aae7037/lKwGVueECIOucBhN4Jr8p_xfVjNYUG.mp3"
+ },
+ {
+  "name": "fetz20-17-electrorock",
+  "url": "https://v3b.fal.media/files/b/0aae7037/L3SzDanrmPGV767p2_b0T_bLyLvMWc.mp3"
+ },
+ {
+  "name": "fetz20-18-moombah",
+  "url": "https://v3b.fal.media/files/b/0aae7037/ocUyuF_XwbhwIngrI-kWa_t6IM8fwV.mp3"
+ },
+ {
+  "name": "fetz20-19-countdown",
+  "url": "https://v3b.fal.media/files/b/0aae7038/vY8ka5t3-ApwIhOqCCSM3_dD71lcCZ.mp3"
  }
 ]
