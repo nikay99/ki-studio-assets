@@ -233,6 +233,14 @@ def main():
             except OSError: pass
         st.pop('rot_ended', None); st['created_at'] = 0; save()
         log('Rotation: %s ist dran, Encoder startet' % GAME)
+    if rg == GAME:
+        # 15.10.: gestoppte Sende-Dienste (statt nur pausiert) liefen beim Wechsel nicht an -> dann selbst starten
+        svc = GAME + '-stream'
+        if subprocess.run(['systemctl', 'is-active', '--quiet', svc]).returncode != 0:
+            if os.geteuid() == 0:
+                subprocess.run(['systemctl', 'start', svc]); log('Rotation: %s war gestoppt, gestartet' % svc)
+            else:
+                log('WARNUNG: %s ist dran, aber %s laeuft nicht (Waechter ohne root-Rechte)' % (GAME, svc))
     def setvid(v):
         # aktuelle Sendungs-ID fuer den Chat-Leser (server.js, VIDEO_ID_FILE): bei mehreren Sendungen auf dem Kanal zeigt /live nur eine
         try:
