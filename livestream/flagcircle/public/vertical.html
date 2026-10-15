@@ -215,9 +215,12 @@ function draw(){
   G.restore();
 }
 let lastCnt=-1;
+let polling=false, pollStart=0, lastPollOk=performance.now(), pollErr='';
 async function poll(){
+  if(polling && performance.now()-pollStart<4000) return;   // keine Anfragen aufstauen, hängende nach 4 s abbrechen
+  polling=true; pollStart=performance.now(); const ac=new AbortController(), to=setTimeout(()=>ac.abort(),4000);
   try{
-    const s=await (await fetch('/api/state',{cache:'no-store'})).json();
+    const s=await (await fetch('/api/state',{cache:'no-store',signal:ac.signal})).json(); clearTimeout(to); lastPollOk=performance.now(); pollErr='';
     if(ver && s.v!==ver) return location.reload(); ver=s.v; S=s;
     if(s.n!==lastN){ lastN=s.n; lastSolv=0; $('solvers').innerHTML=''; $('win').style.display='none'; initSim(s); if(s.phase==='run' && performance.now()-lastFan>4000 && performance.now()>bigUntil){ bigUntil=performance.now()+2500; if(!play('start-countdown-go',.5)) sfx.start() } lastCnt=-1;
       $('p1').animate([{transform:'scale(.7) rotate(-8deg)',opacity:0},{transform:'none',opacity:1}],{duration:400,easing:'cubic-bezier(.2,1.4,.4,1)'}) }
@@ -229,7 +232,8 @@ async function poll(){
     const tr=s.tour, fin=tr.heat>4;
     $('p1').textContent=s.phase==='run'?(fin?'FINAL · 4 left':(s.left<=4?'Heat '+tr.heat+'/4 · final '+s.left+'!':'Heat '+tr.heat+'/4')):(tr.champion?'We have a champion':'Heat '+tr.heat+' winner');
     renderBracket(tr,s);
-  }catch{}
+  }catch(e){ pollErr=String(e&&e.message||e).slice(0,120) }
+  finally{ clearTimeout(to); polling=false }
 }
 function renderBracket(tr,s){
   const key=JSON.stringify([tr.heat,tr.winners,tr.champion,s.phase]); if($('bracket').dataset.k===key) return; $('bracket').dataset.k=key;
@@ -257,11 +261,12 @@ function frame(t){ requestAnimationFrame(frame); lastRaf=performance.now(); nFra
 let nFrames=0, errCnt=0, errMsg='';
 window.addEventListener('error',e=>{ errCnt++; errMsg=(e.message||'')+' @'+(e.lineno||'') });
 window.addEventListener('unhandledrejection',e=>{ errCnt++; errMsg='promise: '+(e.reason&&e.reason.message||e.reason) });
-setInterval(()=>{ try{ fetch('/api/hb',{method:'POST',body:JSON.stringify({frames:nFrames,t:sim?+sim.t.toFixed(1):null,left:sim?sim.left:null,n:S&&S.n,phase:S&&S.phase,hidden:document.hidden,err:errCnt,errMsg,frameErr,up:Math.round(performance.now()/1000)})}).catch(()=>{}) }catch(e){} },5000);
+setInterval(()=>{ try{ fetch('/api/hb',{method:'POST',body:JSON.stringify({frames:nFrames,t:sim?+sim.t.toFixed(1):null,left:sim?sim.left:null,n:S&&S.n,phase:S&&S.phase,hidden:document.hidden,err:errCnt,errMsg,frameErr,pollErr,pollAge:Math.round((performance.now()-lastPollOk)/1000),up:Math.round(performance.now()/1000)})}).catch(()=>{}) }catch(e){} },5000);
 requestAnimationFrame(frame);
 // Watchdog: bleibt das Bild stehen (keine Frames oder Sim-Zustand 30 s unverändert im Lauf), Seite neu laden
 setInterval(()=>{ const now=performance.now();
   if(now-lastRaf>15000){ location.reload(); return }
+  if(now-lastPollOk>15000){ location.reload(); return }
   if(S&&S.phase==='run'&&sim){ const sig=sim.t.toFixed(2)+'|'+sim.left+'|'+S.n; if(sig!==simSig){ simSig=sig; simSigT=now } else if(now-simSigT>30000){ location.reload(); return } } else simSigT=now },2000);
 async function pollBoard(){
   try{
