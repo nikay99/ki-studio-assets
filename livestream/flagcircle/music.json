@@ -1,22 +1,46 @@
 [
-  {
-    "name": "flagcircle-00-gameshow",
-    "url": "https://v3b.fal.media/files/b/0aae605b/BOxGgan2N7lBxxVmy6XUu_1svQxe4q.mp3"
-  },
-  {
-    "name": "flagcircle-01-dnb",
-    "url": "https://v3b.fal.media/files/b/0aae6063/qsqiXLcqsafB_ilfDQpfh_VExRjbA5.mp3"
-  },
-  {
-    "name": "flagcircle-02-electrorock",
-    "url": "https://v3b.fal.media/files/b/0aae605e/7v3K6KK_ljsBo372kXCO7_5aNeccvB.mp3"
-  },
-  {
-    "name": "flagcircle-03-chiptune",
-    "url": "https://v3b.fal.media/files/b/0aae6061/AzN_QoCnUgiwCJMzoKPpP_dvFFVqKH.mp3"
-  },
-  {
-    "name": "flagcircle-04-countdown",
-    "url": "https://v3b.fal.media/files/b/0aae6059/LuPSsD54qjRrlVqD8SheE_3IlTZdhD.mp3"
-  }
+ {
+  "name": "fetz-01-hardstyle",
+  "url": "https://v3b.fal.media/files/b/0aae7007/SYxpN5Z2hlM92Mj767G2Z_OsTgWOS3.mp3"
+ },
+ {
+  "name": "fetz-02-dnb",
+  "url": "https://v3b.fal.media/files/b/0aae7003/ab_G6nMajvcD5eTKhXLu7_612AjLAQ.mp3"
+ },
+ {
+  "name": "fetz-03-electrohouse",
+  "url": "https://v3b.fal.media/files/b/0aae7005/rGNJyVycQBe_uXlRcsvo1_jll4xlI5.mp3"
+ },
+ {
+  "name": "fetz-04-chiptune",
+  "url": "https://v3b.fal.media/files/b/0aae7009/l10IpIH-J4LsFHXK5lA30_35njBLyB.mp3"
+ },
+ {
+  "name": "fetz-05-drumstep",
+  "url": "https://v3b.fal.media/files/b/0aae700a/bK6IFIIt5Us3By0xUl7YE_fnSDyNqe.mp3"
+ },
+ {
+  "name": "fetz-06-bigroom",
+  "url": "https://v3b.fal.media/files/b/0aae700c/NhrDwe8qkyQwygJgDE6H1_L1sJiHgx.mp3"
+ },
+ {
+  "name": "flagcircle-00-gameshow",
+  "url": "https://v3b.fal.media/files/b/0aae605b/BOxGgan2N7lBxxVmy6XUu_1svQxe4q.mp3"
+ },
+ {
+  "name": "flagcircle-01-dnb",
+  "url": "https://v3b.fal.media/files/b/0aae6063/qsqiXLcqsafB_ilfDQpfh_VExRjbA5.mp3"
+ },
+ {
+  "name": "flagcircle-02-electrorock",
+  "url": "https://v3b.fal.media/files/b/0aae605e/7v3K6KK_ljsBo372kXCO7_5aNeccvB.mp3"
+ },
+ {
+  "name": "flagcircle-03-chiptune",
+  "url": "https://v3b.fal.media/files/b/0aae6061/AzN_QoCnUgiwCJMzoKPpP_dvFFVqKH.mp3"
+ },
+ {
+  "name": "flagcircle-04-countdown",
+  "url": "https://v3b.fal.media/files/b/0aae6059/LuPSsD54qjRrlVqD8SheE_3IlTZdhD.mp3"
+ }
 ]
