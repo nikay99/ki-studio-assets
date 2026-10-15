@@ -53,6 +53,17 @@ start_chrome(){
 }
 for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8090/api/state && break; sleep 2; done
 start_chrome; sleep 8
+# Standbild-Wächter (15.10., Flag Circle stand nachts eingefroren): alle 20 s ein kleines Bild vom Bildschirm; ist es 4× hintereinander
+# exakt gleich (~80 s Standbild), hängt die Seite → Chrome beenden, die Schleife unten startet ihn neu. Nicht bei pausierter Rotation.
+freeze_guard(){ local last="" same=0 h
+  while sleep 20; do
+    if [ -f "$DATA_DIR/PAUSE.rot" ] || [ -f "$DATA_DIR/PAUSE" ]; then same=0; last=""; continue; fi
+    h=$(timeout 10 ffmpeg -hide_banner -loglevel error -f x11grab -draw_mouse 0 -video_size "${RW}x${RH}" -i "$DISPLAY.0" -frames:v 1 -vf scale=108:192 -f rawvideo - 2>/dev/null | md5sum | cut -c1-32)
+    [ -z "$h" ] || [ "$h" = d41d8cd98f00b204e9800998ecf8427e ] && continue
+    if [ "$h" = "$last" ]; then same=$((same+1)); else same=0; last="$h"; fi
+    if [ "$same" -ge 3 ]; then log "Standbild seit ~80 s erkannt: Chrome wird neu gestartet"; pkill -f -- "--user-data-dir=$DATA_DIR/chrome" ; same=0; last=""; sleep 30; fi
+  done; }
+freeze_guard &
 
 while true; do
   [ -f /etc/marble/words.env ] && . /etc/marble/words.env
