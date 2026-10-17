@@ -20,7 +20,7 @@ PROFILES = {
                            '⚡ Every chat message charges your ball – up to 3 boosts per race!',
                            '🏆 Points add up all day – your name runs in the TOP bar on screen.']),
     'words': dict(D='/var/lib/marble-words', env='/etc/marble/broadcast-words.env', user='words', stream=('words', 'words-game'),
-                  prefix='Guess the Word', title='Guess the Word 🔴 LIVE – type your answer in chat!', meta='/opt/marble/words/broadcast.json',
+                  prefix=('Guess the Word', 'Can you guess these emoji words'), title='Can you guess these emoji words? 🧠 Only 1% get all!', meta='/opt/marble/words/broadcast.json',
                   thumb='/opt/marble/words/thumbnail.jpg', runjson=False, slot=10,
                   latency='ultraLow',   # Niklas 09.10.: beim Raten zaehlt jede Sekunde Bildverzoegerung
                   remind=['✍️ Know the word? Type it in the chat – everyone who is right scores!',
